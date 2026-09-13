@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    :root {
+      --sidebar-bg: #1f2937;
+      --sidebar-bg-hover: #2d3a4d;
+      --sidebar-active: #2563eb;
+      --sidebar-text: #cbd5e1;
+      --sidebar-text-dim: #8b98ab;
+      --content-bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --danger: #dc2626;
+      --warn: #b45309;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--content-bg);
+    }
+    .layout { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+
+    .sidebar {
+      width: 270px; flex-shrink: 0;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      display: flex; flex-direction: column;
+      padding: 20px 0;
+      overflow-y: auto;
+    }
+    .sidebar-header {
+      padding: 0 20px 20px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 12px;
+    }
+    .sidebar-header .title { font-size: 17px; font-weight: 700; color: #fff; }
+    .sidebar-header .subtitle { font-size: 12px; color: var(--sidebar-text-dim); margin-top: 2px; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 20px; cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .nav-item:hover { background: var(--sidebar-bg-hover); }
+    .nav-item.active {
+      background: var(--sidebar-bg-hover);
+      border-left-color: var(--sidebar-active);
+      color: #fff;
+    }
+    .nav-item.disabled { opacity: 0.45; cursor: not-allowed; }
+    .nav-item .icon { font-size: 17px; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-item .name { font-size: 13.5px; font-weight: 600; flex: 1; }
+    .nav-item .chevron { font-size: 10px; color: var(--sidebar-text-dim); transition: transform 0.15s; }
+    .nav-item.expanded .chevron { transform: rotate(90deg); }
+
+    .nav-children { display: none; }
+    .nav-children.open { display: block; }
+    .nav-children .nav-item { padding-left: 44px; }
+    .nav-children .nav-item .name { font-size: 12.5px; font-weight: 500; }
+
+    .content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .content-header {
+      height: 52px; flex-shrink: 0;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+    }
+    .content-header .current-name { font-size: 15px; font-weight: 700; color: #111827; }
+    .content-header .reload-btn {
+      font-size: 12px; color: #6b7280; cursor: pointer;
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 5px 10px; background: #fafafa;
+    }
+    .content-header .reload-btn:hover { background: #f0f0f0; }
+
+    .frame-area { flex: 1; position: relative; overflow: auto; }
+    iframe {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%; border: none; display: none;
+    }
+    iframe.active { display: block; }
+
+    .panel {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      overflow: auto; padding: 40px;
+    }
+    .center-panel {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; color: #6b7280; height: 100%;
+    }
+    .center-panel .big-icon { font-size: 48px; margin-bottom: 12px; }
+    .center-panel h2 { color: #111827; margin: 0 0 6px 0; }
+    .center-panel.warn h2 { color: var(--warn); }
+    .center-panel.danger h2 { color: var(--danger); }
+    .center-panel code {
+      background: #f3f4f6; color: #374151; padding: 2px 6px;
+      border-radius: 4px; font-size: 12px;
+    }
+
+    .guide-card, .admin-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 24px; max-width: 720px; margin: 0 auto;
+    }
+    .guide-card h2 { margin-top: 0; }
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    .admin-table th, .admin-table td {
+      text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border);
+    }
+    .admin-table th { color: #6b7280; font-weight: 600; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+    }
+    .badge.default { background: #e5e7eb; color: #374151; }
+    .badge.override { background: #dbeafe; color: #1d4ed8; }
+  </style>
+</head>
+<body>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="title">HAK Group</div>
+        <div class="subtitle">Portal điều hướng</div>
+      </div>
+      <div id="nav-list"></div>
+    </div>
+
+    <div class="content">
+      <div class="content-header">
+        <div class="current-name" id="current-name">Trang chủ</div>
+        <div class="reload-btn" id="reload-btn" style="display:none;">↻ Tải lại</div>
+      </div>
+      <div class="frame-area" id="frame-area">
+        <div class="panel center-panel" id="welcome-screen">
+          <div class="big-icon">🏠</div>
+          <h2>Chào mừng đến HAK Portal</h2>
+          <div>Chọn một mục ở menu bên trái để bắt đầu.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var menu = [];
+    var currentId = null;
+    var expanded = {};
+
+    function findItem(id, list) {
+      list = list || menu;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === id) return list[i];
+        if (list[i].children) {
+          var found = findItem(id, list[i].children);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    function renderNavNode(item, container, isChild) {
+      var row = document.createElement('div');
+      row.className = 'nav-item' + (item.id === currentId ? ' active' : '') +
+        (item.type === 'link' && !item.url ? ' disabled' : '') +
+        (item.type === 'group' && expanded[item.id] ? ' expanded' : '');
+      row.innerHTML =
+        '<div class="icon">' + (item.icon || '') + '</div>' +
+        '<div class="name">' + item.name + '</div>' +
+        (item.type === 'group' ? '<div class="chevron">▶</div>' : '');
+      row.onclick = function () {
+        if (item.type === 'group') {
+          expanded[item.id] = !expanded[item.id];
+          render();
+        } else {
+          selectItem(item.id);
+        }
+      };
+      container.appendChild(row);
+
+      if (item.type === 'group' && item.children) {
+        var childWrap = document.createElement('div');
+        childWrap.className = 'nav-children' + (expanded[item.id] ? ' open' : '');
+        item.children.forEach(function (child) {
+          renderNavNode(child, childWrap, true);
+        });
+        container.appendChild(childWrap);
+      }
+    }
+
+    function render() {
+      var navList = document.getElementById('nav-list');
+      navList.innerHTML = '';
+      menu.forEach(function (item) { renderNavNode(item, navList, false); });
+    }
+
+    function clearMissingMsg() {
+      var m = document.getElementById('dynamic-panel');
+      if (m) m.remove();
+    }
+
+    function showCenterPanel(kind, iconChar, title, bodyHtml) {
+      clearMissingMsg();
+      document.querySelectorAll('iframe').forEach(function (f) { f.classList.remove('active'); });
+      document.getElementById('welcome-screen').style.display = 'none';
+      var wrap = document.createElement('div');
+      wrap.className = 'panel center-panel' + (kind ? ' ' + kind : '');
+      wrap.id = 'dynamic-panel';
+      wrap.innerHTML = '<div class="big-icon">' + iconChar + '</div><h2>' + title + '</h2><div>' + bodyHtml + '</div>';
+      document.getElementById('frame-area').appendChild(wrap);
+    }
+
+    function showCardPanel(html) {
+      clearMissingMsg();
+      document.querySelectorAll('iframe').forEach(function (f) { f.classList.remove('active'); });
+      document.getElementById('welcome-screen').style.display = 'none';
+      var wrap = document.createElement('div');
+      wrap.className = 'panel';
+      wrap.id = 'dynamic-panel';
+      wrap.innerHTML = html;
+      document.getElementById('frame-area').appendChild(wrap);
+    }
+
+    function selectItem(id) {
+      var item = findItem(id);
+      if (!item) return;
+      currentId = id;
+      document.getElementById('current-name').textContent = item.name;
+      document.getElementById('reload-btn').style.display = (item.type === 'link' && item.url) ? 'inline-block' : 'none';
+
+      if (item.type === 'link') {
+        if (!item.url) {
+          showCenterPanel('danger', '⚠️', 'Chưa cấu hình URL',
+            'Hệ thống "' + item.name + '" chưa có URL.<br>Thêm property <code>' + item.urlKey + '</code> trong Script Properties, hoặc cập nhật <code>DEFAULT_URLS</code> trong Code.gs.');
+          render();
+          return;
+        }
+        clearMissingMsg();
+        document.getElementById('welcome-screen').style.display = 'none';
+        document.querySelectorAll('iframe').forEach(function (f) { f.classList.remove('active'); });
+        var frame = document.getElementById('frame-' + id);
+        if (!frame) {
+          frame = document.createElement('iframe');
+          frame.id = 'frame-' + id;
+          frame.src = item.url;
+          document.getElementById('frame-area').appendChild(frame);
+        }
+        frame.classList.add('active');
+
+      } else if (item.type === 'placeholder') {
+        showCenterPanel('warn', '🚧', item.name, item.note || 'Đang phát triển.');
+
+      } else if (item.type === 'guide') {
+        showCardPanel('<div class="guide-card"><h2>📘 ' + item.name + '</h2><div>' + item.content + '</div></div>');
+
+      } else if (item.type === 'admin') {
+        google.script.run.withSuccessHandler(function (rows) {
+          var rowsHtml = rows.map(function (r) {
+            var badgeClass = r.source.indexOf('ghi đè') >= 0 ? 'override' : 'default';
+            var urlDisplay = r.url ? r.url : '<span style="color:#dc2626;">(chưa có)</span>';
+            return '<tr><td>' + r.name + '</td><td style="max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + urlDisplay + '</td><td><span class="badge ' + badgeClass + '">' + r.source + '</span></td></tr>';
+          }).join('');
+          showCardPanel(
+            '<div class="admin-card"><h2>⚙️ Quản trị</h2>' +
+            '<div style="color:#6b7280; font-size:13px;">Danh sách URL đang áp dụng cho từng hệ thống con. Để đổi URL, cập nhật Script Properties (ưu tiên) hoặc sửa DEFAULT_URLS trong Code.gs.</div>' +
+            '<table class="admin-table"><thead><tr><th>Hệ thống</th><th>URL hiện tại</th><th>Nguồn</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>'
+          );
+        }).getAdminInfo();
+      }
+
+      render();
+    }
+
+    document.getElementById('reload-btn').onclick = function () {
+      if (!currentId) return;
+      var frame = document.getElementById('frame-' + currentId);
+      if (frame) frame.src = frame.src;
+    };
+
+    google.script.run.withSuccessHandler(function (result) {
+      menu = result;
+      render();
+    }).getMenu();
+  </script>
+
+</body>
+</html>

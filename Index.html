@@ -120,6 +120,16 @@
     }
     .badge.default { background: #e5e7eb; color: #374151; }
     .badge.override { background: #dbeafe; color: #1d4ed8; }
+    .url-edit-input {
+      width: 100%; font-size: 12px; padding: 5px 7px;
+      border: 1px solid var(--border); border-radius: 4px; font-family: monospace;
+    }
+    .save-url-btn, .reset-url-btn {
+      font-size: 11px; padding: 4px 9px; border-radius: 4px;
+      border: 1px solid var(--border); background: #fafafa; cursor: pointer;
+      margin-right: 4px; white-space: nowrap;
+    }
+    .save-url-btn:hover, .reset-url-btn:hover { background: #f0f0f0; }
 
     .frame-status {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -171,6 +181,18 @@
         if (list[i].id === id) return list[i];
         if (list[i].children) {
           var found = findItem(id, list[i].children);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    function findItemByUrlKey(key, list) {
+      list = list || menu;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].urlKey === key) return list[i];
+        if (list[i].children) {
+          var found = findItemByUrlKey(key, list[i].children);
           if (found) return found;
         }
       }
@@ -260,6 +282,75 @@
       frame.src = url;
     }
 
+    function escapeAttr(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+
+    function renderAdminPanel() {
+      google.script.run.withSuccessHandler(function (info) {
+        var isAdmin = info.isAdmin;
+        var rowsHtml = info.rows.map(function (r) {
+          var badgeClass = r.source.indexOf('ghi đè') >= 0 ? 'override' : 'default';
+          var urlCell = isAdmin
+            ? '<input type="text" id="url-input-' + r.key + '" class="url-edit-input" value="' + escapeAttr(r.url) + '" placeholder="https://script.google.com/macros/s/.../exec">'
+            : (r.url ? '<span style="word-break:break-all;">' + r.url + '</span>' : '<span style="color:#dc2626;">(chưa có)</span>');
+          var actionsCell = isAdmin
+            ? '<button class="save-url-btn" data-key="' + r.key + '">💾 Lưu</button><button class="reset-url-btn" data-key="' + r.key + '">↺ Mặc định</button>'
+            : '';
+          return '<tr><td>' + r.name + '</td><td>' + urlCell + '</td><td><span class="badge ' + badgeClass + '">' + r.source + '</span></td><td>' + actionsCell + '</td></tr>';
+        }).join('');
+        var note = isAdmin
+          ? '<div style="color:#6b7280; font-size:13px;">Sửa URL rồi bấm <b>Lưu</b> — áp dụng ngay lập tức, không cần deploy lại Portal. Bấm <b>Mặc định</b> để xóa ghi đè, quay về URL trong Code.gs.</div>'
+          : '<div style="color:#6b7280; font-size:13px;">Bạn đang xem chế độ chỉ đọc. Để được sửa URL trực tiếp tại đây, nhờ quản trị viên thêm email của bạn vào Script Property <code>ADMIN_EMAILS</code>.</div>';
+        showCardPanel(
+          '<div class="admin-card"><h2>⚙️ Quản trị</h2>' + note +
+          '<table class="admin-table"><thead><tr><th>Hệ thống</th><th>URL hiện tại</th><th>Nguồn</th><th></th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+          '<div id="admin-msg" style="margin-top:10px; font-size:13px;"></div></div>'
+        );
+        if (isAdmin) {
+          document.querySelectorAll('.save-url-btn').forEach(function (btn) {
+            btn.onclick = function () {
+              var key = btn.getAttribute('data-key');
+              var input = document.getElementById('url-input-' + key);
+              saveUrlOverride(key, input.value);
+            };
+          });
+          document.querySelectorAll('.reset-url-btn').forEach(function (btn) {
+            btn.onclick = function () { saveUrlOverride(btn.getAttribute('data-key'), ''); };
+          });
+        }
+      }).getAdminInfo();
+    }
+
+    function saveUrlOverride(key, url) {
+      var msg = document.getElementById('admin-msg');
+      if (msg) { msg.style.color = '#6b7280'; msg.textContent = 'Đang lưu...'; }
+      google.script.run
+        .withSuccessHandler(function () {
+          afterUrlChange(key);
+          renderAdminPanel();
+        })
+        .withFailureHandler(function (err) {
+          if (msg) { msg.style.color = '#dc2626'; msg.textContent = 'Lỗi: ' + (err && err.message ? err.message : err); }
+        })
+        .setUrlOverride(key, url);
+    }
+
+    // Đồng bộ menu ở client ngay sau khi đổi URL, để mục tương ứng dùng URL mới
+    // ngay lập tức mà không cần tải lại cả trang Portal.
+    function afterUrlChange(key) {
+      google.script.run.withSuccessHandler(function (freshMenu) {
+        menu = freshMenu;
+        var item = findItemByUrlKey(key);
+        if (item) {
+          var frame = document.getElementById('frame-' + item.id);
+          if (frame) frame.remove();
+          delete frameState[item.id];
+        }
+        render();
+      }).getMenu();
+    }
+
     function showCenterPanel(kind, iconChar, title, bodyHtml) {
       clearMissingMsg();
       clearFrameStatus();
@@ -330,18 +421,7 @@
         showCardPanel('<div class="guide-card"><h2>📘 ' + item.name + '</h2><div>' + item.content + '</div></div>');
 
       } else if (item.type === 'admin') {
-        google.script.run.withSuccessHandler(function (rows) {
-          var rowsHtml = rows.map(function (r) {
-            var badgeClass = r.source.indexOf('ghi đè') >= 0 ? 'override' : 'default';
-            var urlDisplay = r.url ? r.url : '<span style="color:#dc2626;">(chưa có)</span>';
-            return '<tr><td>' + r.name + '</td><td style="max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + urlDisplay + '</td><td><span class="badge ' + badgeClass + '">' + r.source + '</span></td></tr>';
-          }).join('');
-          showCardPanel(
-            '<div class="admin-card"><h2>⚙️ Quản trị</h2>' +
-            '<div style="color:#6b7280; font-size:13px;">Danh sách URL đang áp dụng cho từng hệ thống con. Để đổi URL, cập nhật Script Properties (ưu tiên) hoặc sửa DEFAULT_URLS trong Code.gs.</div>' +
-            '<table class="admin-table"><thead><tr><th>Hệ thống</th><th>URL hiện tại</th><th>Nguồn</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>'
-          );
-        }).getAdminInfo();
+        renderAdminPanel();
       }
 
       render();

@@ -120,6 +120,16 @@
     }
     .badge.default { background: #e5e7eb; color: #374151; }
     .badge.override { background: #dbeafe; color: #1d4ed8; }
+
+    .frame-status {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--content-bg);
+    }
+    .retry-btn {
+      margin-top: 14px; font-size: 13px; color: #fff; cursor: pointer;
+      border: none; border-radius: 6px; padding: 8px 16px; background: var(--sidebar-active);
+    }
+    .retry-btn:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -152,6 +162,8 @@
     var menu = [];
     var currentId = null;
     var expanded = {};
+    var frameState = {}; // id -> { loaded: bool, timer: number }
+    var LOAD_TIMEOUT_MS = 12000;
 
     function findItem(id, list) {
       list = list || menu;
@@ -205,8 +217,52 @@
       if (m) m.remove();
     }
 
+    function clearFrameStatus() {
+      var s = document.getElementById('frame-status');
+      if (s) s.remove();
+    }
+
+    function showFrameLoading(id, name) {
+      clearFrameStatus();
+      var wrap = document.createElement('div');
+      wrap.className = 'frame-status panel center-panel';
+      wrap.id = 'frame-status';
+      wrap.innerHTML = '<div class="big-icon">⏳</div><h2>Đang tải "' + name + '"...</h2>';
+      document.getElementById('frame-area').appendChild(wrap);
+    }
+
+    function showFrameError(id, name, url) {
+      clearFrameStatus();
+      var wrap = document.createElement('div');
+      wrap.className = 'frame-status panel center-panel danger';
+      wrap.id = 'frame-status';
+      wrap.innerHTML = '<div class="big-icon">⚠️</div><h2>Không tải được "' + name + '"</h2>' +
+        '<div>URL hiện tại có thể sai hoặc hệ thống con chưa cho phép nhúng iframe:<br><code>' + url + '</code></div>' +
+        '<button class="retry-btn" id="retry-btn">↻ Thử lại</button>';
+      document.getElementById('retry-btn').onclick = function () { retryFrame(id, name, url); };
+    }
+
+    function armFrameTimer(id, name, url) {
+      if (frameState[id].timer) clearTimeout(frameState[id].timer);
+      frameState[id].timer = setTimeout(function () {
+        if (!frameState[id].loaded && currentId === id) {
+          showFrameError(id, name, url);
+        }
+      }, LOAD_TIMEOUT_MS);
+    }
+
+    function retryFrame(id, name, url) {
+      var frame = document.getElementById('frame-' + id);
+      if (!frame) return;
+      frameState[id].loaded = false;
+      showFrameLoading(id, name);
+      armFrameTimer(id, name, url);
+      frame.src = url;
+    }
+
     function showCenterPanel(kind, iconChar, title, bodyHtml) {
       clearMissingMsg();
+      clearFrameStatus();
       document.querySelectorAll('iframe').forEach(function (f) { f.classList.remove('active'); });
       document.getElementById('welcome-screen').style.display = 'none';
       var wrap = document.createElement('div');
@@ -218,6 +274,7 @@
 
     function showCardPanel(html) {
       clearMissingMsg();
+      clearFrameStatus();
       document.querySelectorAll('iframe').forEach(function (f) { f.classList.remove('active'); });
       document.getElementById('welcome-screen').style.display = 'none';
       var wrap = document.createElement('div');
@@ -248,8 +305,21 @@
         if (!frame) {
           frame = document.createElement('iframe');
           frame.id = 'frame-' + id;
-          frame.src = item.url;
+          frameState[id] = { loaded: false, timer: null };
+          frame.onload = function () {
+            frameState[id].loaded = true;
+            if (frameState[id].timer) clearTimeout(frameState[id].timer);
+            if (currentId === id) clearFrameStatus();
+          };
           document.getElementById('frame-area').appendChild(frame);
+          showFrameLoading(id, item.name);
+          armFrameTimer(id, item.name, item.url);
+          frame.src = item.url;
+        } else if (frameState[id] && frameState[id].loaded) {
+          clearFrameStatus();
+        } else {
+          showFrameLoading(id, item.name);
+          armFrameTimer(id, item.name, item.url);
         }
         frame.classList.add('active');
 
@@ -279,8 +349,8 @@
 
     document.getElementById('reload-btn').onclick = function () {
       if (!currentId) return;
-      var frame = document.getElementById('frame-' + currentId);
-      if (frame) frame.src = frame.src;
+      var item = findItem(currentId);
+      if (item && item.url) retryFrame(currentId, item.name, item.url);
     };
 
     google.script.run.withSuccessHandler(function (result) {

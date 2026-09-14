@@ -42,6 +42,19 @@ function _resolveUrl(key) {
 }
 
 /**
+ * Đọc nội dung 1 file HTML tĩnh trong project (dùng cho nội dung Hướng dẫn —
+ * mỗi hệ thống con 1 file Guide_*.html riêng, đỡ phải nhét text dài vào Code.gs).
+ * Trả về text mặc định nếu file chưa có (hệ thống con đó chưa viết hướng dẫn riêng).
+ */
+function _includeGuide(filename) {
+  try {
+    return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  } catch (e) {
+    return 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.';
+  }
+}
+
+/**
  * Danh sách các hệ thống con có thể sửa URL trực tiếp từ màn Quản trị.
  * Dùng chung cho getAdminInfo() và setUrlOverride() để validate key.
  */
@@ -99,15 +112,15 @@ function getMenu() {
     {
       id: 'huongdan', type: 'group', icon: '📘', name: 'Hướng dẫn',
       children: [
-        { id: 'hd_quy',       type: 'guide', name: 'Quỹ tiền mặt',            content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_kho',       type: 'guide', name: 'Kho gỗ keo',              content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_hopdong',   type: 'guide', name: 'Hợp đồng mua bán gỗ keo', content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_thanhtoan', type: 'guide', name: 'Thanh toán gỗ keo',       content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_vay',       type: 'guide', name: 'Vay ngân hàng',           content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
+        { id: 'hd_quy',       type: 'guide', name: 'Quỹ tiền mặt',            content: _includeGuide('Guide_Quy') },
+        { id: 'hd_kho',       type: 'guide', name: 'Kho gỗ keo',              content: _includeGuide('Guide_Kho') },
+        { id: 'hd_hopdong',   type: 'guide', name: 'Hợp đồng mua bán gỗ keo', content: _includeGuide('Guide_HopDong') },
+        { id: 'hd_thanhtoan', type: 'guide', name: 'Thanh toán gỗ keo',       content: _includeGuide('Guide_ThanhToan') },
+        { id: 'hd_vay',       type: 'guide', name: 'Vay ngân hàng',           content: _includeGuide('Guide_Vay') },
         { id: 'hd_updatekt',  type: 'guide', name: 'Update dữ liệu kế toán',  content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
         { id: 'hd_nhansu',    type: 'guide', name: 'Nhân sự',                 content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_luong',     type: 'guide', name: 'Tiền lương',              content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_fsc',       type: 'guide', name: 'Đánh giá FSC',            content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' }
+        { id: 'hd_luong',     type: 'guide', name: 'Tiền lương',              content: _includeGuide('Guide_Luong') },
+        { id: 'hd_fsc',       type: 'guide', name: 'Đánh giá FSC',            content: _includeGuide('Guide_FSC') }
       ]
     },
     { id: 'quantri', type: 'admin', icon: '⚙️', name: 'Quản trị' }

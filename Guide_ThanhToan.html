@@ -1,0 +1,113 @@
+<h3>QUY TRÌNH THỰC HIỆN THỦ TỤC THANH TOÁN (tóm tắt 5 bước)</h3>
+<p>Đây là quy trình CHUẨN cho 1 hồ sơ đề nghị thanh toán, từ lúc tạo đến khi tiền được ghi nhận chính thức. Mỗi hồ sơ đi qua đúng thứ tự 5 bước này, không được bỏ bước hay đảo bước.</p>
+
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+  <tr>
+    <th>Bước</th>
+    <th>Việc làm</th>
+    <th>Ở đâu</th>
+    <th>Trạng thái sau khi xong</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td><b>Tạo Mới</b> - chọn Chủ rừng, Hợp đồng, chọn Phiếu cân cần thanh toán</td>
+    <td>Danh Sách ĐNTT → "➕ Tạo Mới"</td>
+    <td>Chưa ĐNTT</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><b>Đề Nghị Thanh Toán (tính lại)</b> - hệ thống tự tính tiền, gộp theo Số HĐ, tự điền Ngân hàng</td>
+    <td>Danh Sách ĐNTT → nút "📤 Đề Nghị Thanh Toán"</td>
+    <td>Chờ ĐNTT</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Kiểm tra lại thông tin (Sửa nếu cần), rồi <b>Xác Nhận chuyển ĐNTT</b></td>
+    <td>Tab "2 · Chờ ĐNTT" → chọn hồ sơ → "✅ Xác nhận"</td>
+    <td>Đang ĐNTT</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><b>In Báo Cáo ĐNTT</b> để trình ký duyệt, hoặc <b>Tạo File UNC</b> để nộp ngân hàng chuyển tiền trước (chưa ghi vào sổ sách chính thức)</td>
+    <td>Tab "3 · Đang ĐNTT" → "🖨️ In Báo Cáo ĐNTT" / "🏦 Tạo File UNC"</td>
+    <td>Không đổi trạng thái</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td><b>Duyệt (Đóng Thanh Toán)</b> - nhập ngày thanh toán thực tế → ghi vào sổ sách CHÍNH THỨC, khóa Phiếu Cân vĩnh viễn</td>
+    <td>Tab "3 · Đang ĐNTT" → "📨 Duyệt"</td>
+    <td>Chuyển sang "Báo Cáo Thanh Toán"</td>
+  </tr>
+</table>
+
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Chỉ có thể Sửa/Xóa hồ sơ khi đang ở trạng thái "Chờ ĐNTT". Muốn sửa hồ sơ "Đang ĐNTT", phải bấm "↩️ Về Chờ ĐNTT" trước.</div>
+
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Nếu phiếu cân được chọn có tên Khách hàng KHÁC với Chủ rừng của hồ sơ, hệ thống sẽ cảnh báo ở bước 1 (lúc Lưu) và bước 3 (lúc Xác Nhận) - đọc kỹ trước khi bấm tiếp tục.</div>
+
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Lỡ chốt sai và cần sửa lại hồ sơ ĐÃ Đóng Thanh Toán? Xem mục "Hệ Thống" bên dưới - có công cụ "Mở Đóng Thanh Toán" để đưa cả đợt thanh toán quay lại File Nháp.</div>
+
+<h3>🏠 Trang chủ (Dashboard)</h3>
+<p>Hiện nhanh số liệu tổng quan: số hồ sơ đang trong Danh Sách ĐNTT, số hồ sơ đã sẵn sàng chốt, tổng tiền đang chờ, và số "đơn xin" cũ (từ quy trình nhập liệu thủ công) chưa xử lý. Dùng để nắm tình hình chung mỗi khi mở app.</p>
+
+<h3>➕ Tạo Mới (3 bước)</h3>
+<p><b>Bước 1 - Chủ rừng &amp; Người đề nghị:</b> gõ tìm Họ tên Chủ rừng (gợi ý theo Hợp Đồng đang thực hiện), chọn đúng CCCD (nếu chủ rừng có nhiều hợp đồng/CCCD), Người đề nghị và Ủy quyền sẽ tự điền theo hợp đồng, có thể sửa lại.</p>
+<p><b>Bước 2 - Hợp đồng &amp; Phiếu cân:</b> chọn Số hợp đồng, xem tiến độ (SL Dự Kiến/Đã Thực Hiện/Còn Lại). Danh sách phiếu cân khả dụng tự hiện sẵn 10 dòng/trang - gõ số phiếu cân cụ thể (cách nhau dấu phẩy/dấu cách) để tìm chính xác, kể cả phiếu của khách hàng khác (sẽ có cảnh báo). Chọn Người nhận tiền + Số tài khoản.</p>
+<p><b>Bước 3 - Xác nhận:</b> xem lại toàn bộ thông tin trước khi Lưu. Nếu có phiếu cân khác tên Khách hàng so với Chủ rừng, hệ thống sẽ hỏi xác nhận lại trước khi lưu.</p>
+<p>Nút <b>"🔄 Tải &amp; Tính Lại"</b> ở Bước 2 dùng khi vừa nhập phiếu cân/hợp đồng mới ở file gốc mà chưa thấy xuất hiện để chọn (không cần đợi tới giờ tự động làm mới).</p>
+
+<h3>📄 Danh Sách ĐNTT (chờ duyệt)</h3>
+<p>4 tab: <b>Tất cả</b>, <b>1·Chưa ĐNTT</b> (vừa tạo, chưa tính tiền), <b>2·Chờ ĐNTT</b> (đã tính tiền, có thể Sửa/Xóa), <b>3·Đang ĐNTT</b> (đã xác nhận, chờ Duyệt - có thể In Báo Cáo ĐNTT, Tạo File UNC, hoặc "Về Chờ ĐNTT").</p>
+<p>Nút hành động hiện đúng theo trạng thái của (các) dòng bạn đang chọn, không phải theo tab đang xem - vậy nên ở tab "Tất cả" bạn vẫn thấy đúng nút phù hợp với từng lựa chọn.</p>
+<p><b>🏦 Tạo File UNC:</b> tạo file Excel Ủy Nhiệm Chi để nộp ngân hàng chuyển tiền TRƯỚC khi Duyệt chính thức - dùng cho hồ sơ "Đang ĐNTT". Tham số (TK Trích Nợ/Thu Phí, Bên Chịu Phí...) cấu hình ở Cài Đặt. Mỗi lần tạo đều được lưu vết lại - xem lịch sử ở mục Hệ Thống.</p>
+<p><b>↻ Làm mới:</b> làm mới cache Phiếu Cân/Hợp Đồng rồi tải lại danh sách - dùng khi nghi ngờ dữ liệu chưa cập nhật kịp.</p>
+
+<h3>📊 Báo Cáo Thanh Toán (4 tab)</h3>
+<p><b>Chỉ cần nhớ đúng 2 câu:</b></p>
+<ol>
+  <li>Muốn <b>CHUYỂN TIỀN</b> cho chủ rừng → bấm <b>"Tạo File UNC"</b> (ở Danh Sách ĐNTT, lúc nào cũng bấm được, không cần đợi chốt).</li>
+  <li>Muốn ghi vào <b>SỔ SÁCH KẾ TOÁN (MISA)</b> → không cần làm gì cả, <b>tự động có</b> ngay sau khi Đóng Thanh Toán.</li>
+</ol>
+<p><b>Tab "Báo Cáo Thanh Toán Gỗ Keo":</b> danh sách hồ sơ ĐÃ chốt thanh toán chính thức - báo cáo CHÍNH để xem/in. Lọc theo Chủ rừng/Người nhận/Số HĐ/Lần TT, chọn dòng rồi "📥 Xuất Báo Cáo" - tạo file Excel gồm "Bảng Đề Xuất Thanh Toán" + "Bảng Kê Chi Tiết Chuyển Khoản", đầy đủ lịch sử.</p>
+<p><b>Tab "Báo Cáo Thanh Toán Chi Tiết":</b> xem NHANH theo từng phiếu cân (đọc dữ liệu tính sẵn) - chỉ có dữ liệu từ gần đây, không thay thế được tab Gỗ Keo cho việc tra lịch sử cũ.</p>
+<p><b>Tab "Báo Cáo Kết Xuất MISA":</b> chỉ để XEM LẠI những gì đã tự động ghi - lọc theo khoảng ngày, xuất Excel đúng phần đã lọc (không phải lấy nguyên cả file). Không có nút "tạo lại" ở đây - việc đó chuyển sang mục Hệ Thống (dự phòng, ít dùng).</p>
+<p><b>Tab "Báo Cáo UNC":</b> mục đích DUY NHẤT là <b>tìm/in lại</b> file UNC đã tạo trước đó - vì quên chưa tải, hoặc cần đối chiếu lại nếu lỡ chuyển sai tiền/sai tài khoản. Lọc theo khoảng ngày, xuất Excel gộp lại danh sách. Cũng không có nút "tạo lại" ở đây.</p>
+<p><b>Muốn tạo lại UNC hoặc MISA cho hồ sơ cũ/bị lỗi?</b> Vào menu <b>"🩺 Hệ Thống"</b> - có 2 mục "🔧 Tạo Lại" riêng, chọn khoảng ngày rồi bấm - hệ thống tự xử lý theo lô nhỏ, tự lặp lại tới khi xong (không lo timeout với dữ liệu lớn), tự bỏ qua phần đã có sẵn (không tạo trùng).</p>
+
+<h3>💰 Báo Cáo Công Nợ Khách Hàng Gỗ Keo (8 mục)</h3>
+<ul>
+  <li><b>1 · Công nợ theo Khách hàng</b> - tổng khối lượng nhập/đã trả/còn nợ theo từng khách hàng, trong 1 khoảng ngày.</li>
+  <li><b>2 · Công nợ theo Hợp đồng</b> - tương tự nhưng theo từng hợp đồng (kể cả hợp đồng đã thanh lý).</li>
+  <li><b>4 · Sổ chi tiết công nợ</b> - bấm vào 1 khách hàng/hợp đồng ở tab 1/2 để xem từng phiếu cân/lần thanh toán cụ thể.</li>
+  <li><b>5 · Phân tích thanh toán</b> - tổng hợp theo Nguồn Gốc và Đại Lý trong khoảng ngày.</li>
+  <li><b>6 · Phân tích Nhập/TT theo NG-ĐL</b> - bảng theo NGÀY (dòng) × Nguồn Gốc/Đại Lý (cột), mặc định đầu tháng → hôm nay ("Từ ngày" bị khóa, tự tính theo "Đến ngày"). Có ô "Lọc lại" để xem thu hẹp trong khoảng đã tải. Xuất được cả Excel + PDF.</li>
+  <li><b>7 · Chi tiết Công Nợ theo Phiếu Cân</b> - liệt kê phiếu cân CHƯA thanh toán tính đến 1 ngày cụ thể, kèm "Chênh lệch ngày" (đã treo bao lâu). Mặc định xem hôm qua, chọn ngày khác tự tính lại ngay.</li>
+  <li><b>8 · Tình Hình Thanh Toán Gỗ Keo Hàng Ngày</b> - ngược lại tab 7: liệt kê phiếu cân ĐÃ thanh toán theo "Ngày thanh toán", mặc định xem hôm nay.</li>
+</ul>
+
+<h3>🩺 Hệ Thống (đối soát, bảo trì, sửa dữ liệu đã chốt)</h3>
+<p><b>🔍 Đối Soát Tên Khách Hàng:</b> so sánh "Chủ rừng" ở CT (bản chính) với "Khách hàng" ở PhieuCan_DN (tra theo Số phiếu cân) - chỉ hiện dòng LỆCH. Đồng bộ = cập nhật lại Phiếu Cân theo đúng tên ở CT (CT đã đối chiếu hợp đồng nên là nguồn đúng). Xuất Excel được danh sách trước khi đồng bộ.</p>
+<p><b>🩺 Bảo Trì - Kiểm Tra Đối Chiếu 4 Sheet:</b> đối chiếu chéo DNTT_GK_DN, DNTT_GK_DN_CT, DNTT_GK_DN_112, PhieuCan_DN - tìm Số phiếu cân không tồn tại, dòng mồ côi, tổng tiền 112 lệch với CT con, tên khách hàng lệch. Chạy định kỳ để phát hiện sớm sai lệch dữ liệu.</p>
+<p><b>🏦 Cập Nhật Ngân Hàng Tài Khoản Khách Hàng:</b> vá thông tin Ngân hàng còn thiếu trong dữ liệu đã chốt, tra theo Số tài khoản từ HD_STK.</p>
+<p><b>🔓 Mở "Đóng" Thanh Toán:</b> dùng khi CHỐT SAI cần sửa lại - luôn mở NGUYÊN CẢ đợt thanh toán (theo Chủ rừng + Ngày Đóng TT + Lần Thanh Toán, không sửa lẻ từng phiếu cân, để tránh Số tiền ở 112 bị lệch so với các phiếu cân con). Gõ Chủ rừng sẽ có gợi ý tự động kèm sẵn Ngày Đóng TT/Lần TT - bấm chọn để điền đúng luôn cả 3 ô, không cần tự tra tay. Hệ thống sẽ: xóa khỏi bản chính (DNTT_GK_DN + tất cả CT con + 112), copy lại y hệt sang File Nháp (Chờ ĐNTT) để chỉnh sửa, mở khóa lại TẤT CẢ Phiếu Cân liên quan, đổi "Trạng Thái" từ "OK" sang "Test giá" - đồng thời dọn theo cả 3 "bảng con" (ChiTietDNTT, ChiTietUNC, Update_NganHang_DN) vì đây là dữ liệu tính sẵn/lịch sử gắn liền với đợt thanh toán này.</p>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Rủi ro cao - đụng dữ liệu tài chính đã chốt, không tự hoàn tác được.</div>
+<p><b>📜 Lịch Sử Sửa Đổi:</b> theo dõi mọi lần Mở Đóng Thanh Toán, Đồng Bộ Tên Khách Hàng và Cập Nhật Ngân Hàng - kèm rõ Gmail người thực hiện, thời gian, chi tiết.</p>
+<p><b>🔧 Tạo Lại MISA / Tạo Lại UNC (dự phòng):</b> dùng cho hồ sơ CŨ (chốt trước khi có tính năng tự động) hoặc khi phát hiện lỗi/sai sót cần làm lại - chọn khoảng ngày đã chốt, hệ thống tự xử lý theo lô nhỏ và lặp lại tới khi xong (không lo timeout dù chọn khoảng ngày rộng), tự bỏ qua phần đã có sẵn để không tạo trùng. Việc thường ngày (chuyển tiền, ghi sổ) không cần tới 2 mục này - chỉ dùng khi có sự cố.</p>
+
+<h3>⚙️ Cài Đặt</h3>
+<p><b>Định Dạng THẬT Google Sheet:</b> xem locale/múi giờ THẬT đang cài trên File Chính/File Nháp, có nút đồng bộ nhanh sang đúng Vùng Lãnh Thổ tương ứng.</p>
+<p><b>Link các file liên quan:</b> xem VÀ ĐỔI được mọi file/thư mục hệ thống kết nối tới (File Chính, Phiếu Cân, Hợp Đồng, Cập Nhật Ngân Hàng, Danh Mục Ngân Hàng, Thư mục Báo Cáo) - dán URL/ID mới rồi bấm "Đổi", dùng khi triển khai cho đơn vị/năm khác.</p>
+<p><b>Làm mới cache / Bật Trigger (10 phút, 7:30-13:00, 15h):</b> mỗi nút có huy hiệu hiện rõ ĐÃ BẬT hay CHƯA (đọc thật từ hệ thống, không đoán).</p>
+<p><b>Khóa Định Dạng TEXT/Ngày:</b> chống Google Sheets tự làm sai CCCD/STK/Số HĐ/ID (mất số 0 đầu) và Ngày/Timestamp (lộn ngày-tháng) - huy hiệu hiện rõ đã khóa bao nhiêu/tổng số cột, bấm mở từng sheet xem chi tiết. Nên bấm lại mỗi khi vừa cập nhật code mới.</p>
+<p><b>Vùng Lãnh Thổ</b> vs <b>Vùng Định Dạng Báo Cáo Xuất Excel:</b> TÁCH RIÊNG nhau - vùng đầu ảnh hưởng khóa cột nội bộ (Draft/bản chính) và cách hiểu "Ngày thanh toán" khi Đóng TT; vùng sau CHỈ ảnh hưởng định dạng ngày trong các FILE EXCEL XUẤT RA (có thể khác nhau nếu đơn vị nhận báo cáo cần định dạng riêng).</p>
+<p><b>Giá Trị Mặc Định MISA</b> (Số TK/Ngân hàng/Mã NH công ty) và <b>Cấu Hình UNC</b> (TK Trích Nợ/Thu Phí, Bên Chịu Phí, Loại Tiền, tên sheet Danh Mục Ngân Hàng) - sửa được ngay, không cần sửa code.</p>
+<p><b>🤖 Trợ Lý AI (Chatbot):</b> dán API key Gemini (miễn phí tại Google AI Studio) để bật chatbot - có nút 🤖 nổi góc màn hình ở mọi trang, hỏi được về cách dùng webapp, số liệu tổng quan THẬT hiện tại (số hồ sơ theo trạng thái, tổng tiền đang chờ - tự tra trước khi trả lời, không tự bịa số), hoặc câu hỏi bất kỳ. Câu hỏi cần chi tiết hơn (tên khách hàng cụ thể, số liệu Báo Cáo Công Nợ...) sẽ được hướng dẫn vào đúng trang xem. Không cần API key vẫn dùng được (chế độ dự phòng, không AI). Nút 🔄 trong khung chat để xóa ngữ cảnh, hỏi câu hoàn toàn mới.</p>
+<p><b>Tạo/Cập Nhật Sheet Thông Số:</b> tạo 1 sheet tóm tắt toàn bộ cấu hình hệ thống hiện tại - hữu ích khi cần bàn giao/kiểm tra nhanh.</p>
+
+<h3>❓ Xử lý sự cố thường gặp</h3>
+<p><b>Không thấy phiếu cân/hợp đồng mới vừa nhập?</b> Bấm "🔄 Tải &amp; Tính Lại" (Bước 2 Tạo Mới) hoặc "↻ Làm mới" (Danh Sách ĐNTT).</p>
+<p><b>Không sửa/xóa được hồ sơ?</b> Chỉ sửa/xóa được khi đang "Chờ ĐNTT" - nếu đang "Đang ĐNTT", bấm "Về Chờ ĐNTT" trước. Nếu ĐÃ chốt (Đóng Thanh Toán), dùng "Mở Đóng Thanh Toán" ở mục Hệ Thống.</p>
+<p><b>CCCD/STK/ID bị mất số 0 đầu, hoặc Ngày bị lộn ngày-tháng?</b> Vào Cài Đặt bấm "Khóa Định Dạng TEXT/Ngày" - lưu ý KHÔNG phục hồi được dữ liệu cũ đã sai, cần gõ lại tay.</p>
+<p><b>Xuất báo cáo Excel bị chậm/timeout?</b> Hệ thống đã tối ưu dùng cache chung cho Phiếu Cân/Hợp Đồng - nếu vẫn chậm, báo rõ báo cáo nào và khoảng bao nhiêu dòng dữ liệu để kiểm tra tiếp.</p>
+<p><b>Chọn "dd/mm/yyyy" nhưng file xuất ra vẫn hiện "mm/dd/yyyy"?</b> Kiểm tra lại "Vùng Định Dạng Báo Cáo Xuất Excel" ở Cài Đặt (khác với "Vùng Lãnh Thổ").</p>
+<p><b>Chốt sai, cần sửa lại hồ sơ đã Đóng Thanh Toán?</b> Vào Hệ Thống, dùng "Mở Đóng Thanh Toán" (theo Chủ rừng + Ngày + Lần TT) - cả đợt thanh toán sẽ quay lại File Nháp để chỉnh sửa.</p>
+<p><b>Trigger chạy sai giờ?</b> Kiểm tra múi giờ của Apps Script Project (Project Settings &gt; Time zone) phải là GMT+7 Việt Nam - xem cảnh báo đỏ ở đầu trang Cài Đặt nếu có.</p>

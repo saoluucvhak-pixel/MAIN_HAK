@@ -1,0 +1,282 @@
+<h3>📖 Hướng dẫn sử dụng — Hệ thống Quản lý Hợp đồng Gỗ Keo (HAK Group)</h3>
+
+<h3>1. Tổng quan hệ thống</h3>
+<ul>
+  <li>👤 Khách hàng (nhóm theo Số CCCD — KHÔNG phải 1 bảng riêng, chỉ nhóm ảo từ HD_NCC)
+    <ul>
+      <li>📋 Hợp đồng (HD_NCC — 1 khách hàng có thể có NHIỀU hợp đồng)
+        <ul>
+          <li>🌲 Lô rừng (HD_RUNG — 1 hợp đồng nhiều lô rừng)
+            <ul>
+              <li>📍 Tọa độ GPS (HD_GPS — 1 rừng nhiều điểm)</li>
+              <li>🖼️ Ảnh hiện trường (HD_Picture — tối đa 10 ảnh/dòng)</li>
+            </ul>
+          </li>
+          <li>💳 Số tài khoản (HD_STK — 1 hợp đồng nhiều số TK)</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+<p>Dữ liệu <b>bên ngoài</b> (chỉ đọc): <b>Báo giá gỗ keo</b> (tra đơn giá theo ngày), <b>DNTT_GK_DN_CT</b> (khối lượng/giá trị đã thực hiện + thanh toán), <b>PhieuCan_DN</b> (phiếu cân).</p>
+
+<h3>2. Quy trình nhập liệu (trang "📝 Nhập liệu HĐ / Rừng / TK")</h3>
+<p>Trang gốc là <b>👤 Khách hàng</b> (không phải danh sách hợp đồng phẳng) — bấm 1 khách hàng để xem toàn bộ hợp đồng họ đã ký, mỗi hợp đồng 1 dòng riêng.</p>
+
+<h4>Bước 1 — Tạo hợp đồng mới (wizard 3 bước)</h4>
+<p>"➕ Thêm khách hàng" (ở trang gốc) hoặc "➕ Thêm hợp đồng cho khách hàng này" (khi đã ở trong 1 khách hàng — bỏ qua bước nhập lại thông tin cá nhân):</p>
+<ol>
+  <li><b>Bước 1 — Khách hàng</b>: tìm khách hàng đã ký trước đó (gõ tên/CCCD), hoặc "➕ Khách hàng mới".</li>
+  <li><b>Bước 2 — Thông tin hợp đồng</b>: Ngày ký, Số HĐ (để trống tự sinh), Ủy quyền thanh toán (Không → người nhận là chính chủ rừng; Có → nhập thêm thông tin người ủy quyền), Số tài khoản/Ngân hàng (nhập luôn ở đây, ghi vào <b>HD_STK</b>).</li>
+  <li><b>Bước 3 — Xác nhận</b>: xem lại tóm tắt → "💾 Lưu hợp đồng".</li>
+</ol>
+<ul>
+  <li><b>Mã số thuế</b>: tự điền theo Số CCCD (thông lệ với cá nhân) — gõ đè lại nếu khách hàng có MST riêng (tổ chức/doanh nghiệp).</li>
+  <li><b>Nơi cấp CCCD</b>: gõ vài ký tự sẽ hiện gợi ý từ các giá trị đã từng nhập trước đó.</li>
+</ul>
+
+<h4>Bước 2 — Trạng thái hợp đồng &amp; quy trình duyệt</h4>
+<p>Hợp đồng mới tạo <b>luôn bắt đầu ở "Chờ thực hiện"</b> — không tự động nhảy sang trạng thái khác. Chỉ được chuyển <b>ĐÚNG bước kế tiếp</b>, không nhảy cóc:</p>
+<ol>
+  <li><b>Chờ thực hiện</b></li>
+  <li><b>Đang thực hiện</b> (sau khi ✅ Duyệt)</li>
+  <li><b>Đã hoàn thành</b> (sau khi ✅ Duyệt)</li>
+  <li><b>Đã thanh lý</b> (sau khi ✅ Duyệt)</li>
+</ol>
+<p>Ngoài ra, từ "Chờ thực hiện" cũng có thể chuyển thẳng sang <b>Đã hủy</b> bằng thao tác ❌ Hủy.</p>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Chỉ "Chờ thực hiện" và "Đang thực hiện" mới được Sửa thông tin / Thêm-Sửa-Xóa Lô rừng / Số tài khoản / Tọa độ GPS / Ảnh. Từ "Đã hoàn thành" trở đi, hợp đồng chuyển sang CHỈ XEM — muốn sửa phải duyệt lùi lại bằng tay trên Sheet (không có nút lùi trên webapp, tránh sửa nhầm dữ liệu đã chốt).</div>
+<p>Nút duyệt nằm ngay đầu trang chi tiết hợp đồng (chỉ hiện đúng bước hợp lệ tiếp theo). Muốn duyệt NHIỀU hợp đồng cùng lúc: vào danh sách hợp đồng của 1 khách hàng → lọc đúng 1 tab trạng thái (vd "Chờ thực hiện") → tick chọn nhiều dòng → bấm nút duyệt hàng loạt hiện ra.</p>
+
+<h4>Bước 3 — Thêm lô rừng</h4>
+<p>Trong 1 hợp đồng → tab "🌲 Lô rừng" → "➕ Thêm lô rừng": Địa chỉ/Diện tích/Đơn giá — gõ Diện tích tự tính luôn Khối lượng dự kiến (= <b>Định mức</b> × DT, mặc định 120 tấn/ha nhưng <b>sửa được ngay trên form</b> — chỉ dùng để tính, không lưu vào Sheet), có nút "💰 Xem gợi ý đơn giá bình quân theo Báo giá" để lấy nhanh giá tham khảo theo đúng tháng ký hợp đồng.</p>
+<p>Bấm "Xem chi tiết →" trên 1 lô rừng để vào 2 tab con: <b>📍 Tọa độ GPS</b> và <b>🖼️ Ảnh</b> (xem định dạng tọa độ hỗ trợ ở mục 2b bên dưới). Ảnh tải lên ở đây <b>tự động duyệt luôn</b>, không cần bước duyệt riêng.</p>
+
+<h4>2a. Phân biệt RÕ 3 loại đính kèm — rất hay bị nhầm, đọc kỹ mục này</h4>
+<p>Hệ thống có 3 chỗ đính kèm file/ảnh khác nhau hoàn toàn, ứng với 3 mục đích khác nhau — đính kèm nhầm chỗ sẽ khiến báo cáo/đối chiếu bị sai:</p>
+<table style="border-collapse:collapse;">
+<tr>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Đính kèm ở đâu</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Là gì</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Ví dụ cụ thể</th>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📄 "Đính kèm hồ sơ tài liệu"</b> (ngay trong form "Thêm/Sửa lô rừng", nút "📷 Đọc &amp; đính kèm hồ sơ pháp lý")</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">File GIẤY TỜ chứng minh nguồn gốc đất/rừng — KHÔNG phải ảnh chụp cây/rừng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Giấy chứng nhận QSDĐ (sổ đỏ), Hợp đồng mua bán đất, Giấy xác nhận, Đơn xác nhận của UBND xã/phường. Bấm nút này sẽ <b>tự đọc luôn nội dung</b> (OCR) để điền sẵn "Loại hồ sơ"/"Số giấy tờ".</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>🖼️ Tab "Ảnh"</b> (trong chi tiết 1 lô rừng)</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Ảnh chụp THỰC TẾ hiện trường — KHÔNG phải giấy tờ</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Ảnh cây/lô rừng hiện trạng trước khi khai thác, ảnh trong quá trình khai thác/thu mua thực tế tại vườn.</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📍 Tab "Tọa độ GPS"</b> (trong chi tiết 1 lô rừng, mục "Ảnh minh chứng" khi thêm điểm)</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Ảnh có TEM TỌA ĐỘ in sẵn — dùng để CHỨNG MINH đúng vị trí đo</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Ảnh chụp bằng app "GPS Map Camera" hoặc tương tự (có in vĩ độ/kinh độ, địa chỉ, ngày giờ ngay trên ảnh). Hệ thống tự đọc tọa độ từ tem này để điền sẵn Vĩ độ/Kinh độ nếu có.</td>
+</tr>
+</table>
+<p>Riêng CCCD/giấy tờ tùy thân của chủ rừng và người ủy quyền đính kèm ở <b>Bước 1 và Bước 2</b> của wizard tạo hợp đồng (nút "📷 Đọc CCCD"), không phải ở đây.</p>
+
+<h4>2b. Định dạng tọa độ GPS được hỗ trợ khi nhập tay</h4>
+<p>Chỉ có 2 ô để gõ — <b>Vĩ độ (Lat)</b> và <b>Kinh độ (Lng)</b>. <b>Không cần chọn hay khai báo trước</b> đang nhập hệ nào — gõ nguyên giá trị đo được, hệ thống tự dò định dạng theo thứ tự sau (thử lần lượt, dùng đúng kiểu đầu tiên khớp):</p>
+<table style="border-collapse:collapse;">
+<tr>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Thứ tự</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Định dạng</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Ví dụ</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Ghi chú</th>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">1</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">DMS có ký hiệu độ/phút/giây (°'")</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>108°3'14.857"E</b></td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Kiểu copy trực tiếp từ Google Maps/app đo GPS</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">2</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Decimal (thập phân thường)</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>108.054127</b></td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Cho phép dùng dấu phẩy kiểu VN: <b>108,054127</b></td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">3</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">DMS chuỗi cách nhau dấu chấm</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>108.3.14.857E</b></td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Độ.Phút.Giây + ký tự hướng N/S/E/W ở cuối</td>
+</tr>
+</table>
+<p>Dù nhập theo kiểu nào ở trên, khi bấm "➕ Thêm điểm" hệ thống luôn quy đổi về <b>1 số thập phân (DD)</b> duy nhất trước khi ghi vào <b>HD_GPS</b> — mọi báo cáo/tính toán về sau chỉ đọc số thập phân đã quy đổi sẵn, không dò định dạng lại.</p>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Chưa hỗ trợ hệ tọa độ phẳng (VN-2000, UTM...) — các hệ đo bằng mét (không phải độ) hiện chưa nhận diện được. Nếu cần dùng, phải báo trước để bổ sung công thức quy đổi riêng theo từng khu vực/kinh tuyến trục.</div>
+
+<h4>Bước 4 — Thêm số tài khoản (nếu cần thêm ngoài số đã nhập lúc tạo)</h4>
+<p>Tab "💳 Số tài khoản" trong hợp đồng → "➕ Thêm tài khoản" — 1 hợp đồng có thể có nhiều số tài khoản.</p>
+
+<h4>Bước 5 — Theo dõi &amp; xử lý</h4>
+<p>Theo dõi qua "📊 Báo cáo tổng hợp" (tab "👤 Theo dõi hợp đồng theo khách hàng" xem nhanh theo cấu trúc mẹ-con, hoặc các tab báo cáo khác) → Kiểm tra &amp; Đối chiếu định kỳ → Duyệt lần lượt qua các trạng thái → Thanh lý khi hoàn thành.</p>
+
+<h3>3. Các báo cáo có sẵn</h3>
+<table style="border-collapse:collapse;">
+<tr>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Xem ở đâu</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Nội dung</th>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo hợp đồng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo tổng hợp</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Tổng quan: chủ rừng, CCCD, KL, đơn giá, giá trị, tình trạng</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Tình hình thực hiện</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo tổng hợp</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">KL/giá trị dự kiến-thực hiện-còn lại, ngày TH, số phiếu cân (chỉ HĐ Đang/Chờ thực hiện)</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Thanh lý hợp đồng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo tổng hợp</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Danh sách hợp đồng chưa thanh lý</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Hồ sơ rừng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo tổng hợp</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Chi tiết từng lô rừng + xem tọa độ/ảnh</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Thanh toán</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo tổng hợp</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Tổng hợp theo tài khoản/chủ rừng</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Theo dõi hợp đồng theo khách hàng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo tổng hợp</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Xem cấu trúc mẹ-con: Khách hàng → Hợp đồng → Lô rừng/STK → GPS/Hồ sơ (chỉ xem)</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">BaoCao_KiemTra</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Sheet file chính</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Kết quả kiểm tra hồ sơ pháp lý từng lô rừng</td>
+</tr>
+</table>
+
+<h3>4. Cơ chế "Làm mới" &amp; luồng dữ liệu báo cáo</h3>
+<p><b>Vấn đề giải quyết:</b> nếu mỗi lần mở báo cáo đều tính lại từ đầu → rất chậm, dễ timeout. Giải pháp: tính sẵn, lưu lại, chỉ cập nhật phần thay đổi.</p>
+<ol>
+  <li><b>Dữ liệu gốc</b> (HD_NCC, HD_RUNG, HD_STK, HD_GPS, HD_Picture) — khi Tạo/Sửa/Xóa (qua webapp hoặc sửa tay trên Sheet)…</li>
+  <li>…kích hoạt <b>bẫy tự động</b>, cập nhật NGAY đúng 1 dòng bị ảnh hưởng (không xóa sheet)…</li>
+  <li>…ghi vào <b>Draft_BaoCaoHopDong</b> (file riêng, đã tổng hợp sẵn) — báo cáo chỉ đọc thẳng từ đây, không tính toán thêm…</li>
+  <li>…nên trên <b>Webapp</b>, các báo cáo hiện ra gần như tức thì.</li>
+</ol>
+<p>Song song đó, <b>dữ liệu ngoài</b> (DNTT_GK_DN_CT + PhieuCan_DN) được đồng bộ qua trigger riêng (30 phút/lần, chỉ khi có dữ liệu mới) và nhập vào Draft ở trên theo đúng cơ chế trên.</p>
+
+<h4>3 cơ chế cập nhật Draft — không cái nào xóa hết làm lại</h4>
+<table style="border-collapse:collapse;">
+<tr>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Cơ chế</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Kích hoạt khi nào</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Phạm vi cập nhật</th>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Bẫy nhật ký tự động</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Ngay khi Tạo/Sửa/Xóa (webapp hoặc sửa tay trên Sheet)</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Đúng 1 dòng hợp đồng bị ảnh hưởng</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Nút "🔄 Làm mới dữ liệu"</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Bấm tay</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Chỉ hợp đồng có nhật ký thay đổi từ lần trước</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Trigger đồng bộ thanh toán (30 phút/lần)</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Tự động khi DNTT_GK_DN_CT có dữ liệu mới</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Cập nhật "đã thực hiện" cho mọi hợp đồng, vẫn ghi đè từng dòng</td>
+</tr>
+</table>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Ngoại lệ DUY NHẤT có xóa-làm-lại: menu "Xây dựng lại Draft báo cáo" — chỉ dùng 1 lần lúc cài đặt ban đầu. Đã tối ưu chống timeout (tự chia đợt, bấm lại để tiếp tục nếu chưa xong, không tính lại từ đầu).</div>
+
+<h4>BaoCao_KiemTra — cơ chế riêng, khác Draft</h4>
+<table style="border-collapse:collapse;">
+<tr>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;"></th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Draft_BaoCaoHopDong</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">BaoCao_KiemTra</th>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Kích hoạt</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Tự động liên tục</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Chỉ khi bấm "Chạy kiểm tra" hoặc theo lịch</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Cập nhật theo</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Từng dòng hợp đồng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Từng dòng lô rừng (Mã Rừng)</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Xóa-làm-lại?</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Không (trừ xây dựng lại 1 lần)</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Không — ghi đè/thêm dòng thay đổi, tự dọn dòng đã xóa (chỉ khi chạy không lọc ngày)</td>
+</tr>
+</table>
+
+<h3>5. Xem chi tiết lô rừng (tọa độ + hồ sơ + ảnh)</h3>
+<p>(3 loại đính kèm dưới đây khác nhau hoàn toàn — xem bảng phân biệt đầy đủ ở mục 2a phía trên nếu chưa rõ.)</p>
+<p>Ở tab <b>🌲 Hồ sơ rừng</b> (Báo cáo tổng hợp), bấm "🔄 Tải báo cáo" rồi bấm "📍 Xem chi tiết" trên dòng cần xem — hiện lên khung nổi giữa màn hình (đóng bằng nút ✕, bấm ra ngoài, hoặc phím Esc), gồm:</p>
+<ul>
+  <li><b>Tọa độ GPS</b> — từng điểm đã đo, có link mở Google Maps</li>
+  <li><b>Hồ sơ pháp lý</b> — loại hồ sơ, số giấy tờ, link file đính kèm (bấm mở trực tiếp) — đây là GIẤY TỜ (sổ đỏ, hợp đồng mua bán...), không phải ảnh chụp rừng</li>
+  <li><b>Ảnh hiện trường</b> — ảnh chụp THỰC TẾ hiện trạng rừng/khai thác, tách 2 nhóm: "Ảnh riêng của lô rừng này" (chắc chắn đúng lô) và "Ảnh chung của cả hợp đồng" (chưa rõ thuộc lô nào cụ thể nếu hợp đồng có nhiều lô)</li>
+</ul>
+
+<h3>6. Tab Thanh toán</h3>
+<p>Bấm "🔄 Tải báo cáo" để xem tổng hợp thanh toán theo từng Số tài khoản (gộp từ DNTT_GK_DN_CT). 3 ô lọc phía trên (Người nhận tiền / Số hợp đồng / Tên chủ rừng) vừa gõ tìm tự do, vừa bấm vào ô sẽ hiện gợi ý có sẵn để chọn nhanh.</p>
+
+<h3>7. Tab "👤 Theo dõi hợp đồng theo khách hàng" (Báo cáo tổng hợp)</h3>
+<p>Xem NHANH cấu trúc mẹ-con ngay trong Báo cáo tổng hợp — Khách hàng → Hợp đồng → (tab) Lô rừng/Số tài khoản → (tab) Tọa độ GPS/Hồ sơ pháp lý — bấm 1 dòng để mở rộng xem con NGAY TẠI CHỖ (không chuyển trang). <b>Chỉ để xem</b> — muốn Thêm/Sửa/Xóa, dùng trang "📝 Nhập liệu HĐ / Rừng / TK".</p>
+
+<h3>8. Công cụ hệ thống (menu "🚀 HỆ THỐNG HAK" trên Google Sheet)</h3>
+<table style="border-collapse:collapse;">
+<tr>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Công cụ</th>
+<th style="border:1px solid #e5e7eb;padding:6px 10px;">Khi nào dùng</th>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">🔄 Xây dựng lại Draft báo cáo</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Chỉ 1 lần lúc cài đặt ban đầu, hoặc khi nghi ngờ Draft bị sai lệch nhiều</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">🌲 Xây dựng lại cache Hồ sơ rừng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Tương tự, riêng cho tab Hồ sơ rừng</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">⏱️ Bật đồng bộ định kỳ phần thanh toán</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Bật 1 lần để "Khối lượng thực hiện" tự cập nhật mỗi 30 phút khi DNTT_GK_DN_CT có dữ liệu mới</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">💰 Đồng bộ thanh toán NGAY</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Muốn cập nhật ngay, không chờ 30 phút (vd vừa sửa DNTT_GK_DN_CT xong)</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">🛰️ Chẩn đoán GPS lô rừng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Khi "Xem chi tiết" không hiện tọa độ dù đã đo</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">🖼️ Chẩn đoán ảnh / 🔎 Chẩn đoán ảnh theo 1 lô rừng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Khi ảnh không hiện link mở được</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">⚡ Chuyển tên file ảnh / hồ sơ pháp lý sang URL thật</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Chạy 1 lần nếu "Xem chi tiết" bị chậm/treo lúc hiện ảnh</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">🔎 Chẩn đoán Số HĐ trong Hồ sơ rừng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Khi lọc theo Số HĐ ở tab Hồ sơ rừng ra trống bất thường</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">📝 Định dạng TEXT cho cột quan trọng</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Chạy 1 lần — giữ Số CCCD/SĐT/Số TK/Số HĐ... không bị Sheets tự chuyển thành số (mất số 0 đầu)</td>
+</tr>
+<tr>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">📅 Đồng bộ định dạng ngày/tháng/năm</td>
+<td style="border:1px solid #e5e7eb;padding:6px 10px;">Chạy 1 lần — đặt hiển thị ngày kiểu dd/mm/yyyy cho các cột ngày</td>
+</tr>
+</table>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Menu "📅 Đồng bộ định dạng ngày/tháng/năm" đã tự đặt luôn Vùng địa lý (Locale) = Việt Nam cho cả file dữ liệu chính lẫn file Draft/Báo cáo riêng bằng code — không cần vào Cài đặt bảng tính làm tay nữa.</div>

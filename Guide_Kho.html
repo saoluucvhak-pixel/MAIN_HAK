@@ -1,0 +1,86 @@
+<h3>Hướng dẫn sử dụng — Kho gỗ keo (HAK Group)</h3>
+
+<h4>📥 Import — Nhập/Xuất kho theo phiếu cân</h4>
+
+<p><b>Nhập kho theo phiếu cân (gỗ keo)</b></p>
+<ol>
+  <li>Chuẩn bị file Excel xuất ra từ phần mềm trạm cân (kiểu cân "Nhập"). Nếu chưa có mẫu, bấm <b>"📄 Tải file mẫu"</b> để tham khảo đúng định dạng cột.</li>
+  <li>Kéo thả hoặc chọn file .xls/.xlsx, bấm <b>"Tải lên & Xem trước"</b>.</li>
+  <li>Kiểm tra bảng xem trước: dòng lỗi (❌) sẽ không chọn được; bỏ tick những dòng không muốn nhập.</li>
+  <li>Bấm <b>"✔️ Xác nhận nhập liệu"</b> để ghi chính thức vào PhieuCan_DN. Hệ thống tự tính giá ngay sau khi ghi xong.</li>
+</ol>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Mỗi lần Xem trước chỉ xử lý đúng file vừa chọn — file gốc tự động lưu trữ vào thư mục Done ngay lập tức, không cần dọn dẹp thủ công.</div>
+
+<p><b>Xuất kho theo phiếu cân (dăm gỗ)</b></p>
+<ol>
+  <li>Tương tự Nhập kho, nhưng dùng file trạm cân kiểu "Xuất" và ghi vào NL_PC_XH_Draft rồi duyệt vào NL_PC_XH.</li>
+  <li>Có thể chọn <b>Kho xuất / Kho nhập mặc định</b> áp dụng cho cả lô nếu file không có sẵn 2 cột này.</li>
+</ol>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> File mẫu Xuất hàng hiện là suy đoán tốt nhất (chưa có mẫu thật kiểu "Xuất" để đối chiếu) — nếu tên cột trên trạm cân khác, chỉ cần sửa lại đúng tên tiêu đề cột trong file tải lên (hệ thống đọc theo tên cột, không theo vị trí).</div>
+
+<h4>📝 Nhập liệu — Nhập kho</h4>
+<ul>
+  <li><b>Nhập thủ công kho gỗ keo</b>: dùng khi có phiếu cân lẻ chưa kịp import qua file, hoặc cần bổ sung 1 phiếu bị thiếu. Lưu ý: nếu số khối lượng nhập &lt; 70, hệ thống tự hiểu là đơn vị Tấn và quy đổi ra Kg.</li>
+  <li><b>Nhập TP dăm</b>: ghi nhận thành phẩm dăm gỗ sản xuất ra, nhập vào 1 kho cụ thể.</li>
+  <li><b>Nhập khác</b>: các trường hợp nhập kho không phải từ sản xuất (điều chỉnh, trả hàng...).</li>
+</ul>
+
+<h4>🚚 Nhập liệu — Xuất kho</h4>
+<ul>
+  <li><b>Xuất bán</b>: xuất dăm gỗ để bán/xuất khẩu. Đây cũng là nơi thực hiện <b>Đối chiếu hoàn thành đơn hàng</b> (panel riêng trong màn hình này) — đối chiếu Khô (BDMT) trước, Tươi (MT) sau, hệ thống tự tính và hỏi xác nhận trước khi tạo phiếu điều chỉnh. Xem chi tiết ở mục <b>"Điều chỉnh cân đối kho"</b> ngay bên dưới.</li>
+  <li><b>Xuất trung chuyển</b>: chuyển hàng giữa 2 kho nội bộ, không phải bán ra ngoài.</li>
+  <li><b>Xuất khác</b>: các trường hợp xuất kho khác (hao hụt, điều chỉnh...).</li>
+  <li><b>Đơn hàng xuất bán</b>: lập thông tin đơn hàng theo Số TKHQ (Khách hàng, Tàu, Đơn giá USD, KL_MT, Độ khô...). Đây là <b>bảng mẹ</b> để đối chiếu với các phiếu cân xuất — nên lập đơn hàng TRƯỚC khi import phiếu cân xuất tương ứng.</li>
+</ul>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Công thức: <b>KL_BDMT = KL_MT × Độ khô</b> — chỉ cần nhập KL_MT và Độ khô, hệ thống tự tính KL_BDMT.</div>
+
+<h4>⚖️ Điều chỉnh cân đối kho (sau mỗi đơn hàng xuất bán)</h4>
+<p>Sau khi 1 đơn hàng xuất bán đã cân xong toàn bộ xe (Import xong Xuất kho theo phiếu cân), số liệu tại <b>kho xuất bán</b> thường KHÔNG khớp tuyệt đối ngay — vì hàng được trung chuyển từ nhiều kho khác nhau vào kho xuất bán ở nhiều thời điểm khác nhau, còn việc cân xuất thực tế lại diễn ra theo tiến độ xe ra cảng. Chức năng này giúp <b>tất toán chênh lệch</b> đó sau khi đơn hàng hoàn tất, vào đúng 2 bước theo thứ tự bắt buộc.</p>
+
+<p><b>Bước 1 · Điều chỉnh Khô (BDMT) — làm trước</b></p>
+<p><b>Nội dung điều chỉnh:</b> So sánh <b>tổng dăm khô đã trung chuyển VÀO kho xuất bán</b> với <b>tổng dăm khô đã xuất bán thực tế RA</b>, trong đúng khoảng thời gian của đơn hàng.</p>
+<ul>
+  <li><b>Chênh lệch dương</b> (xuất bán ra nhiều hơn số đã trung chuyển vào) → hệ thống tự gợi ý tạo phiếu <b>Xuất trung chuyển</b>: Kho Nhập = kho xuất bán, Kho Xuất = kho đã trung chuyển vào kho xuất bán nhiều nhất trong kỳ (coi như "bù" thêm hàng vào kho xuất bán cho khớp số đã xuất ra).</li>
+  <li><b>Chênh lệch âm</b> (đã trung chuyển vào nhiều hơn số thực xuất bán ra) → tạo phiếu <b>Xuất trung chuyển</b> theo chiều ngược lại: Kho Xuất = kho xuất bán, Kho Nhập = kho nguồn (trả bớt phần hàng dư về đúng kho đã gửi đến).</li>
+</ul>
+<p><b>Lý do phải làm bước này:</b> Số dăm khô (BDMT) là số liệu <b>gốc để tính giá trị hàng hóa thật</b> (không đổi theo thời gian/độ ẩm). Nếu không tất toán, tồn kho khô tại kho xuất bán sẽ dần lệch so với thực tế trung chuyển + xuất bán cộng dồn qua nhiều đơn hàng, làm sai lệch báo cáo tồn kho và giá trị hạch toán.</p>
+
+<p><b>Bước 2 · Điều chỉnh Tươi (MT) — CHỈ làm SAU khi Bước 1 đã cân bằng</b></p>
+<p><b>Nội dung điều chỉnh:</b> Sau khi số Khô đã khớp (Bước 1 = 0), đối chiếu tiếp phần <b>tấn tươi (MT)</b> — vì khối lượng tươi bị hao hụt dần theo thời gian do <b>bay hơi độ ẩm</b> tự nhiên trong lúc lưu kho/vận chuyển, dù khối lượng khô (giá trị thật) không đổi.</p>
+<ul>
+  <li><b>Dư tươi</b> (tồn kho tươi tính ra nhiều hơn thực tế, do bay hơi ít hơn dự kiến) → tạo phiếu <b>Xuất khác (ĐC)</b> tại kho xuất bán, không có kho nhập.</li>
+  <li><b>Thiếu tươi</b> (hao hụt bay hơi nhiều hơn dự kiến) → tạo phiếu <b>Nhập khác (ĐC)</b> tại kho xuất bán, không có kho xuất.</li>
+</ul>
+<p>Cả 2 trường hợp đều dùng <b>Độ khô = 0%</b> — vì đây là điều chỉnh <b>THUẦN TÚY phần tươi do bay hơi</b>, không liên quan đến số Khô đã được tất toán xong ở Bước 1 (nếu tính Độ khô khác 0, phiếu điều chỉnh sẽ vô tình làm lệch lại số Khô vừa mới cân bằng).</p>
+
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Vì sao phải làm ĐÚNG THỨ TỰ Khô trước, Tươi sau: Độ ẩm (và do đó phần tươi hao hụt) chỉ có ý nghĩa xác định SAU KHI số Khô đã đúng — nếu làm Tươi trước khi Khô còn lệch, con số "hao hụt do bay hơi" tính ra sẽ bị trộn lẫn với phần chênh lệch do trung chuyển chưa tất toán, dẫn đến điều chỉnh sai. Vì vậy hệ thống <b>chặn cứng</b> Bước 2 nếu Bước 1 chưa cân bằng, bắt buộc phải hoàn thành Bước 1 trước.</div>
+
+<p><b>Thao tác trên giao diện</b></p>
+<ol>
+  <li>Vào Nhập liệu → Xuất bán, chọn đúng Kho Xuất Bán + khoảng thời gian của đơn hàng ở panel "Đối chiếu hoàn thành đơn hàng".</li>
+  <li>Bấm <b>nút 1️⃣</b> (Khô/BDMT) — hộp thoại hiện đủ Kho Xuất/Kho Nhập/Khối lượng/Độ khô gợi ý, bấm OK để tạo phiếu ngay, hoặc Cancel để tự chọn kho khác. Nếu đã cân bằng, hệ thống báo "đã cân bằng hoàn toàn", không cần làm gì thêm.</li>
+  <li>Sau khi Bước 1 xong, bấm <b>nút 2️⃣</b> (Tươi/MT) — xác nhận tương tự. Nếu Bước 1 chưa xong, hệ thống sẽ báo lỗi và yêu cầu quay lại bấm nút 1️⃣ trước.</li>
+</ol>
+
+<h4>🗂️ Nhập liệu — Nhập khác (Danh mục &amp; theo dõi)</h4>
+<ul>
+  <li><b>Danh mục kho</b>: khai báo/quản lý danh sách các kho (nhà máy, bãi chứa...) dùng chung cho toàn hệ thống Kho Dăm.</li>
+  <li><b>Độ ẩm dăm gỗ (quản lý độ khô)</b>: nhập độ khô đo được mỗi ngày — dữ liệu này được dùng để tự động tính "Độ khô nhà máy" khi lập Đơn hàng xuất bán.</li>
+  <li><b>Kỳ vét bãi</b>: cấu hình thời gian hiệu lực và tỷ lệ tiêu hao cho từng đợt vét bãi, ảnh hưởng đến cách tính tồn kho.</li>
+</ul>
+
+<h4>📊 Báo cáo tổng hợp kho</h4>
+<ul>
+  <li><b>Báo cáo gỗ keo nhập qua cân</b>: lọc theo ngày, xe, khách hàng, đại lý/nguồn gốc, tình trạng thanh toán; xuất Excel/PDF; in phiếu nhập kho từng dòng.</li>
+  <li><b>Báo cáo gỗ keo nhập kết xuất Misa</b>: dữ liệu đã map sẵn để import lên phần mềm MISA hạch toán mua hàng.</li>
+  <li><b>Báo cáo dăm gỗ xuất qua cân</b>: lọc theo đơn vị vận chuyển, số xe, số tờ khai hải quan, khoảng ngày; phân trang 20 dòng/trang.</li>
+  <li><b>Báo cáo xuất kho dăm gỗ kết xuất Misa</b>: tổng hợp theo đơn hàng xuất bán, tính sẵn thành tiền USD.</li>
+  <li><b>Báo cáo tồn kho dăm gỗ</b>: xem tồn kho hiện tại theo từng kho hoặc theo kỳ vét bãi.</li>
+</ul>
+
+<h4>💰 Quản lý báo giá</h4>
+<ol>
+  <li><b>Nhập báo giá</b>: Bước 1 chọn ngày/thời điểm hiệu lực → Bước 2 (tùy chọn) sao chép từ báo giá cũ → Bước 3 chọn Mã báo giá + Mã khối lượng + Đơn giá cho từng nhóm, có thể "Tách nhóm" nếu cần đặt giá riêng cho từng mã.</li>
+  <li><b>Hiệu lực báo giá</b>: xem toàn bộ lịch sử hoặc chỉ các mã còn hiệu lực; xuất Excel; Sửa/Xóa từng dòng hoặc xóa cả phiếu (chỉ khi chưa hết hiệu lực và chưa có phiếu cân áp dụng).</li>
+  <li><b>Danh mục mã báo giá</b> / <b>Danh mục mã khối lượng</b>: khai báo các mã dùng khi nhập báo giá.</li>
+</ol>

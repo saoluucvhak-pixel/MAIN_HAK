@@ -1,0 +1,312 @@
+<h3>📘 Hệ thống này dùng để làm gì?</h3>
+<p>Đây là công cụ kiểm soát &amp; giám sát toàn bộ chuỗi cung ứng gỗ keo theo <b>Quy trình QT-FSC-01</b> và <b>Kế hoạch triển khai KH-FSC-01</b>. Nguyên tắc cốt lõi: <b>không nhập lại dữ liệu đã có</b> — hệ thống đọc trực tiếp 5 Google Sheet nghiệp vụ đang dùng thật, chỉ tạo mới đúng phần chưa từng có (kết luận giám sát, đánh giá rủi ro, tiến độ triển khai).</p>
+<p>Ngoài quy trình QT-FSC-01 (kiểm soát theo từng lô hàng), hệ thống còn có nhóm <b>"Đánh giá nội bộ hệ thống DDS"</b> — đây là yêu cầu <b>riêng biệt theo tiêu chuẩn FSC-STD-40-005 Ver.3.1</b>, thực hiện định kỳ <b>hằng năm</b> (không phải theo từng lô), do Ban CoC chủ trì, nhằm đánh giá xem toàn bộ hệ thống thẩm định (DDS) có đang được thực thi hiệu quả hay không.</p>
+
+<h3>🗂️ Giải thích từng mục bên trái (theo đúng thứ tự trên sidebar)</h3>
+<table style="border-collapse:collapse; width:100%;">
+  <tr>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Mục</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Nguồn dữ liệu</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Dùng để làm gì</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>🏠 Dashboard</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tổng hợp từ tất cả sheet</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhìn nhanh: bao nhiêu hợp đồng, tỷ lệ hồ sơ đầy đủ, số HĐ chưa đánh giá FSC, rừng rủi ro cao, HĐ chưa theo dõi khảo sát, tiến độ triển khai theo giai đoạn.</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="border:1px solid #e5e7eb;padding:6px 10px;background:#F0EEE4;font-weight:bold;">BƯỚC 1–2: Thẩm định &amp; ký hợp đồng</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>🧾 Thẩm định hợp đồng</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM-FSC-01/02)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Checklist 8 tiêu chí trước khi ký HĐ (mục đích SDĐ, sổ đỏ, CCCD, rừng tự nhiên 2020, tranh chấp, khối lượng, thông báo giá) — ra kết luận Đồng ý/Yêu cầu bổ sung/Từ chối.</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📄 Hợp đồng &amp; hồ sơ rừng</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">HD_RUNG, BaoCao_KiemTra</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Xem từng hợp đồng: hồ sơ đủ/thiếu gì, bấm <b>"📎 Chi tiết"</b> xem pháp lý rừng + tọa độ Google Maps + ảnh. Ghi <b>kết luận giám sát FSC</b> ở form cuối trang.</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="border:1px solid #e5e7eb;padding:6px 10px;background:#F0EEE4;font-weight:bold;">BƯỚC 3: Khảo sát &amp; tham vấn</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📋 Khảo sát &amp; Tham vấn</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">4 sub-tab: bảng Có/Chưa (nhập mới) + Báo cáo khảo sát (nhập mới, có ảnh) + BB Giám sát khai thác (nhập mới) + Tham vấn bên liên quan (nhập mới)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">"Bảng theo dõi" xem nhanh HĐ nào thiếu loại hồ sơ nào; 3 sub-tab còn lại là nơi gõ/xem NỘI DUNG THẬT của từng loại hồ sơ, kể cả tải ảnh khảo sát.</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="border:1px solid #e5e7eb;padding:6px 10px;background:#F0EEE4;font-weight:bold;">BƯỚC 3–4: Khai thác, cân, nghiệm thu</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📦 Lô hàng mua vào</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">HoSoKeo_DN</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">200 lô nhập gần nhất (phân trang 20/trang), lọc mã HĐ/chủ rừng/ngày, tổng khối lượng &amp; tổng tiền (toàn bộ + theo trang).</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="border:1px solid #e5e7eb;padding:6px 10px;background:#F0EEE4;font-weight:bold;">BƯỚC 5–6: Vận chuyển &amp; chế biến</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>🚛 Lệnh điều động vận chuyển</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM-FSC-05)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lệnh điều động vận chuyển nội bộ — điểm đi/đến, biển số, số phiếu cân, ngày lập phiếu xuất kho.</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>🏭 Tiêu hao chế biến</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM-FSC-06)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Theo dõi định mức tiêu hao chế biến dăm gỗ theo từng kỳ, so sánh định mức công bố vs thực tế.</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="border:1px solid #e5e7eb;padding:6px 10px;background:#F0EEE4;font-weight:bold;">BƯỚC 7–8: Xuất bán &amp; báo cáo Nhà nước</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>🚚 Xuất hàng</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">NL_PC_XH</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">200 lô xuất gần nhất (phân trang), lọc theo số TKHQ/ngày, tổng khối lượng (chưa có cột tiền trong sheet nguồn).</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📤 Đơn hàng xuất bán</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">NL_DH_XB</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Đơn hàng khách mua — bổ sung thông tin còn thiếu ở BM-FSC-07 (giá USD, khách hàng, khối lượng theo đơn).</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>🗓️ Báo cáo Nhà nước</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM-FSC-08)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Theo dõi hạn nộp/ngày nộp thực tế Mẫu số 29 (năm) và Mẫu số 14 (quý) cho cơ quan Kiểm lâm.</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="border:1px solid #e5e7eb;padding:6px 10px;background:#F0EEE4;font-weight:bold;">BƯỚC 9 &amp; MỤC 8.3: Giám sát rủi ro</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>⚠️ Rủi ro CNRA</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM-FSC-09, chọn rừng từ dropdown)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Đánh giá rủi ro theo Bộ CNRA Việt Nam cho từng lô rừng — Không đáng kể/Đáng kể, kèm biện pháp giảm thiểu (RMM).</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>🔍 Giám sát định kỳ</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM-FSC-10)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo giám sát — đối chiếu đủ 5 mục tiêu giám sát của QT-FSC-01, ra kết luận ĐẠT/ĐẠT CÓ ĐIỀU KIỆN/KHÔNG ĐẠT.</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="border:1px solid #e5e7eb;padding:6px 10px;background:#F0EEE4;font-weight:bold;">KH-FSC-01: Triển khai</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📈 Tiến độ triển khai</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM-KH-01)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Cập nhật tiến độ 5 giai đoạn theo KH-FSC-01, so sánh mốc kế hoạch với ngày thực tế.</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>✅ Nghiệm thu giai đoạn</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM-KH-02)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Đối chiếu đầu ra kỳ vọng từng giai đoạn với bằng chứng thực nhận, ra kết luận Nghiệm thu/Có điều kiện/Chưa.</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>⚠️ Rủi ro triển khai</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM-KH-03)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Ghi nhận rủi ro/vướng mắc phát sinh khi triển khai — mức độ, biện pháp, người phụ trách, hạn xử lý.</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="border:1px solid #e5e7eb;padding:6px 10px;background:#F0EEE4;font-weight:bold;">ĐÁNH GIÁ NỘI BỘ HỆ THỐNG DDS (theo FSC-STD-40-005 Ver.3.1, riêng biệt với QT-FSC-01)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📅 Kế hoạch đánh giá nội bộ</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lập kế hoạch đánh giá nội bộ hằng năm (tối thiểu 1 lần/năm) — nhập tổng số nhà cung cấp, hệ thống tự tính số mẫu theo công thức y = 0.8×√x.</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📝 Phiếu yêu cầu khắc phục</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM.05)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Ghi nhận điểm không phù hợp phát hiện khi đánh giá nội bộ, phân tích nguyên nhân, hành động khắc phục, theo dõi đến khi đóng (thời hạn 3–12 tháng).</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>📋 Xem xét hệ thống DDS</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM.07)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Biên bản xem xét hệ thống thẩm định định kỳ hằng năm, sau khi có kết quả đánh giá nội bộ — ghi nhận có/không cần cập nhật DDS.</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>👤 Phê duyệt đánh giá viên</b></td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập mới (BM.08)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Phê duyệt đủ 4 nhóm yêu cầu (trình độ, kinh nghiệm, phẩm chất, năng lực) trước khi giao nhiệm vụ đánh giá nội bộ cho 1 người.</td>
+  </tr>
+</table>
+
+<h3>✅ Quy trình thao tác gợi ý hằng ngày/tuần</h3>
+<ol>
+  <li>Mở <b>Dashboard</b> xem tổng quan — chú ý các thẻ màu đỏ/cam (cảnh báo) và badge số trên sidebar.</li>
+  <li>Có hợp đồng mới → vào <b>Thẩm định hợp đồng</b> chấm đủ 8 tiêu chí trước khi ký.</li>
+  <li>Vào <b>Hợp đồng &amp; hồ sơ rừng</b>, lọc "Chưa đánh giá" → bấm "Chi tiết" kiểm tra tọa độ/ảnh → ghi kết luận giám sát.</li>
+  <li>Song song, cập nhật tab <b>Khảo sát &amp; Tham vấn</b> (4 sub-tab) ngay khi có kết quả khảo sát/giám sát khai thác/phỏng vấn thực địa.</li>
+  <li>Với hợp đồng có nhiều rừng, dùng tab <b>Rủi ro CNRA</b> đánh giá riêng từng lô.</li>
+  <li>Theo dõi <b>Lệnh điều động</b>, <b>Tiêu hao chế biến</b> khi hàng đi qua các khâu vận chuyển/chế biến.</li>
+  <li>Trước hạn 15/01 và cuối mỗi quý, vào <b>Báo cáo Nhà nước</b> ghi nhận đã nộp Mẫu 29/Mẫu 14.</li>
+  <li>Cuối tuần/tháng, vào <b>Giám sát định kỳ</b> lập báo cáo tổng hợp theo mẫu BM-FSC-10.</li>
+  <li>Theo dõi <b>Tiến độ triển khai</b>, cập nhật <b>Nghiệm thu giai đoạn</b> và <b>Rủi ro triển khai</b> để biết đang đúng/chậm so với KH-FSC-01.</li>
+  <li><b>Hằng năm (tối thiểu 1 lần)</b>: lập <b>Kế hoạch đánh giá nội bộ</b> DDS → phát hiện điểm không phù hợp thì lập <b>Phiếu yêu cầu khắc phục</b>, theo dõi đến khi đóng → sau đó lập <b>Biên bản xem xét hệ thống DDS</b>. Trước khi giao nhiệm vụ cho người đánh giá mới, phải có <b>Phê duyệt đánh giá viên</b>.</li>
+</ol>
+
+<h3>⚠️ Những giới hạn cần biết</h3>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;">
+  <b>⚠️ Lưu ý:</b>
+  <ul>
+    <li><b>Không tự phân loại</b> rừng tự nhiên/phòng hộ/sản xuất — dữ liệu nguồn không có trường này, vẫn cần rà soát thủ công rồi ghi vào tab Rủi ro CNRA.</li>
+    <li><b>Ảnh chủ rừng/hiện trường</b> (HD_Picture) chỉ hiện được tên file, chưa xem trực tiếp trong webapp — cần mở sheet gốc hoặc thư mục Drive tương ứng.</li>
+    <li>Nếu gặp lỗi <b>"Phản hồi bất thường"</b> khi bấm tab: đây là lỗi chập chờn của hạ tầng Google, hệ thống tự thử lại 2 lần — nếu vẫn lỗi, đợi vài giây rồi bấm lại, tránh bấm chuyển tab liên tục.</li>
+    <li>Dùng nút <b>"🔍 Kiểm tra kết nối 5 file nguồn"</b> ở góc dưới bên trái bất cứ khi nào nghi ngờ dữ liệu không cập nhật.</li>
+  </ul>
+</div>
+
+<h3>🖨️ In phiếu để ký tay</h3>
+<p>Mỗi dòng trong các bảng danh sách (Thẩm định, Lệnh điều động, Tiêu hao, Báo cáo NN, Nghiệm thu giai đoạn, Rủi ro triển khai, Rủi ro CNRA, Giám sát định kỳ, BB Giám sát khai thác, Tham vấn) đều có nút <b>🖨</b> — bấm sẽ mở 1 trang in riêng, định dạng như phiếu giấy chính thức (tiêu đề HAK GROUP, bảng thông tin, khối ký tên "Người lập / Người phê duyệt" ở cuối) — in ra là ký tay được ngay, không cần mở lại file Word gốc.</p>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;">
+  <b>⚠️ Lưu ý:</b> các mẫu Word gốc (Báo cáo khảo sát, Biên bản giám sát khai thác...) chỉ tồn tại dưới dạng file đã gửi qua chat trước đây — webapp không lưu trữ/liên kết trực tiếp được tới file đó. Nếu muốn có nút tải file mẫu gốc ngay trong webapp, upload các file Word đó lên 1 thư mục Google Drive rồi cho link thư mục để gắn nút tải trực tiếp vào đây.
+</div>
+
+<h3>🔧 Khi cần sửa/mở rộng hệ thống</h3>
+<p>Toàn bộ hệ thống chỉ gồm 2 file: <b>Code.gs</b> (backend, đọc/ghi Google Sheets) và <b>Index.html</b> (giao diện). Sửa xong dán đè lại đúng 2 file này vào Apps Script rồi <b>Deploy → Manage deployments → New version → Deploy</b> để cập nhật link chính thức.</p>
+
+<h3>📖 Toàn văn Quy trình QT-FSC-01 (tóm tắt để tra cứu nhanh)</h3>
+<p><b>Mục tiêu:</b> kiểm soát, giám sát nguồn gốc gỗ nguyên liệu rừng trồng theo tiêu chuẩn FSC, đúng Luật Lâm nghiệp, Thông tư 26/2025/TT-BNNMT và pháp luật thuế/kế toán hiện hành.</p>
+<p><b>9 bước quy trình:</b></p>
+<ol>
+  <li><b>Thẩm định &amp; lựa chọn chủ rừng/vùng cung ứng</b> — kiểm tra sổ đỏ/xác nhận đất, CCCD, loại rừng (loại trừ rừng phòng hộ/tự nhiên/đặc dụng), rà soát bản đồ vùng cung ứng. <i>→ webapp: tab Hợp đồng &amp; hồ sơ rừng, mục "Chi tiết".</i></li>
+  <li><b>Ký hợp đồng, thông báo giá</b> — kèm phương án khai thác nếu là rừng phòng hộ là rừng trồng. <i>→ webapp: tab Hợp đồng &amp; hồ sơ rừng.</i></li>
+  <li><b>Đánh giá thực địa &amp; tham vấn các bên liên quan</b> — lập Báo cáo khảo sát, phỏng vấn UBND xã/Kiểm lâm/chủ rừng lân cận/người dân/công nhân/người vận chuyển. <i>→ webapp: tab Nhập Báo cáo khảo sát + Nhập Tham vấn bên liên quan.</i></li>
+  <li><b>Khai thác &amp; lập Bảng kê lâm sản</b> — kèm giám sát trong/sau khai thác. <i>→ webapp: tab Nhập BB Giám sát khai thác.</i></li>
+  <li><b>Cân hàng, nghiệm thu, thanh toán.</b> <i>→ webapp: tab Lô hàng mua vào.</i></li>
+  <li><b>Vận chuyển nội bộ, nhập kho.</b></li>
+  <li><b>Chế biến dăm &amp; theo dõi xuất-nhập-tồn.</b></li>
+  <li><b>Vận chuyển xuất bán/xuất khẩu.</b> <i>→ webapp: tab Xuất hàng.</i></li>
+  <li><b>Lưu trữ hồ sơ &amp; báo cáo định kỳ cho Nhà nước</b> (Mẫu số 29 trước 15/01 hằng năm; Mẫu số 14 theo quý).</li>
+</ol>
+<p><b>5 mục tiêu giám sát định kỳ (Mục 8.1, QT-FSC-01):</b> (1) Đầy đủ hồ sơ, (2) Hợp pháp nguồn gốc, (3) Nhất quán số liệu, (4) Tuân thủ thời hạn báo cáo, (5) Kiểm soát rủi ro FSC/CNRA. <i>→ webapp: tab Giám sát định kỳ chấm điểm đúng 5 mục này.</i></p>
+<p><b>Kết luận định kỳ theo 3 mức:</b> ĐẠT / ĐẠT CÓ ĐIỀU KIỆN / KHÔNG ĐẠT.</p>
+
+<h3>📅 Kế hoạch triển khai KH-FSC-01 (tóm tắt)</h3>
+<table style="border-collapse:collapse; width:100%;">
+  <tr>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Giai đoạn</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Thời gian</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Đầu ra chính</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">0. Chuẩn bị</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tuần 1–2</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bộ biểu mẫu chuẩn + danh sách đầu mối cơ quan thẩm quyền</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">1. Đào tạo &amp; Thí điểm</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tuần 3–6</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo thí điểm, đề xuất điều chỉnh biểu mẫu/quy trình</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">2. Triển khai toàn diện</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tuần 7–12</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">100% lô hàng có hồ sơ đầy đủ; bản đồ vùng cung ứng v1</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">3. Đánh giá nội bộ</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tuần 13–16</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo đánh giá nội bộ năm đầu tiên</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">4. Vận hành ổn định</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Từ tuần 17</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Chu kỳ giám sát định kỳ diễn ra thường xuyên</td>
+  </tr>
+</table>
+<p><i>→ webapp: tab Tiến độ triển khai dùng đúng 5 giai đoạn này để cập nhật thực tế.</i></p>
+
+<h3>📎 Danh mục 13 biểu mẫu đính kèm (BM-FSC-01 → 10, BM-KH-01 → 03) — Đã có đủ 13/13</h3>
+<table style="border-collapse:collapse; width:100%;">
+  <tr>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Mã</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Tên biểu mẫu</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Áp dụng</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Nơi nhập/xem trong webapp</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-FSC-01/02</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Phiếu thẩm định chủ rừng + Kiểm tra hồ sơ trước ký HĐ</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 1–2</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">🧾 Thẩm định hợp đồng (checklist) + 📄 Hợp đồng &amp; hồ sơ rừng (tham chiếu)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-FSC-03/04</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tiếp nhận BKLS + Nghiệm thu &amp; thanh lý HĐ</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 3–4</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">📦 Lô hàng mua vào</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-FSC-05</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lệnh điều động vận chuyển nội bộ</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 5</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">🚛 Lệnh điều động vận chuyển</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-FSC-06</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Phiếu theo dõi định mức tiêu hao chế biến</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 6</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">🏭 Tiêu hao chế biến</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-FSC-07</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Checklist hồ sơ xuất bán/xuất khẩu</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 7</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">🚚 Xuất hàng + 📤 Đơn hàng xuất bán</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-FSC-08</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Sổ theo dõi nộp báo cáo định kỳ cơ quan Nhà nước</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 8</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">🗓️ Báo cáo Nhà nước</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-FSC-09</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Phiếu đánh giá rủi ro CNRA theo vùng cung ứng</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 9</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">⚠️ Rủi ro CNRA</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-FSC-10</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo giám sát định kỳ</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Mục 8.3</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">🔍 Giám sát định kỳ</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo khảo sát (10 mục nội dung, có ảnh)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 3</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">📋 Khảo sát &amp; Tham vấn → sub-tab "Báo cáo khảo sát"</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Biên bản giám sát khai thác (trong/sau)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 3–4</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">📋 Khảo sát &amp; Tham vấn → sub-tab "BB Giám sát khai thác"</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bản ghi tham vấn bên liên quan</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bước 3</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">📋 Khảo sát &amp; Tham vấn → sub-tab "Tham vấn bên liên quan"</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-KH-01</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Phiếu theo dõi tiến độ theo giai đoạn</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">KH-FSC-01</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">📈 Tiến độ triển khai</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-KH-02</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Biên bản nghiệm thu hoàn thành giai đoạn</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">KH-FSC-01</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">✅ Nghiệm thu giai đoạn</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">BM-KH-03</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Phiếu ghi nhận rủi ro/vướng mắc triển khai</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">KH-FSC-01</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">⚠️ Rủi ro triển khai</td>
+  </tr>
+</table>
+<p>Mỗi dòng dữ liệu ở các tab nhập mới đều có nút 🖨 để in phiếu đơn (có khối ký tên) — xem mục "In phiếu để ký tay" bên trên.</p>

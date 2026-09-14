@@ -1,0 +1,150 @@
+<h3>Tổng quan</h3>
+<h4>Giới thiệu hệ thống HAK_QUY</h4>
+<p>HAK_QUY dùng để quản lý thu – chi tiền mặt, sổ quỹ, công nợ, sổ cơm, quỹ công đoàn và các báo cáo thu mua Keo, thay cho việc ghi chép thủ công trên Excel/sổ giấy.</p>
+<h4>3 vai trò sử dụng</h4>
+<ul>
+<li><b>ADMIN</b> (Quản trị viên): toàn quyền — lập/hủy phiếu, quản lý công nợ, quản lý người dùng, khóa sổ, xem nhật ký hệ thống, cấu hình báo cáo Keo.</li>
+<li><b>THU_QUY</b> (Thủ quỹ): lập Phiếu Thu/Chi, hủy phiếu (nếu chưa khóa sổ), xem Sổ Quỹ/Sổ Cơm, tra cứu — không tạo được khoản công nợ mới, không vào Quản Trị.</li>
+<li><b>XEM</b>: chỉ xem Dashboard, Sổ Quỹ, Sổ Quỹ Công Đoàn, Sổ Cơm, Công Nợ, Báo Cáo, Tra Cứu — không lập/sửa/hủy được gì.</li>
+</ul>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Hệ thống luôn tra đúng vai trò thật của tài khoản để phân quyền, không phụ thuộc giao diện hiển thị gì.</div>
+<h4>Tổng quan giao diện</h4>
+<ul>
+<li>📊 Dashboard — tổng quan số liệu hôm nay (tồn quỹ, thu/chi, công nợ, số phiếu).</li>
+<li>💵 Thu Tiền / 💸 Chi Tiền — lập phiếu.</li>
+<li>📒 Sổ Quỹ / 🎌 Sổ Quỹ Công Đoàn — sổ kế toán chi tiết từng quỹ.</li>
+<li>🍚 Sổ Cơm — theo dõi suất ăn hàng ngày.</li>
+<li>🤝 Công Nợ — quản lý khoản phải thu/phải trả.</li>
+<li>👥 Đối Tượng / 🏷️ Danh Mục — danh mục dùng khi lập phiếu.</li>
+<li>📈 Báo Cáo — báo cáo tổng hợp, xuất Excel, gửi email.</li>
+<li>🔍 Tra Cứu — tìm/xem chi tiết phiếu, hủy phiếu.</li>
+<li>⚙️ Quản Trị — chỉ ADMIN.</li>
+</ul>
+
+<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;">
+
+<h3>Thu - Chi - Hủy phiếu</h3>
+<h4>Quy trình Thu - Chi - Hủy phiếu</h4>
+<h4>1. Lập Phiếu Thu</h4>
+<ol>
+<li>Vào menu "Thu Tiền".</li>
+<li>Chọn Quỹ: "Quỹ tiền mặt" hoặc "Quỹ công đoàn".</li>
+<li>Chọn Loại giao dịch: "Thu thường" hoặc "Thu công nợ" (thu tiền khách trả nợ cũ).</li>
+<li>Nếu chọn "Thu công nợ": chọn Đối tượng trước — hệ thống hiện các khoản công nợ "Còn nợ" của đối tượng đó để chọn.</li>
+<li>Nhập Ngày thu, Người nộp tiền, Đối tượng, Loại thu, Số tiền, Nội dung thu.</li>
+<li>(Tùy chọn) Mở phần "Thông tin hạch toán Sổ Quỹ" để nhập Ngày hạch toán / Tài khoản / TK đối ứng / Mã nhân viên / Chi nhánh — bỏ trống thì lấy mặc định (TK 1111).</li>
+<li>Bấm "💾 Lưu Phiếu Thu".</li>
+</ol>
+<p>Hệ thống tự sinh Số phiếu thu (PT000001…), cộng vào Sổ Quỹ tương ứng, và tự trừ vào khoản công nợ đã chọn nếu là "Thu công nợ".</p>
+<h4>2. Lập Phiếu Chi</h4>
+<p>Tương tự Phiếu Thu, tại menu "Chi Tiền": chọn Quỹ, Loại giao dịch ("Chi thường"/"Trả công nợ"), Người nhận tiền, Đối tượng, Loại chi, Số tiền, Nội dung chi → "💾 Lưu Phiếu Chi". Số phiếu chi sinh tự động dạng PC000001…</p>
+<h4>3. Hủy Phiếu (khi lập sai)</h4>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Hệ thống KHÔNG cho sửa/xóa phiếu đã lập — mọi chứng từ sai phải HỦY (giữ nguyên lịch sử) rồi lập lại phiếu mới nếu cần.</div>
+<ol>
+<li>Vào menu "Tra Cứu".</li>
+<li>Tìm phiếu cần hủy: nhập Số phiếu hoặc lọc theo ngày/Đối tượng/Nội dung/Người lập, bấm "Tìm kiếm".</li>
+<li>Bấm "Xem" ở cuối dòng phiếu để mở Chi tiết.</li>
+<li>Nếu phiếu đang "Hợp lệ" và bạn là ADMIN/THU_QUY, sẽ hiện nút đỏ "🗑️ Hủy phiếu này".</li>
+<li>Bấm vào, nhập Lý do hủy (bắt buộc), xác nhận.</li>
+</ol>
+<p>Sau khi hủy: phiếu chuyển "Đã hủy" kèm lý do, bị loại khỏi Sổ Quỹ; nếu là Thu/Trả công nợ thì khoản nợ liên quan được tự hoàn tác. Mọi thao tác được ghi vào Nhật ký hệ thống.</p>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Không hủy được nếu phiếu đã "Đã hủy" từ trước, hoặc ngày của phiếu đã bị Khóa Sổ — phải Mở khóa ngày đó trước (xem tab "Khóa Sổ - Quản Trị").</div>
+
+<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;">
+
+<h3>Công Nợ</h3>
+<h4>Quy trình quản lý Công Nợ</h4>
+<ol>
+<li>(Chỉ ADMIN) Vào "Công Nợ" > bấm "+ Thêm khoản Công Nợ".</li>
+<li>Chọn Đối tượng, Loại ("Phải thu"/"Phải trả"), nhập Ngày phát sinh, Số tiền phát sinh, Hạn thanh toán (nếu có), Nội dung, rồi Lưu.</li>
+<li>Khi phát sinh thu/trả tiền cho khoản nợ đó: lập Phiếu Thu ("Thu công nợ") hoặc Phiếu Chi ("Trả công nợ"), nhớ chọn đúng khoản công nợ trong danh sách hiện ra.</li>
+<li>Theo dõi tại trang "Công Nợ": lọc theo Loại / Trạng thái ("Còn nợ"/"Đã tất toán").</li>
+<li>Cuối kỳ, vào "Báo Cáo" > "Công nợ tổng hợp" (đối chiếu theo đối tượng, theo kỳ) hoặc "Công nợ quá hạn" (tự động liệt kê khoản quá hạn tính đến hôm nay).</li>
+</ol>
+
+<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;">
+
+<h3>Sổ Quỹ - Sổ Cơm</h3>
+<h4>Sổ Quỹ / Sổ Quỹ Công Đoàn / Sổ Cơm</h4>
+<h4>Theo dõi Sổ Quỹ</h4>
+<ol>
+<li>Vào "Sổ Quỹ" (quỹ tiền mặt) hoặc "Sổ Quỹ Công Đoàn".</li>
+<li>Lọc theo khoảng ngày, Loại giao dịch, hoặc Người lập nếu cần.</li>
+<li>Xem danh sách kèm cột Tồn lũy kế sau mỗi dòng.</li>
+<li>Bấm "⬇ Xuất Excel" để tải file .xlsx đúng khuôn sổ kế toán chi tiết (dòng Tồn đầu kỳ, cột Nợ/Có, kẻ khung).</li>
+</ol>
+<h4>Nhập Sổ Cơm hàng ngày</h4>
+<ol>
+<li>Vào "Sổ Cơm", chọn Ngày, nhập Số suất Trưa/Tối (đơn giá tự lấy mặc định, có thể sửa).</li>
+<li>Nếu ngày đó có tạm ứng tiền cơm: nhập thêm Ngày tạm ứng + Số tiền tạm ứng.</li>
+<li>Lưu — nếu ngày đó đã có dữ liệu, hệ thống tự cập nhật lại (không tạo trùng).</li>
+</ol>
+<p>Bảng Sổ Cơm theo tháng hiển thị Tổng suất, Thành tiền từng ngày và cột Tồn quỹ cơm tính lũy kế tự động.</p>
+
+<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;">
+
+<h3>Báo Cáo</h3>
+<ul>
+<li><b>Thu - Chi</b>: chọn khoảng ngày (+ lọc Loại/Người lập) → xem Tồn đầu kỳ – Tổng Thu – Tổng Chi – Tồn cuối kỳ và chi tiết → Xuất Excel hoặc In/Xuất PDF.</li>
+<li><b>Công nợ tổng hợp</b>: chọn Loại công nợ + khoảng ngày → xem Đầu kỳ/Phát sinh/Đã thu-trả/Cuối kỳ theo từng đối tượng → Xuất Excel.</li>
+<li><b>Công nợ quá hạn</b>: danh sách tự động các khoản quá hạn tính đến hôm nay.</li>
+<li><b>Báo cáo ngày (Keo)</b>: chọn 1 ngày → xem Nhập/Thanh toán Keo trong ngày (theo Nguồn gốc, theo Đại lý DT/QT/KL), chi tiết phiếu cân, tồn quỹ tiền mặt đầu/cuối ngày → Xuất Excel hoặc Gửi Email.</li>
+<li><b>Báo cáo tháng</b>: chọn Tháng/Năm → xem tổng quan Keo trong tháng, tồn quỹ tiền mặt & công đoàn cuối tháng, Sổ Cơm trong tháng → Xuất Excel (1 file gồm 5 sheet: Quy_TamUng, KEO_NHAP, CK_KEO, COM, QUY_CongDoan) hoặc Gửi Email.</li>
+</ul>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Nút "Gửi Email" gửi tới đúng danh sách email đã cấu hình ở Quản Trị > "Báo cáo ngày (Keo)".</div>
+
+<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;">
+
+<h3>Khóa Sổ - Quản Trị</h3>
+<h4>Khóa Sổ và Quản Trị (chỉ ADMIN)</h4>
+<h4>Khóa Sổ cuối kỳ</h4>
+<ol>
+<li>Vào "Quản Trị" > tab "Khóa Sổ".</li>
+<li>Chọn Ngày cần khóa (sau khi đã đối chiếu số liệu ngày đó chính xác), bấm Khóa.</li>
+<li>Sau khi khóa: không ai (kể cả ADMIN) lập/sửa/hủy được Phiếu Thu/Chi vào đúng ngày đó.</li>
+<li>Nếu cần sửa lại: bấm "Mở khóa", bắt buộc nhập Lý do mở khóa (lưu vào lịch sử để truy vết).</li>
+</ol>
+<h4>Người dùng</h4>
+<p>Bấm "+ Thêm người dùng" để tạo tài khoản (Tên đăng nhập, Mật khẩu ≥ 6 ký tự, Họ tên, Vai trò). Có thể Khóa/Mở khóa từng tài khoản (trừ tài khoản đang đăng nhập).</p>
+<h4>Nhật ký hệ thống</h4>
+<p>Ghi lại MỌI thao tác Thêm/Sửa/Hủy quan trọng (ai làm, lúc nào, dữ liệu trước/sau) — lọc theo Chức năng/Người thao tác/Mã chứng từ để tra soát khi có sai lệch.</p>
+<h4>Cấu hình Báo cáo ngày (Keo)</h4>
+<ol>
+<li>Nhập (hoặc dán nguyên link) ID 2 Google Sheet nguồn: "PhanTichNhapTT_DRAFT" và "PhieuCan_DN".</li>
+<li>Nhập danh sách Email nhận báo cáo, nhiều email cách nhau bởi dấu phẩy.</li>
+<li>Bấm "💾 Lưu cấu hình".</li>
+</ol>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Tài khoản Google đứng tên deploy web app phải có quyền Xem (Viewer) trên cả 2 Google Sheet nguồn thì mới đọc được dữ liệu.</div>
+
+<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;">
+
+<h3>Phân quyền</h3>
+<h4>Bảng phân quyền theo chức năng</h4>
+<ul>
+<li><b>Xem Dashboard, Sổ Quỹ, Sổ Quỹ Công Đoàn, Sổ Cơm, Tra Cứu</b> — ADMIN: ✔, THU_QUY: ✔, XEM: ✔</li>
+<li><b>Lập Phiếu Thu / Phiếu Chi</b> — ADMIN: ✔, THU_QUY: ✔, XEM: ✘</li>
+<li><b>Hủy Phiếu Thu / Chi</b> — ADMIN: ✔, THU_QUY: ✔, XEM: ✘</li>
+<li><b>Nhập / sửa Sổ Cơm</b> — ADMIN: ✔, THU_QUY: ✔, XEM: ✘</li>
+<li><b>Xem trang Công Nợ</b> — ADMIN: ✔, THU_QUY: ✘, XEM: ✔</li>
+<li><b>Tạo khoản Công Nợ mới</b> — ADMIN: ✔, THU_QUY: ✘, XEM: ✘</li>
+<li><b>Xem trang Báo Cáo + Xuất Excel</b> — ADMIN: ✔, THU_QUY: ✘, XEM: ✔</li>
+<li><b>Gửi Email báo cáo (ngày/tháng)</b> — ADMIN: ✔, THU_QUY: ✘, XEM: ✘</li>
+<li><b>Xem/Thêm/Sửa Đối Tượng, Danh Mục</b> — ADMIN: ✔, THU_QUY: ✘, XEM: ✘</li>
+<li><b>Quản Trị (Người dùng, Khóa Sổ, Nhật ký, Cấu hình báo cáo Keo)</b> — ADMIN: ✔, THU_QUY: ✘, XEM: ✘</li>
+</ul>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> THU_QUY không có mục "Công Nợ" và "Báo Cáo" trên menu; XEM xem được nhưng không sửa/lập được gì. "Gửi Email" chỉ ADMIN dùng được.</div>
+
+<hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;">
+
+<h3>Xử lý sự cố</h3>
+<h4>Xử lý sự cố thường gặp</h4>
+<h4>Trang cứ hiện "Đang tải..." mãi không lên số liệu</h4>
+<p>Tải lại trang (F5) và kiểm tra kết nối mạng. Nếu vẫn lỗi ở đúng 1 màn hình cụ thể, báo lại chính xác màn hình đó.</p>
+<h4>Lỗi "You do not have permission to call UrlFetchApp.fetch"</h4>
+<p>ADMIN vào Apps Script Editor, chọn 1 hàm bất kỳ liên quan xuất Excel/gửi email ở ô chọn hàm trên cùng, bấm Run, và bấm "Cho phép" khi Google hỏi cấp quyền — chỉ cần làm 1 lần.</p>
+<h4>Lỗi "Illegal spreadsheet id or key"</h4>
+<p>ID Google Sheet nguồn trong Quản Trị > "Báo cáo ngày (Keo)" chưa đúng — dán lại nguyên đường link Google Sheet, hệ thống tự tách lấy ID.</p>
+<h4>Không lập/hủy được phiếu, báo "Ngày ... đã bị khóa sổ"</h4>
+<p>Ngày đó đã bị ADMIN khóa sổ — vào Quản Trị > Khóa Sổ, Mở khóa ngày đó (nhập lý do) rồi thao tác lại.</p>
+<h4>Không thấy nút "Hủy phiếu này"</h4>
+<p>Kiểm tra: phiếu đã "Đã hủy" từ trước (không hủy lại được), hoặc tài khoản đang đăng nhập là vai trò XEM (không có quyền hủy).</p>

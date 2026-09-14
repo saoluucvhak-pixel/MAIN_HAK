@@ -55,6 +55,24 @@ function _includeGuide(filename) {
 }
 
 /**
+ * Danh sách công cụ độc lập (file HTML tự chạy trên trình duyệt, không cần
+ * deploy webapp riêng) được phép nhúng qua getToolContent() — chỉ cho phép
+ * đúng các file trong danh sách này, không đọc file tuỳ ý theo tên client gửi lên.
+ */
+var TOOL_FILES = ['Tool_PhanBoKhoiLuong'];
+
+/**
+ * Trả về nội dung HTML đầy đủ của 1 công cụ độc lập để client nhúng vào
+ * iframe qua srcdoc (xem type:'tool' trong getMenu() và selectItem() ở Index.html).
+ */
+function getToolContent(toolFile) {
+  if (TOOL_FILES.indexOf(toolFile) === -1) {
+    throw new Error('Công cụ không hợp lệ: ' + toolFile);
+  }
+  return HtmlService.createHtmlOutputFromFile(toolFile).getContent();
+}
+
+/**
  * Danh sách các hệ thống con có thể sửa URL trực tiếp từ màn Quản trị.
  * Dùng chung cho getAdminInfo() và setUrlOverride() để validate key.
  */
@@ -106,7 +124,8 @@ function getMenu() {
     {
       id: 'congcu', type: 'group', icon: '🧮', name: 'Công cụ kế toán',
       children: [
-        { id: 'gtgt', type: 'placeholder', name: 'Đối chiếu thuế GTGT', note: 'Đang phát triển' }
+        { id: 'gtgt', type: 'placeholder', name: 'Đối chiếu thuế GTGT', note: 'Đang phát triển' },
+        { id: 'cc_phanbokhoiluong', type: 'tool', name: 'Phân bổ khối lượng tính lương', toolFile: 'Tool_PhanBoKhoiLuong' }
       ]
     },
     {

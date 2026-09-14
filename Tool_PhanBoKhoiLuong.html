@@ -1,0 +1,2189 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Phân Bổ Khối Lượng Tính Lương — HAK Group</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+  :root{
+    --bg:#eef1e9;
+    --surface:#ffffff;
+    --surface-2:#e3e8da;
+    --surface-3:#d8dfc9;
+    --ink:#1f2a22;
+    --ink-muted:#59665b;
+    --ink-faint:#8a9587;
+    --line:#c9d0c0;
+    --line-soft:#dbe1d2;
+    --accent:#2f6e4f;
+    --accent-strong:#1f4e37;
+    --accent-soft:#dce8de;
+    --warn:#a8631f;
+    --warn-soft:#f3e3cd;
+    --danger:#a83b2e;
+    --danger-soft:#f4dcd7;
+    --good:#256b57;
+    --good-soft:#d9ece3;
+    --shadow: 0 1px 2px rgba(31,42,34,0.06), 0 6px 20px -8px rgba(31,42,34,0.18);
+    --radius: 12px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12160f;
+      --surface:#1a2018;
+      --surface-2:#212a1d;
+      --surface-3:#2b3624;
+      --ink:#e9ede2;
+      --ink-muted:#a9b5a0;
+      --ink-faint:#748069;
+      --line:#38442f;
+      --line-soft:#2b3624;
+      --accent:#72bf94;
+      --accent-strong:#9adcb6;
+      --accent-soft:#22362a;
+      --warn:#e2a15a;
+      --warn-soft:#3a2c19;
+      --danger:#e58c7c;
+      --danger-soft:#3a211d;
+      --good:#7fd0b4;
+      --good-soft:#1c332b;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12160f;
+    --surface:#1a2018;
+    --surface-2:#212a1d;
+    --surface-3:#2b3624;
+    --ink:#e9ede2;
+    --ink-muted:#a9b5a0;
+    --ink-faint:#748069;
+    --line:#38442f;
+    --line-soft:#2b3624;
+    --accent:#72bf94;
+    --accent-strong:#9adcb6;
+    --accent-soft:#22362a;
+    --warn:#e2a15a;
+    --warn-soft:#3a2c19;
+    --danger:#e58c7c;
+    --danger-soft:#3a211d;
+    --good:#7fd0b4;
+    --good-soft:#1c332b;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.5);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Public Sans", -apple-system, "Segoe UI", sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:"Archivo", "Public Sans", sans-serif; text-wrap:balance; margin:0;}
+  .mono, .num{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums;}
+  a{color:var(--accent-strong);}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 24px 80px;}
+
+  /* header */
+  .topbar{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:20px;
+    padding-bottom:20px; margin-bottom:24px; border-bottom:1px solid var(--line);
+  }
+  .brand-eyebrow{
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent);
+    font-weight:700; margin-bottom:6px; display:block;
+  }
+  .topbar h1{font-size:26px; font-weight:800; letter-spacing:-0.01em; color:var(--ink);}
+  .topbar p{margin:6px 0 0; color:var(--ink-muted); font-size:14.5px; max-width:56ch;}
+  .theme-note{font-size:12px; color:var(--ink-faint); text-align:right; max-width:220px; padding-top:4px;}
+
+  /* stepper */
+  .steps{display:flex; gap:0; margin-bottom:28px; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--surface);}
+  .step-pill{
+    flex:1; padding:12px 16px; display:flex; align-items:center; gap:10px;
+    border-right:1px solid var(--line); font-size:13px; color:var(--ink-muted); font-weight:600;
+  }
+  .step-pill:last-child{border-right:none;}
+  .step-pill .dot{
+    width:22px;height:22px;border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; background:var(--surface-2); color:var(--ink-faint); font-family:"IBM Plex Mono",monospace;
+  }
+  .step-pill.done .dot{background:var(--accent); color:#fff;}
+  .step-pill.active{color:var(--ink); background:var(--accent-soft);}
+  .step-pill.active .dot{background:var(--accent); color:#fff;}
+  .step-pill.warn .dot{background:var(--warn); color:#fff;}
+
+  /* cards */
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 24px; margin-bottom:20px; box-shadow:var(--shadow);
+  }
+  .card-head{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--line-soft); flex-wrap:wrap;
+  }
+  .card-head h2{
+    font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--accent-strong); display:flex; align-items:center; gap:10px;
+  }
+  .step-num{
+    width:24px;height:24px;border-radius:50%; flex:none; display:inline-flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; background:var(--accent); color:#fff; font-family:"IBM Plex Mono",monospace;
+    text-transform:none; letter-spacing:normal;
+  }
+  .card-head .hint{font-size:12.5px; color:var(--ink-faint); text-transform:none; letter-spacing:normal; font-weight:600;}
+  .card-sub{font-size:13px; color:var(--ink-muted); margin:0 0 16px;}
+
+  .cols2{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  /* min-width:0 la bat buoc: mac dinh 1 grid item khong co-lai nho hon do rong TU NHIEN cua
+     noi dung ben trong (vd bang preview nhieu cot, white-space:nowrap) du ban than no da co
+     overflow-x:auto — thieu dong nay khien ca card/trang bi day rong ra ngoai, "tran vien". */
+  .cols2 > div{min-width:0;}
+  @media (max-width:860px){ .cols2{grid-template-columns:1fr;} }
+
+  /* dropzone */
+  .dropzone{
+    border:1.5px dashed var(--line); border-radius:10px; padding:22px; text-align:center;
+    cursor:pointer; transition:border-color .15s, background .15s; background:var(--surface-2);
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--accent); background:var(--accent-soft);}
+  .dropzone .icon{font-size:22px; margin-bottom:6px; display:block;}
+  .dropzone .fname{font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--accent-strong); margin-top:8px; word-break:break-all;}
+  .dropzone input{display:none;}
+  .dz-title{font-weight:600; font-size:14px;}
+  .dz-desc{font-size:12.5px; color:var(--ink-faint); margin-top:4px;}
+
+  .field-row{display:flex; align-items:center; gap:10px; margin-top:10px; font-size:13px;}
+  .field-row label{width:150px; flex:none; color:var(--ink-muted); font-weight:600;}
+  select, button, input[type=text]{
+    font-family:inherit; font-size:13px; border-radius:8px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); padding:7px 10px;
+  }
+  select{flex:1; min-width:0;}
+  select:disabled{opacity:.5;}
+  input:disabled{opacity:.6; cursor:not-allowed; background:var(--surface-2);}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-weight:700;
+    border:1px solid var(--accent); background:var(--accent); color:#fff; padding:10px 18px; border-radius:9px;
+    font-size:13.5px; transition:filter .12s, transform .05s;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn:active{transform:translateY(1px);}
+  .btn.secondary{background:transparent; color:var(--accent-strong); border-color:var(--line);}
+  .btn.secondary:hover{background:var(--accent-soft); border-color:var(--accent);}
+  .btn:disabled{opacity:.45; cursor:not-allowed; filter:none;}
+  .btn.small{padding:6px 12px; font-size:12.5px; border-radius:7px;}
+  .link-btn{background:none;border:none;color:var(--accent-strong);font-weight:600;font-size:12.5px;cursor:pointer;padding:0;text-decoration:underline; text-underline-offset:2px;}
+
+  table.mini{width:100%; border-collapse:collapse; font-size:12px; margin-top:12px;}
+  table.mini th, table.mini td{padding:5px 8px; border-bottom:1px solid var(--line-soft); text-align:left; white-space:nowrap;}
+  table.mini th{color:var(--ink-faint); font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:.04em;}
+  .mini-wrap{overflow-x:auto; border:1px solid var(--line-soft); border-radius:8px;}
+
+  .mapping-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px 16px; margin-top:14px;}
+  .map-item label{display:block; font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; font-weight:700;}
+  .map-item .req{color:var(--danger);}
+  .map-item select, .map-item input[type=text]{width:100%;}
+
+  /* stat tiles */
+  .tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:6px;}
+  @media (max-width:860px){ .tiles{grid-template-columns:repeat(2,1fr);} }
+  .tile{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:10px; padding:14px 16px;}
+  .tile .label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:700;}
+  .tile .val{font-family:"IBM Plex Mono",monospace; font-size:22px; font-weight:600; margin-top:4px; color:var(--ink);}
+  .tile.warn{background:var(--warn-soft); border-color:transparent;}
+  .tile.warn .val{color:var(--warn);}
+  .tile.good{background:var(--good-soft);}
+  .tile.good .val{color:var(--good);}
+
+  .chip{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:99px;}
+  .chip.warn{background:var(--warn-soft); color:var(--warn);}
+  .chip.danger{background:var(--danger-soft); color:var(--danger);}
+  .chip.good{background:var(--good-soft); color:var(--good);}
+  .chip.neutral{background:var(--surface-3); color:var(--ink-muted);}
+
+  .bars{display:flex; flex-direction:column; gap:10px; margin:18px 0 4px;}
+  .bar-row{display:grid; grid-template-columns:170px 1fr 90px; align-items:center; gap:12px; font-size:13px;}
+  .bar-row .name{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .bar-track{background:var(--surface-3); border-radius:99px; height:10px; overflow:hidden;}
+  .bar-fill{background:linear-gradient(90deg, var(--accent), var(--accent-strong)); height:100%; border-radius:99px;}
+  .bar-row .val{text-align:right; font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--ink-muted);}
+
+  .tabs{display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:14px;}
+  .tab{padding:9px 14px; font-size:13px; font-weight:600; color:var(--ink-faint); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;}
+  .tab.active{color:var(--accent-strong); border-color:var(--accent);}
+
+  table.data{border-collapse:collapse; font-size:12.5px; width:100%;}
+  table.data th, table.data td{padding:7px 10px; border-bottom:1px solid var(--line-soft); white-space:nowrap;}
+  table.data thead th{position:sticky; top:0; background:var(--surface-2); color:var(--ink-muted); font-weight:700; text-align:right; font-size:11px;}
+  table.data thead th:first-child, table.data thead th:nth-child(2){text-align:left;}
+  table.data td{text-align:right; font-family:"IBM Plex Mono",monospace;}
+  table.data td:first-child, table.data td:nth-child(2){text-align:left; font-family:"Public Sans",sans-serif;}
+  table.data tbody tr:hover{background:var(--surface-2);}
+  table.data tr.dept-row{background:var(--surface-2); font-weight:700;}
+  table.data tr.dept-row td{border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+  table.data tr.total-row{background:var(--surface-3); font-weight:700;}
+  .table-scroll{overflow-x:auto; border:1px solid var(--line-soft); border-radius:10px; max-height:520px; overflow-y:auto;}
+
+  .warn-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .warn-list li{
+    display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:8px;
+    background:var(--warn-soft); font-size:12.5px; color:var(--ink);
+  }
+  .warn-list li.danger{background:var(--danger-soft);}
+  .warn-list b{font-family:"IBM Plex Mono",monospace;}
+
+  .empty-state{text-align:center; padding:36px 20px; color:var(--ink-faint); font-size:13.5px;}
+
+  footer{margin-top:40px; padding-top:18px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-faint); text-align:center;}
+
+  .divider{height:1px; background:var(--line-soft); margin:18px 0;}
+
+  .export-row{display:flex; gap:12px; align-items:center; flex-wrap:wrap;}
+  .export-note{font-size:12px; color:var(--ink-faint); margin-top:10px;}
+
+  ::selection{background:var(--accent-soft);}
+  .visually-hidden{position:absolute; width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+  button:focus-visible, .dropzone:focus-visible, select:focus-visible, .tab:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <span class="brand-eyebrow">HAK Group · Công cụ tính lương</span>
+      <h1>Phân bổ khối lượng tính lương</h1>
+      <p>Nạp <b>bảng khối lượng</b> (phiếu cân) và <b>bảng phòng ban</b> (danh sách nhân sự) — công cụ tự chia sản lượng cho từng phòng ban rồi tới từng công nhân theo đúng cách tính đang dùng, và xuất ra file Excel.</p>
+    </div>
+    <div class="theme-note">Chạy hoàn toàn trong trình duyệt trên máy bạn — dữ liệu lương không gửi đi đâu cả.</div>
+  </div>
+
+  <div class="steps">
+    <div class="step-pill" id="step-pill-1"><span class="dot">1</span> Khối lượng</div>
+    <div class="step-pill" id="step-pill-2"><span class="dot">2</span> Bơm/Ban dăm</div>
+    <div class="step-pill" id="step-pill-3"><span class="dot">3</span> Phòng ban</div>
+    <div class="step-pill" id="step-pill-4"><span class="dot">4</span> Đơn giá &amp; bù lương</div>
+    <div class="step-pill" id="step-pill-5"><span class="dot">5</span> Kết quả</div>
+    <div class="step-pill" id="step-pill-6"><span class="dot">6</span> Xuất Excel</div>
+  </div>
+
+  <!-- STEP 1: KHOI LUONG -->
+  <div class="card" id="card-kl">
+    <div class="card-head">
+      <h2><span class="step-num">1</span> Bảng khối lượng (phiếu cân)</h2>
+      <button class="link-btn" id="btn-template-kl" type="button">Tải file mẫu</button>
+    </div>
+    <div class="card-sub">Mỗi dòng là một phiếu cân: ngày cân, khối lượng (tấn), mã phòng ban thực hiện, và tên công nhân vắng mặt hôm đó (nếu có).</div>
+    <div class="cols2">
+      <div>
+        <div class="dropzone" id="dz-kl" tabindex="0" role="button" aria-label="Tải lên bảng khối lượng">
+          <span class="icon">⚖️</span>
+          <div class="dz-title">Kéo thả hoặc bấm để chọn file</div>
+          <div class="dz-desc">.xlsx, .xls hoặc .csv</div>
+          <div class="fname" id="fname-kl"></div>
+          <input type="file" id="file-kl" accept=".xlsx,.xls,.csv" />
+        </div>
+        <div class="field-row" id="row-sheet-kl" style="display:none;">
+          <label for="sel-sheet-kl">Chọn sheet</label>
+          <select id="sel-sheet-kl"></select>
+        </div>
+      </div>
+      <div>
+        <div class="mini-wrap" id="preview-kl-wrap" style="display:none;">
+          <table class="mini" id="preview-kl"></table>
+        </div>
+        <div id="mapping-kl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: BOM/BAN DAM -->
+  <div class="card" id="card-bd">
+    <div class="card-head">
+      <h2><span class="step-num">2</span> Bảng bơm/ban dăm (tùy chọn)</h2>
+      <button class="link-btn" id="btn-template-bd" type="button">Tải file mẫu</button>
+    </div>
+    <div class="card-sub">Cùng định dạng như bảng khối lượng, nhưng mỗi dòng tính là 1 xe (không phải tấn) — mỗi phiếu vẫn cần mã phòng ban và tên người vắng nếu có, để chia đều số xe cho người có mặt.</div>
+    <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; margin-bottom:14px; cursor:pointer;">
+      <input type="checkbox" id="chk-bd-enable" style="width:16px;height:16px;">
+      Đơn vị này có tính lương theo bơm/ban dăm
+    </label>
+    <div id="bd-body" style="display:none;">
+      <div class="cols2">
+        <div>
+          <div class="dropzone" id="dz-bd" tabindex="0" role="button" aria-label="Tải lên bảng bơm/ban dăm">
+            <span class="icon">🚛</span>
+            <div class="dz-title">Kéo thả hoặc bấm để chọn file</div>
+            <div class="dz-desc">.xlsx, .xls hoặc .csv</div>
+            <div class="fname" id="fname-bd"></div>
+            <input type="file" id="file-bd" accept=".xlsx,.xls,.csv" />
+          </div>
+          <div class="field-row" id="row-sheet-bd" style="display:none;">
+            <label for="sel-sheet-bd">Chọn sheet</label>
+            <select id="sel-sheet-bd"></select>
+          </div>
+        </div>
+        <div>
+          <div class="mini-wrap" id="preview-bd-wrap" style="display:none;">
+            <table class="mini" id="preview-bd"></table>
+          </div>
+          <div id="mapping-bd"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: PHONG BAN -->
+  <div class="card" id="card-pb">
+    <div class="card-head">
+      <h2><span class="step-num">3</span> Bảng phòng ban (danh sách nhân sự)</h2>
+      <button class="link-btn" id="btn-template-pb" type="button">Tải file mẫu</button>
+    </div>
+    <div class="card-sub">Mỗi dòng là một nhân viên: mã &amp; tên phòng ban, họ tên, ngày vào làm / nghỉ việc (bỏ trống nếu vẫn đang làm).</div>
+    <div class="cols2">
+      <div>
+        <div class="dropzone" id="dz-pb" tabindex="0" role="button" aria-label="Tải lên bảng phòng ban">
+          <span class="icon">🧑‍🤝‍🧑</span>
+          <div class="dz-title">Kéo thả hoặc bấm để chọn file</div>
+          <div class="dz-desc">.xlsx, .xls hoặc .csv</div>
+          <div class="fname" id="fname-pb"></div>
+          <input type="file" id="file-pb" accept=".xlsx,.xls,.csv" />
+        </div>
+        <div class="field-row" id="row-sheet-pb" style="display:none;">
+          <label for="sel-sheet-pb">Chọn sheet</label>
+          <select id="sel-sheet-pb"></select>
+        </div>
+      </div>
+      <div>
+        <div class="mini-wrap" id="preview-pb-wrap" style="display:none;">
+          <table class="mini" id="preview-pb"></table>
+        </div>
+        <div id="mapping-pb"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: DON GIA & BU LUONG -->
+  <div class="card" id="card-luong">
+    <div class="card-head">
+      <h2><span class="step-num">4</span> Chấm công, đơn giá &amp; bù lương</h2>
+      <button class="link-btn" id="btn-template-attend" type="button">Tải file mẫu</button>
+    </div>
+    <div class="card-sub">Tùy chọn — chỉ cần nếu bạn muốn công cụ tính luôn ra <b>tiền</b> (sản lượng + bù lương), không chỉ số lượng. Bỏ trống bảng công thì công cụ vẫn chạy bình thường, chỉ dừng ở phần số lượng.</div>
+    <div class="cols2">
+      <div>
+        <div class="dropzone" id="dz-attend" tabindex="0" role="button" aria-label="Tải lên bảng công">
+          <span class="icon">🗓️</span>
+          <div class="dz-title">Bảng công cả tháng (họ tên + số công)</div>
+          <div class="dz-desc">.xlsx, .xls hoặc .csv</div>
+          <div class="fname" id="fname-attend"></div>
+          <input type="file" id="file-attend" accept=".xlsx,.xls,.csv" />
+        </div>
+        <div class="field-row" id="row-sheet-attend" style="display:none;">
+          <label for="sel-sheet-attend">Chọn sheet</label>
+          <select id="sel-sheet-attend"></select>
+        </div>
+      </div>
+      <div>
+        <div class="mini-wrap" id="preview-attend-wrap" style="display:none;">
+          <table class="mini" id="preview-attend"></table>
+        </div>
+        <div id="mapping-attend"></div>
+      </div>
+    </div>
+    <div class="divider" id="attend-daily-divider" style="display:none;"></div>
+    <div id="attend-daily-wrap" style="display:none;">
+      <div class="card-head" style="border-bottom:none;margin-bottom:8px;padding-bottom:0;">
+        <span class="card-sub" style="margin:0;">Bắt buộc để bù lương cá nhân tính đúng công thức Đại Hiệp — bảng công <b>theo NGÀY</b> (công BT từng ngày, bậc thang 0,5, trần 1 công ngày thường/1,5 công Chủ Nhật). Không tải bảng này thì bù lương cá nhân sẽ tạm dùng mức sàn cố định (kém chính xác hơn — có cảnh báo rõ trong kết quả).</span>
+        <button class="link-btn" id="btn-template-attend-daily" type="button">Tải file mẫu</button>
+      </div>
+      <div class="cols2">
+        <div>
+          <div class="dropzone" id="dz-attendDaily" tabindex="0" role="button" aria-label="Tải lên bảng công theo ngày">
+            <span class="icon">📅</span>
+            <div class="dz-title">Bảng công theo ngày (công BT từng ngày)</div>
+            <div class="dz-desc">.xlsx, .xls hoặc .csv</div>
+            <div class="fname" id="fname-attendDaily"></div>
+            <input type="file" id="file-attendDaily" accept=".xlsx,.xls,.csv" />
+          </div>
+          <div class="field-row" id="row-sheet-attendDaily" style="display:none;">
+            <label for="sel-sheet-attendDaily">Chọn sheet</label>
+            <select id="sel-sheet-attendDaily"></select>
+          </div>
+        </div>
+        <div>
+          <div class="mini-wrap" id="preview-attendDaily-wrap" style="display:none;">
+            <table class="mini" id="preview-attendDaily"></table>
+          </div>
+          <div id="mapping-attendDaily"></div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="mapping-grid">
+      <div class="map-item"><label>Đơn giá khối lượng (đ/tấn)</label><input type="text" id="inp-giakl" value="6000"></div>
+      <div class="map-item"><label>Đơn giá bơm/ban dăm (đ/xe)</label><input type="text" id="inp-giabd" value="10000"></div>
+      <div class="map-item"><label>Mức sàn bù lương (đ/ngày công)</label><input type="text" id="inp-mucsan" value="200000"></div>
+      <div class="map-item"><label>Ngưỡng công tối thiểu để được bù (cơ chế theo tổ)</label><input type="text" id="inp-nguong" value="15"></div>
+      <div class="map-item">
+        <label>Số ngày chuẩn/tháng (cơ chế theo tổ)</label>
+        <input type="text" id="inp-songaychuan" value="" readonly disabled placeholder="tự động theo dữ liệu">
+      </div>
+      <div class="map-item">
+        <label>Cơ chế bù lương</label>
+        <select id="sel-cochebu">
+          <option value="none">Không áp dụng</option>
+          <option value="group">Theo bình quân cả tổ</option>
+          <option value="individual">Theo từng cá nhân (mẫu Đại Hiệp)</option>
+        </select>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="export-row">
+      <button class="btn" id="btn-compute" disabled>Tính phân bổ</button>
+      <span class="hint" id="compute-hint" style="font-size:12.5px;color:var(--ink-faint);">Tải đủ bảng khối lượng + phòng ban để bắt đầu</span>
+    </div>
+  </div>
+
+  <!-- STEP 5: RESULTS -->
+  <div class="card" id="card-results" style="display:none;">
+    <div class="card-head">
+      <h2><span class="step-num">5</span> Kết quả phân bổ</h2>
+      <span class="hint" id="result-range"></span>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div id="warn-panel" style="display:none;">
+      <div class="divider"></div>
+      <h3 style="font-size:14px;margin-bottom:10px;">Cần kiểm tra lại</h3>
+      <ul class="warn-list" id="warn-list"></ul>
+    </div>
+
+    <div class="divider"></div>
+    <h3 style="font-size:14px;margin-bottom:4px;">Sản lượng theo phòng ban</h3>
+    <div class="bars" id="dept-bars"></div>
+
+    <div class="divider"></div>
+    <div class="tabs">
+      <div class="tab active" data-tab="dept">Bảng theo phòng ban</div>
+      <div class="tab" data-tab="emp">Chi tiết theo công nhân</div>
+      <div class="tab" data-tab="audit">Đối soát theo phiếu cân</div>
+      <div class="tab" data-tab="luong">Tiền lương &amp; bù lương</div>
+    </div>
+    <div class="table-scroll" id="tab-content"></div>
+  </div>
+
+  <!-- STEP 6: EXPORT -->
+  <div class="card" id="card-export" style="display:none;">
+    <div class="card-head"><h2><span class="step-num">6</span> Xuất Excel</h2></div>
+    <div class="card-sub">File trình bày theo mẫu báo cáo nội bộ: có khối tiêu đề, kẻ khung, tô màu tiêu đề bảng, cố định dòng đầu và khối ký tên. Sheet đầu tiên là "Hướng dẫn sử dụng" giải thích từng sheet và cách tính. Số sheet thay đổi tùy bạn có bật bơm/ban dăm và nạp bảng công hay không.</div>
+    <div class="mapping-grid" style="margin-bottom:6px;">
+      <div class="map-item"><label>Tên đơn vị / công ty</label><input type="text" id="inp-donvi" placeholder="VD: Công ty TNHH Hoàng Anh Khôi"></div>
+      <div class="map-item"><label>Tiêu đề kỳ báo cáo</label><input type="text" id="inp-thang" placeholder="VD: Tháng 06/2026"></div>
+      <div class="map-item"><label>Người lập bảng</label><input type="text" id="inp-nguoilap" placeholder="Họ tên người lập"></div>
+    </div>
+    <div class="export-row">
+      <button class="btn" id="btn-export">⬇ Tải file Excel kết quả</button>
+      <span class="export-note" id="export-note"></span>
+    </div>
+  </div>
+
+  <footer>Công cụ nội bộ HAK Group — mở lại bằng trình duyệt bất cứ lúc nào, không cần cài đặt. Cách tính: chia đều khối lượng mỗi phiếu cân cho các công nhân đang làm việc và không có tên trong "NV vắng" của phòng ban phụ trách phiếu đó.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------------------------------------------------------- */
+  /* Utilities                                                          */
+  /* ---------------------------------------------------------------- */
+  function stripDiacritics(str){
+    return String(str||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D");
+  }
+  function normHeader(h){
+    return stripDiacritics(h).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  }
+  function normLastWord(name){
+    var parts = String(name||"").trim().split(/\s+/);
+    return stripDiacritics(parts[parts.length-1]||"").toLowerCase();
+  }
+  function parseTokens(str){
+    if(!str) return [];
+    return String(str).split(/[,;\/\s]+/).map(function(s){return stripDiacritics(s).toLowerCase();})
+      .filter(function(s){return s && s !== "@";});
+  }
+  function excelSerialToDate(n){
+    // Excel serial date -> JS Date (handles the 1900 leap-year bug the same way Excel does)
+    var utc = Math.round((n - 25569) * 86400 * 1000);
+    return new Date(utc);
+  }
+  function toDate(v){
+    if(v instanceof Date && !isNaN(v)) return v;
+    if(typeof v === "number") return excelSerialToDate(v);
+    if(typeof v === "string" && v.trim()){
+      var s = v.trim();
+      // dd/mm/yyyy (or dd-mm-yyyy), optionally followed by a time part — match the date PREFIX,
+      // not the whole string, so a trailing " 00:00:00" doesn't fall through to the risky branch below.
+      var m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+      if(m) return new Date(Date.UTC(+m[3], +m[2]-1, +m[1]));
+      // yyyy-mm-dd (or yyyy/mm/dd), same idea — covers "2026-07-01 00:00:00" / "2026-07-01T00:00:00" etc.
+      var m2 = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if(m2) return new Date(Date.UTC(+m2[1], +m2[2]-1, +m2[3]));
+      // Last resort: let the browser parse it, but re-pack using its LOCAL calendar fields —
+      // NOT getUTCDate()/etc — because a datetime string with no explicit timezone (e.g.
+      // "2026-07-01 00:00:00", no "Z"/offset) is parsed as LOCAL midnight by JS. In a timezone
+      // ahead of UTC (Vietnam, UTC+7) reading that back with getUTCDate() rolls it back a day —
+      // "01/07" silently becomes "30/06". Re-anchoring to the LOCAL calendar date fixes that.
+      var d = new Date(s);
+      if(!isNaN(d)) return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    }
+    return null;
+  }
+  function isoDate(d){
+    return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");
+  }
+  function dispDate(d){
+    return String(d.getUTCDate()).padStart(2,"0")+"/"+String(d.getUTCMonth()+1).padStart(2,"0");
+  }
+  // Thang "chinh" cua dot du lieu = thang co nhieu NGAY KHAC NHAU xuat hien nhat trong dateKeys
+  // (dateKeys la danh sach ngay duy nhat, khong phai so phieu) — dung lam co so xac dinh "So ngay
+  // chuan" va de phat hien phieu cong le nam LAC thang (vd 1 phieu 31/05 lot vao du lieu thang 06).
+  // Duyet counts THEO THU TU THANG (khong phai thu tu insertion) de tie-break on dinh, khong phu
+  // thuoc vao thu tu ngay xuat hien trong workbook.
+  function dominantMonthFromDateKeys(dateKeys){
+    if(!dateKeys || !dateKeys.length) return null;
+    var counts = {};
+    dateKeys.forEach(function(dk){
+      var ym = dk.slice(0,7);
+      counts[ym] = (counts[ym]||0) + 1;
+    });
+    var best = null, bestCount = -1;
+    Object.keys(counts).sort().forEach(function(k){
+      if(counts[k] > bestCount){ bestCount = counts[k]; best = k; }
+    });
+    return best;
+  }
+  // Số ngày chuẩn/tháng = số ngày thực tế của tháng chiếm đa số trong dữ liệu đã nạp
+  // (vd tháng 6 -> 30, tháng 7 -> 31) — tự động, không cần người dùng nhập tay.
+  function daysInMonthFromDateKeys(dateKeys){
+    var best = dominantMonthFromDateKeys(dateKeys);
+    if(!best) return 30;
+    var parts = best.split("-");
+    var y = +parts[0], m = +parts[1];
+    return new Date(Date.UTC(y, m, 0)).getUTCDate();
+  }
+  function toNumber(v){
+    if(typeof v === "number") return v;
+    if(v == null) return NaN;
+    var s = String(v).trim().replace(/\./g,"").replace(",", ".");
+    // if the above nuked a normal decimal point number (e.g. "3.13") recover it
+    if(isNaN(parseFloat(s))){ return NaN; }
+    var direct = parseFloat(String(v).trim());
+    if(!isNaN(direct) && String(v).trim().match(/^-?\d+(\.\d+)?$/)) return direct;
+    return parseFloat(s);
+  }
+  function fmt(n, d){
+    if(n == null || isNaN(n)) return "";
+    return n.toLocaleString("vi-VN", {minimumFractionDigits:d||0, maximumFractionDigits:d==null?2:d});
+  }
+  function escapeHtml(s){
+    return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Field definitions                                                  */
+  /* ---------------------------------------------------------------- */
+  var KL_FIELDS = [
+    {key:"phieu",   label:"Phiếu cân",        req:false, variants:["phieu can","so phieu can","phieu","so phieu"]},
+    {key:"ngay",    label:"Ngày cân",         req:true,  variants:["ngay can 1","ngay can","ngay","ngay thang"]},
+    {key:"bienSo",  label:"Biển số xe",       req:false, variants:["bien so 1","bien so","bien so xe"]},
+    {key:"can1",    label:"Cân lần 1",        req:false, variants:["can lan 1"]},
+    {key:"can2",    label:"Cân lần 2",        req:false, variants:["can lan 2"]},
+    {key:"kl",      label:"Khối lượng (tấn)", req:true,  variants:["kl hang tan","kl hang","khoi luong tan","khoi luong","san luong","kl"]},
+    {key:"maPB",    label:"Mã phòng ban",     req:true,  variants:["ma phong ban","phong ban","ma to"]},
+    {key:"vangRaw", label:"NV vắng",          req:false, variants:["nv vang","vang","nhan vien vang","cong nhan vang"]}
+  ];
+  // Bơm/ban dăm dùng LẠI đúng thuật toán phân bổ của bảng khối lượng, nhưng đơn vị tính là XE
+  // (mỗi phiếu = 1 xe), không phải TẤN — nhãn cột phải nói rõ "xe" để người dùng không nhầm map
+  // nhầm cột cân nặng thật (vd "Cân lần 1/2") vào đây. Một số file gốc vẫn đặt tên cột này là
+  // "KL hàng (Tấn)" (dùng lại y hệt cột bên khối lượng, giá trị luôn =1/phiếu) trong khi file khác
+  // (vd mẫu Đại Hiệp) đặt tên đúng là "SL xe" — nên vẫn giữ các biến thể nhận-diện cũ, chỉ thêm
+  // các biến thể "xe" và đổi nhãn hiển thị.
+  var BD_FIELDS = KL_FIELDS.map(function(f){
+    if(f.key !== "kl") return f;
+    return {key:"kl", label:"Số lượng (xe)", req:true,
+      variants:["sl xe","so xe","so luong xe","so xe bd","luong xe","kl hang tan","kl hang","khoi luong tan","khoi luong","san luong","kl"]};
+  });
+  var PB_FIELDS = [
+    {key:"maPB",     label:"Mã phòng ban",    req:true,  variants:["ma phong ban","ma to"]},
+    {key:"tenPB",    label:"Tên phòng ban",   req:true,  variants:["ten phong ban","ten to"]},
+    {key:"maNV",     label:"Mã nhân viên",    req:false, variants:["ma nhan vien","ma nv"]},
+    {key:"hoTen",    label:"Họ và tên",       req:true,  variants:["ho va ten","ho ten","ten nhan vien"]},
+    {key:"ngayVao",  label:"Ngày vào làm",    req:false, variants:["ngay vao lam","ngay vao"]},
+    {key:"ngayNghi", label:"Ngày nghỉ việc",  req:false, variants:["ngay nghi viec","ngay nghi"]}
+  ];
+  var ATTEND_FIELDS = [
+    {key:"maNV",   label:"Mã nhân viên", req:false, variants:["ma nhan vien","ma nv"]},
+    {key:"hoTen",  label:"Họ và tên",    req:true,  variants:["ho va ten","ho ten","ten nhan vien"]},
+    {key:"soCong", label:"Số công",      req:true,  variants:["so cong","ngay cong","cong"]}
+  ];
+  // Bang cong THEO NGAY (cong BT tung ngay) — dung cho co che bu luong "individual" (mau Dai Hiep).
+  // Chi can 2 cot dinh danh, con cac cot NGAY (1..31) duoc TU DONG nhan dien theo tieu de cot
+  // (xem parseDayHeader) thay vi khai bao field co dinh, vi so cot ngay thay doi theo thang.
+  var ATTEND_DAILY_FIELDS = [
+    {key:"maNV",  label:"Mã nhân viên", req:false, variants:["ma nhan vien","ma nv"]},
+    {key:"hoTen", label:"Họ và tên",    req:true,  variants:["ho va ten","ho ten","ten nhan vien"]}
+  ];
+  function fieldSetFor(kind){
+    if(kind === "kl") return KL_FIELDS;
+    if(kind === "bd") return BD_FIELDS;
+    if(kind === "attend") return ATTEND_FIELDS;
+    if(kind === "attendDaily") return ATTEND_DAILY_FIELDS;
+    return PB_FIELDS;
+  }
+
+  function parseDayHeader(label){
+    if(label == null) return null;
+    var s = String(label).trim();
+    if(!s) return null;
+    if(/^\d{1,2}$/.test(s)){
+      var n = parseInt(s,10);
+      return (n>=1 && n<=31) ? n : null;
+    }
+    var m = s.match(/(\d{1,2})\s*$/);
+    if(m){
+      var n2 = parseInt(m[1],10);
+      if(n2>=1 && n2<=31) return n2;
+    }
+    return null;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* State                                                              */
+  /* ---------------------------------------------------------------- */
+  function emptyTableState(){
+    return {workbook:null, sheetName:null, headerRow:0, headers:[], rows:[], mapping:{}, parsed:null};
+  }
+  var state = {
+    kl:  emptyTableState(),
+    bd:  emptyTableState(),
+    pb:  emptyTableState(),
+    attend: emptyTableState(),
+    attendDaily: emptyTableState(),
+    bdEnabled: false,
+    result:null, resultBd:null, luong:null
+  };
+
+  /* ---------------------------------------------------------------- */
+  /* File loading                                                       */
+  /* ---------------------------------------------------------------- */
+  function readWorkbook(file, cb){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var wb = XLSX.read(new Uint8Array(e.target.result), {type:"array", cellDates:true});
+        cb(null, wb);
+      }catch(err){ cb(err); }
+    };
+    reader.onerror = function(){ cb(reader.error); };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function sheetToAoa(wb, sheetName){
+    var ws = wb.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json(ws, {header:1, defval:null, blankrows:false});
+  }
+
+  function findHeaderRow(aoa, fieldSet){
+    var bestIdx = 0, bestScore = -1;
+    var limit = Math.min(aoa.length, 6);
+    for(var r=0;r<limit;r++){
+      var row = aoa[r] || [];
+      var norm = row.map(normHeader);
+      var score = 0;
+      fieldSet.forEach(function(f){
+        if(matchColumn(norm, f) >= 0) score++;
+      });
+      if(score > bestScore){ bestScore = score; bestIdx = r; }
+    }
+    return bestIdx;
+  }
+
+  function matchColumn(normHeaders, field){
+    var variants = field.variants.map(normHeader);
+    // exact match first
+    for(var i=0;i<normHeaders.length;i++){
+      if(variants.indexOf(normHeaders[i]) >= 0) return i;
+    }
+    // substring match
+    for(var j=0;j<normHeaders.length;j++){
+      if(!normHeaders[j]) continue;
+      for(var k=0;k<variants.length;k++){
+        if(variants[k] && normHeaders[j].indexOf(variants[k]) >= 0) return j;
+      }
+    }
+    return -1;
+  }
+
+  function scoreSheetFor(aoa, fieldSet){
+    var hRow = findHeaderRow(aoa, fieldSet);
+    var headers = (aoa[hRow]||[]).map(normHeader);
+    var score = 0;
+    fieldSet.forEach(function(f){ if(f.req && matchColumn(headers, f) >= 0) score++; });
+    return score;
+  }
+
+  function pickBestSheet(wb, fieldSet){
+    var best = null, bestScore = -1;
+    wb.SheetNames.forEach(function(name){
+      var aoa = sheetToAoa(wb, name);
+      if(!aoa.length) return;
+      var s = scoreSheetFor(aoa, fieldSet);
+      if(s > bestScore){ bestScore = s; best = name; }
+    });
+    return best || wb.SheetNames[0];
+  }
+
+  function loadSheet(kind, sheetName){
+    var s = state[kind];
+    var fieldSet = fieldSetFor(kind);
+    s.sheetName = sheetName;
+    var aoa = sheetToAoa(s.workbook, sheetName);
+    s.headerRow = findHeaderRow(aoa, fieldSet);
+    s.headers = (aoa[s.headerRow] || []).map(function(h, i){
+      return {idx:i, label: (h==null || h==="") ? ("Cột "+XLSX.utils.encode_col(i)) : String(h)};
+    });
+    s.rows = aoa.slice(s.headerRow+1);
+    var normed = s.headers.map(function(h){return normHeader(h.label);});
+    s.mapping = {};
+    fieldSet.forEach(function(f){
+      var idx = matchColumn(normed, f);
+      s.mapping[f.key] = idx;
+    });
+    if(kind === "attendDaily") recomputeAttendDailyCols();
+    renderPreview(kind);
+    renderMapping(kind);
+    updateComputeButton();
+  }
+
+  function recomputeAttendDailyCols(){
+    var s = state.attendDaily;
+    var idFieldIdx = [s.mapping.maNV, s.mapping.hoTen];
+    s.dayCols = s.headers
+      .filter(function(h){ return idFieldIdx.indexOf(h.idx) < 0; })
+      .map(function(h){ return {idx:h.idx, day: parseDayHeader(h.label)}; })
+      .filter(function(dc){ return dc.day != null; })
+      .sort(function(a,b){ return a.day - b.day; });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* UI: dropzones                                                      */
+  /* ---------------------------------------------------------------- */
+  function setupDropzone(kind){
+    var dz = document.getElementById("dz-"+kind);
+    var input = document.getElementById("file-"+kind);
+    dz.addEventListener("click", function(){ input.click(); });
+    dz.addEventListener("keydown", function(e){ if(e.key==="Enter" || e.key===" "){ e.preventDefault(); input.click(); } });
+    ["dragenter","dragover"].forEach(function(ev){
+      dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.add("drag"); });
+    });
+    ["dragleave","drop"].forEach(function(ev){
+      dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.remove("drag"); });
+    });
+    dz.addEventListener("drop", function(e){
+      if(e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(kind, e.dataTransfer.files[0]);
+    });
+    input.addEventListener("change", function(e){
+      if(e.target.files && e.target.files[0]) handleFile(kind, e.target.files[0]);
+    });
+  }
+
+  function handleFile(kind, file){
+    document.getElementById("fname-"+kind).textContent = file.name;
+    readWorkbook(file, function(err, wb){
+      if(err){ alert("Không đọc được file: "+err.message); return; }
+      state[kind].workbook = wb;
+      var sel = document.getElementById("sel-sheet-"+kind);
+      sel.innerHTML = "";
+      wb.SheetNames.forEach(function(name){
+        var opt = document.createElement("option");
+        opt.value = name; opt.textContent = name;
+        sel.appendChild(opt);
+      });
+      var fieldSet = fieldSetFor(kind);
+      var best = pickBestSheet(wb, fieldSet);
+      sel.value = best;
+      document.getElementById("row-sheet-"+kind).style.display = wb.SheetNames.length>1 ? "flex" : "none";
+      loadSheet(kind, best);
+      var stepOf = {kl:1, bd:2, pb:3, attend:4, attendDaily:4};
+      markStepDone(stepOf[kind] || 1);
+    });
+  }
+
+  document.getElementById("sel-sheet-kl").addEventListener("change", function(e){ loadSheet("kl", e.target.value); });
+  document.getElementById("sel-sheet-bd").addEventListener("change", function(e){ loadSheet("bd", e.target.value); });
+  document.getElementById("sel-sheet-pb").addEventListener("change", function(e){ loadSheet("pb", e.target.value); });
+  document.getElementById("sel-sheet-attend").addEventListener("change", function(e){ loadSheet("attend", e.target.value); });
+  document.getElementById("sel-sheet-attendDaily").addEventListener("change", function(e){ loadSheet("attendDaily", e.target.value); });
+
+  document.getElementById("sel-cochebu").addEventListener("change", function(e){
+    var show = e.target.value === "individual";
+    document.getElementById("attend-daily-divider").style.display = show ? "block" : "none";
+    document.getElementById("attend-daily-wrap").style.display = show ? "block" : "none";
+  });
+
+  document.getElementById("chk-bd-enable").addEventListener("change", function(e){
+    state.bdEnabled = e.target.checked;
+    document.getElementById("bd-body").style.display = e.target.checked ? "block" : "none";
+    updateComputeButton();
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* UI: preview + mapping                                              */
+  /* ---------------------------------------------------------------- */
+  function renderPreview(kind){
+    var s = state[kind];
+    var wrap = document.getElementById("preview-"+kind+"-wrap");
+    var table = document.getElementById("preview-"+kind);
+    var maxRows = 5;
+    var html = "<thead><tr>" + s.headers.map(function(h){return "<th>"+escapeHtml(h.label)+"</th>";}).join("") + "</tr></thead><tbody>";
+    for(var i=0;i<Math.min(maxRows, s.rows.length);i++){
+      var row = s.rows[i];
+      html += "<tr>" + s.headers.map(function(h){
+        var v = row[h.idx];
+        if(v instanceof Date) v = dispDate(v)+"/"+v.getUTCFullYear();
+        return "<td>"+escapeHtml(v==null?"":v)+"</td>";
+      }).join("") + "</tr>";
+    }
+    html += "</tbody>";
+    table.innerHTML = html;
+    wrap.style.display = "block";
+  }
+
+  function renderMapping(kind){
+    var s = state[kind];
+    var fieldSet = fieldSetFor(kind);
+    var el = document.getElementById("mapping-"+kind);
+    var html = '<div class="mapping-grid">';
+    fieldSet.forEach(function(f){
+      html += '<div class="map-item"><label>'+escapeHtml(f.label)+(f.req?' <span class="req">*</span>':'')+'</label>';
+      html += '<select data-kind="'+kind+'" data-field="'+f.key+'"><option value="-1">— không có —</option>';
+      s.headers.forEach(function(h){
+        var sel = (s.mapping[f.key] === h.idx) ? " selected" : "";
+        html += '<option value="'+h.idx+'"'+sel+'>'+escapeHtml(h.label)+'</option>';
+      });
+      html += '</select></div>';
+    });
+    html += '</div>';
+    if(kind === "attendDaily"){
+      var days = (s.dayCols||[]).map(function(dc){return dc.day;});
+      if(days.length){
+        html += '<div class="card-sub" style="margin:10px 0 0;">Đã tự động nhận diện <b>'+days.length+' cột ngày</b> (ngày '+days[0]+' đến ngày '+days[days.length-1]+') để làm cột công BT theo ngày — không cần map thủ công từng ngày.</div>';
+      } else {
+        html += '<div class="card-sub" style="margin:10px 0 0;color:#b45309;">⚠️ Chưa nhận diện được cột ngày nào. Cần dòng tiêu đề có các cột đặt tên là số thứ tự ngày trong tháng (1, 2, 3…) — kiểm tra lại dòng tiêu đề/sheet đã chọn.</div>';
+      }
+    }
+    el.innerHTML = html;
+    el.querySelectorAll("select").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        state[sel.dataset.kind].mapping[sel.dataset.field] = parseInt(sel.value, 10);
+        if(sel.dataset.kind === "attendDaily"){ recomputeAttendDailyCols(); renderMapping("attendDaily"); }
+        updateComputeButton();
+      });
+    });
+  }
+
+  function mappingComplete(kind){
+    var s = state[kind];
+    if(!s.workbook) return false;
+    var fieldSet = fieldSetFor(kind);
+    var base = fieldSet.every(function(f){ return !f.req || (s.mapping[f.key] != null && s.mapping[f.key] >= 0); });
+    if(kind === "attendDaily") return base && !!(s.dayCols && s.dayCols.length);
+    return base;
+  }
+
+  function updateComputeButton(){
+    var ok = mappingComplete("kl") && mappingComplete("pb") && (!state.bdEnabled || mappingComplete("bd"));
+    document.getElementById("btn-compute").disabled = !ok;
+    document.getElementById("compute-hint").textContent = ok
+      ? "Sẵn sàng tính phân bổ"
+      : "Kiểm tra lại các cột bắt buộc (*) ở trên";
+  }
+
+  function markStepDone(n){
+    var pill = document.getElementById("step-pill-"+n);
+    if(pill) pill.classList.add("done");
+  }
+  function markStepActive(n){
+    for(var i=1;i<=6;i++){
+      var p = document.getElementById("step-pill-"+i);
+      if(p) p.classList.toggle("active", i===n);
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Row extraction                                                     */
+  /* ---------------------------------------------------------------- */
+  function extractProductionRows(kind){
+    var s = state[kind], m = s.mapping, out = [];
+    if(!s.workbook) return out;
+    s.rows.forEach(function(row, i){
+      var maPB = m.maPB>=0 ? row[m.maPB] : null;
+      var klRaw = m.kl>=0 ? row[m.kl] : null;
+      if(maPB == null || String(maPB).trim()==="" ) return;
+      if(klRaw == null || String(klRaw).trim()==="") return;
+      out.push({
+        rowIndex: i,
+        phieu: m.phieu>=0 ? row[m.phieu] : (i+1),
+        ngay: m.ngay>=0 ? toDate(row[m.ngay]) : null,
+        bienSo: m.bienSo>=0 ? row[m.bienSo] : "",
+        kl: toNumber(klRaw),
+        maPB: String(maPB).trim(),
+        vangRaw: m.vangRaw>=0 ? row[m.vangRaw] : ""
+      });
+    });
+    return out;
+  }
+
+  function extractAttendRows(){
+    var s = state.attend, m = s.mapping, out = [];
+    if(!s.workbook) return out;
+    s.rows.forEach(function(row){
+      var hoTen = m.hoTen>=0 ? row[m.hoTen] : null;
+      if(hoTen == null || String(hoTen).trim()==="") return;
+      out.push({
+        maNV: m.maNV>=0 ? String(row[m.maNV]||"").trim() : "",
+        hoTen: String(hoTen).trim(),
+        soCong: m.soCong>=0 ? toNumber(row[m.soCong]) : null
+      });
+    });
+    return out;
+  }
+
+  function extractAttendDailyRows(){
+    var s = state.attendDaily, m = s.mapping, out = [];
+    if(!s.workbook || !s.dayCols || !s.dayCols.length) return out;
+    s.rows.forEach(function(row){
+      var hoTen = m.hoTen>=0 ? row[m.hoTen] : null;
+      if(hoTen == null || String(hoTen).trim()==="") return;
+      var days = {};
+      s.dayCols.forEach(function(dc){
+        var raw = row[dc.idx];
+        if(raw == null || String(raw).trim()==="") return; // de trong = KHONG co du lieu ngay do, khac voi cong BT = 0
+        var v = toNumber(raw);
+        if(!isNaN(v)) days[dc.day] = v;
+      });
+      out.push({
+        maNV: m.maNV>=0 ? String(row[m.maNV]||"").trim() : "",
+        hoTen: String(hoTen).trim(),
+        days: days
+      });
+    });
+    return out;
+  }
+
+  function extractPbRows(){
+    var s = state.pb, m = s.mapping, out = [];
+    s.rows.forEach(function(row){
+      var hoTen = m.hoTen>=0 ? row[m.hoTen] : null;
+      var maPB = m.maPB>=0 ? row[m.maPB] : null;
+      if(hoTen == null || String(hoTen).trim()==="") return;
+      if(maPB == null || String(maPB).trim()==="") return;
+      out.push({
+        maPB: String(maPB).trim(),
+        tenPB: m.tenPB>=0 ? String(row[m.tenPB]||"").trim() : "",
+        maNV: m.maNV>=0 ? String(row[m.maNV]||"").trim() : "",
+        hoTen: String(hoTen).trim(),
+        ngayVao: m.ngayVao>=0 ? toDate(row[m.ngayVao]) : null,
+        ngayNghi: m.ngayNghi>=0 ? toDate(row[m.ngayNghi]) : null
+      });
+    });
+    return out;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Core allocation                                                    */
+  /* ---------------------------------------------------------------- */
+  function computeAllocation(klRows, pbRows, unitLabel){
+    unitLabel = unitLabel || "tấn";
+    var deptName = {};
+    pbRows.forEach(function(e){ if(e.maPB && e.tenPB && !deptName[e.maPB]) deptName[e.maPB] = e.tenPB; });
+
+    var byEmpDay = {};   // empKey -> {dateKey: sum}
+    var byEmpInfo = {};  // empKey -> {maPB, tenPB, maNV, hoTen, total}
+    var byDeptDay = {};  // maPB -> {dateKey: sum}
+    var byDeptInfo = {}; // maPB -> {tenPB, total, unallocated, empCount}
+    var audit = [];
+    var warnings = [];
+    var dateSet = {};
+    var totalKl = 0;
+
+    klRows.forEach(function(row){
+      totalKl += (isNaN(row.kl) ? 0 : row.kl);
+      var dept = row.maPB;
+      var date = row.ngay;
+      var kl = isNaN(row.kl) ? 0 : row.kl;
+      var dateKey = date ? isoDate(date) : "(không rõ ngày)";
+      dateSet[dateKey] = date || null;
+
+      if(!byDeptInfo[dept]) byDeptInfo[dept] = {tenPB: deptName[dept] || dept, total:0, unallocated:0, empCount:0};
+      if(!byDeptDay[dept]) byDeptDay[dept] = {};
+      byDeptDay[dept][dateKey] = (byDeptDay[dept][dateKey]||0) + kl;
+      byDeptInfo[dept].total += kl;
+
+      var candidates = pbRows.filter(function(e){ return e.maPB === dept; });
+      if(candidates.length === 0){
+        warnings.push({type:"unknown_dept", msg:"Phiếu cân "+row.phieu+" (ngày "+(date?dispDate(date):"?")+ ") dùng mã phòng ban \""+dept+"\" nhưng bảng phòng ban không có phòng ban này.", severity:"danger"});
+        audit.push({phieu:row.phieu, ngay:date, maPB:dept, tenPB:"(không xác định)", kl:kl, soNguoi:0, names:[], share:0, note:"Mã phòng ban không có trong bảng phòng ban"});
+        byDeptInfo[dept].unallocated += kl;
+        return;
+      }
+
+      var tokens = parseTokens(row.vangRaw);
+      var present = candidates.filter(function(e){
+        if(e.ngayVao && date && date < e.ngayVao) return false;
+        if(e.ngayNghi && date && date > e.ngayNghi) return false;
+        if(tokens.indexOf(normLastWord(e.hoTen)) >= 0) return false;
+        return true;
+      });
+
+      if(present.length === 0){
+        warnings.push({type:"no_present", msg:"Phiếu cân "+row.phieu+" (ngày "+(date?dispDate(date):"?")+", phòng ban "+dept+") không có công nhân nào đang làm việc / có mặt để nhận — "+fmt(kl,2)+" "+unitLabel+" chưa phân bổ được.", severity:"warn"});
+        audit.push({phieu:row.phieu, ngay:date, maPB:dept, tenPB:deptName[dept]||dept, kl:kl, soNguoi:0, names:[], share:0, note:"Không có nhân sự phù hợp — chưa phân bổ được"});
+        byDeptInfo[dept].unallocated += kl;
+        return;
+      }
+
+      var share = kl / present.length;
+      var names = [];
+      present.forEach(function(e){
+        var key = (e.maNV || e.hoTen) + "||" + e.maPB;
+        if(!byEmpDay[key]) byEmpDay[key] = {};
+        byEmpDay[key][dateKey] = (byEmpDay[key][dateKey]||0) + share;
+        if(!byEmpInfo[key]) byEmpInfo[key] = {maPB:e.maPB, tenPB: deptName[e.maPB]||e.maPB, maNV:e.maNV, hoTen:e.hoTen, total:0};
+        byEmpInfo[key].total += share;
+        names.push(e.hoTen);
+      });
+      audit.push({phieu:row.phieu, ngay:date, maPB:dept, tenPB:deptName[dept]||dept, kl:kl, soNguoi:present.length, names:names, share:share, note:""});
+    });
+
+    // employee count per dept (from roster, not just those who received allocation)
+    pbRows.forEach(function(e){
+      if(byDeptInfo[e.maPB]) byDeptInfo[e.maPB].empCount++;
+    });
+
+    var dateKeys = Object.keys(dateSet).filter(function(k){return dateSet[k];}).sort();
+    var unknownDateIncluded = dateSet["(không rõ ngày)"] !== undefined;
+
+    // Canh bao phieu can "lac thang": ngay cua phieu KHONG thuoc thang chiem da so trong toan bo
+    // du lieu vua nap (vd 1-2 phieu ghi 31/05 lan trong ca lo du lieu thang 06). Day thuong la
+    // nguyen nhan khien nguoi dung thay "ngay hien thi sai thang" du logic doc ngay van dung —
+    // that ra la du lieu goc co phieu ghi nham/khac thang, chi la truoc day khong duoc canh bao ro.
+    var dominantYm = dominantMonthFromDateKeys(dateKeys);
+    if(dominantYm){
+      klRows.forEach(function(row){
+        var date = row.ngay;
+        if(!date) return;
+        var ym = isoDate(date).slice(0,7);
+        if(ym !== dominantYm){
+          var ymParts = dominantYm.split("-");
+          warnings.push({type:"wrong_month", msg:"Phiếu cân "+row.phieu+" có ngày "+dispDate(date)+"/"+date.getUTCFullYear()+" — KHÁC THÁNG với phần lớn dữ liệu còn lại (đa số phiếu thuộc tháng "+ymParts[1]+"/"+ymParts[0]+"). Có thể do nhập nhầm ngày/tháng trên phiếu cân này — kiểm tra lại trước khi dùng để trả lương.", severity:"warn"});
+        }
+      });
+    }
+
+    return {
+      byEmpDay: byEmpDay, byEmpInfo: byEmpInfo,
+      byDeptDay: byDeptDay, byDeptInfo: byDeptInfo,
+      audit: audit, warnings: warnings,
+      dateKeys: dateKeys, unknownDateIncluded: unknownDateIncluded,
+      totalKl: totalKl
+    };
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Tien san luong + bu luong (wage top-up)                            */
+  /* ---------------------------------------------------------------- */
+  function buildEmployeeUniverse(pbRows){
+    var map = {}, order = [];
+    pbRows.forEach(function(e){
+      var key = (e.maNV || e.hoTen) + "||" + e.maPB;
+      if(!map[key]){
+        map[key] = {maPB:e.maPB, tenPB:e.tenPB, maNV:e.maNV, hoTen:e.hoTen};
+        order.push(key);
+      }
+    });
+    return {map:map, order:order};
+  }
+
+  function normNameKey(name){
+    return stripDiacritics(name).toLowerCase().replace(/\s+/g," ").trim();
+  }
+
+  function buildAttendLookup(attendRows){
+    var byMaNV = {}, byName = {};
+    attendRows.forEach(function(a){
+      if(a.maNV) byMaNV[a.maNV] = a;
+      var nkey = normNameKey(a.hoTen);
+      if(nkey) byName[nkey] = a;
+    });
+    return {byMaNV:byMaNV, byName:byName};
+  }
+
+  function lookupAttend(lookup, maNV, hoTen){
+    if(maNV && lookup.byMaNV[maNV]) return lookup.byMaNV[maNV];
+    var nkey = normNameKey(hoTen);
+    return lookup.byName[nkey] || null;
+  }
+
+  /**
+   * Tinh tien san luong (KL * gia + xe BD * gia) va bu luong theo 1 trong 2 co che:
+   *  - "group":      so sanh binh quan CA TO (tong tien san luong ca to / so ngay chuan / so nguoi trong to)
+   *                   voi muc san; neu thap hon, MOI nguoi du dieu kien duoc bu (muc san - binh quan to) * cong rieng.
+   *                   Co bi CHAN boi nguong cong toi thieu: duoi nguong thi khong duoc bu (bu = 0).
+   *  - "individual": theo dung cong thuc tim thay trong file mau Dai Hiep (sheet "CONG CN", vd
+   *                   =IF(D47=0,"",IF(D47*6000>200000,D47*6000,200000)) ap dung cho TUNG NGAY rieng le:
+   *                   ngay nao co san luong (tan KL > 0) thi tien ngay do = max(tan_ngay*gia, muc san);
+   *                   ngay khong san xuat thi khong tinh gi ca. Bu luong = tong phan "noi" len so voi
+   *                   tien thuc te (khong ap dung cho bom/ban dam — file mau Dai Hiep cung khong ap dung
+   *                   san cho khoan nay). KHONG bi chan boi nguong cong (cong thuc goc khong co dieu kien
+   *                   nay — no tu gate theo tung ngay lam viec).
+   */
+  function computeLuong(resKl, resBd, attendRows, pbRows, cfg, attendDailyRows){
+    var uni = buildEmployeeUniverse(pbRows);
+    var attendLookup = buildAttendLookup(attendRows);
+    var attendDailyLookup = (attendDailyRows && attendDailyRows.length) ? buildAttendLookup(attendDailyRows) : null;
+    var rows = [];
+    var warnings = [];
+    var deptTotals = {}; // maPB -> {tienSum, count, tenPB}
+
+    uni.order.forEach(function(key){
+      var e = uni.map[key];
+      var klInfo = resKl && resKl.byEmpInfo[key];
+      var bdInfo = resBd && resBd.byEmpInfo[key];
+      var tanKl = klInfo ? klInfo.total : 0;
+      var xeBd = bdInfo ? bdInfo.total : 0;
+      var luongSanLuong = tanKl*cfg.giaKl;
+      var luongBanDam = xeBd*cfg.giaBd;
+      var tienSanLuong = luongSanLuong + luongBanDam;
+
+      var att = lookupAttend(attendLookup, e.maNV, e.hoTen);
+      var soCong = att ? toNumber(att.soCong) : null;
+      if(soCong == null || isNaN(soCong)) soCong = null;
+      var eligible = soCong != null && soCong >= cfg.nguong;
+      if(!att){
+        warnings.push({type:"no_attend", maPB:e.maPB, hoTen:e.hoTen,
+          msg:"Không tìm thấy số công của \""+e.hoTen+"\" ("+e.maPB+") trong bảng công — mặc định coi như không đủ điều kiện bù lương (chỉ áp dụng cho cơ chế theo tổ).", severity:"warn"});
+      }
+
+      rows.push({
+        key:key, maPB:e.maPB, tenPB:e.tenPB, maNV:e.maNV, hoTen:e.hoTen,
+        tanKl:tanKl, xeBd:xeBd, luongSanLuong:luongSanLuong, luongBanDam:luongBanDam, tienSanLuong:tienSanLuong,
+        soCong:soCong, eligible:eligible, buLuong:0
+      });
+
+      if(!deptTotals[e.maPB]) deptTotals[e.maPB] = {tienSum:0, count:0, tenPB:e.tenPB};
+      deptTotals[e.maPB].tienSum += tienSanLuong;
+      deptTotals[e.maPB].count += 1;
+    });
+
+    var deptGroupAvg = {};
+    Object.keys(deptTotals).forEach(function(d){
+      var dt = deptTotals[d];
+      deptGroupAvg[d] = (dt.count>0 && cfg.soNgayChuan>0) ? dt.tienSum / cfg.soNgayChuan / dt.count : 0;
+    });
+
+    if(cfg.coChe === "group"){
+      rows.forEach(function(r){
+        r.groupAvg = deptGroupAvg[r.maPB] || 0;
+        if(!r.eligible) return;
+        if(r.groupAvg < cfg.mucSan) r.buLuong = round2((cfg.mucSan - r.groupAvg) * r.soCong);
+      });
+    } else if(cfg.coChe === "individual"){
+      // Cong thuc dung (mau Dai Hiep) — doi chieu truc tiep voi pipeline Power Query + DAX
+      // THAT nguoi dung cung cap (khong con la suy dien tu file tinh): SL Tham chieu KHONG PHAI
+      // phep nhan lien tuc 33,333333 x cong BT, ma la 1 BAC THANG tra bang (DAX):
+      //   Ngay thuong (BT): cong BT < 0,5 -> 0 ; 0,5 <= cong BT < 1 -> 16,666667 ; cong BT >= 1 -> 33,333333
+      //   Chu Nhat   (CN): cong BT < 0,5 -> 0 ; 0,5 <= cong BT < 1 -> 16,666667 ;
+      //                     1 <= cong BT < 1,5 -> 33,333333 ; cong BT >= 1,5 -> 49,9999999 (~50)
+      // (xem ham slThamChieuTan). Voi cong BT dung dung bac 0/0,5/1/1,5 thi bac thang nay cho
+      // ra dung ket qua nhu 33,333333 x cong BT — nhung voi cong BT LECH bac (vd 0,7), bac thang
+      // "chan xuong" bac duoi (0,5) thay vi noi suy — khac voi phep nhan lien tuc, nen phai dung
+      // dung ham bac thang de khop chinh xac voi so tien thuc te don vi da tra.
+      //   Tien ngay = MAX(san luong ngay x don gia, SL Tham chieu ngay x don gia)
+      //   Bu luong thang = tong phan chenh lech cua nhung ngay san luong thap hon tham chieu.
+      // Thieu cong BT cho 1 ngay/1 nguoi cu the (co bang cong theo ngay nhung khong co du lieu
+      // dung ngay do) -> coi cong BT = 0 (khop dung "otherwise 0" trong pipeline goc) -> SL Tham
+      // chieu = 0 -> KHONG bu luong ngay do (khac han fallback muc san co dinh — xem canh bao rieng).
+      // Chi khi HOAN TOAN KHONG co bang cong theo ngay nao (attendDailyLookup rong) moi fallback
+      // ve muc san CO DINH (hanh vi cu, gan dung) kem canh bao muc nghiem trong.
+      function slThamChieuTan(congBT, isSunday){
+        var v = congBT;
+        if(!isSunday){
+          if(v < 1) return (v < 0.5) ? 0 : 16.666667;
+          return 33.333333;
+        }
+        if(v < 0.5) return 0;
+        if(v < 1) return 16.666667;
+        if(v < 1.5) return 33.333333;
+        return 49.9999999;
+      }
+      rows.forEach(function(r){
+        var klByDay = resKl && resKl.byEmpDay[r.key];
+        var actualSum = 0, floorSum = 0, workDays = 0;
+        var attDaily = attendDailyLookup ? lookupAttend(attendDailyLookup, r.maNV, r.hoTen) : null;
+        var missingDays = 0;
+        var capIssues = []; // ngay co cong BT nhap khac voi bac thang chuan (vuot tran / khong dung buoc 0,5)
+        if(klByDay){
+          Object.keys(klByDay).forEach(function(dk){
+            var tan = klByDay[dk] || 0;
+            if(tan > 0){
+              workDays++;
+              var payDay = tan * cfg.giaKl;
+              actualSum += payDay;
+              var threshold = cfg.mucSan; // fallback CHI khi hoan toan chua tai bang cong theo ngay
+              if(attendDailyLookup){
+                var dow = new Date(dk+"T00:00:00Z").getUTCDay(); // 0 = Chu Nhat (quy uoc UTC dung xuyen suot cong cu)
+                var isSunday = dow === 0;
+                var dayNum = parseInt(dk.split("-")[2], 10);
+                var congBTraw = (attDaily && attDaily.days) ? attDaily.days[dayNum] : undefined;
+                var congBT;
+                if(congBTraw == null || isNaN(congBTraw)){
+                  missingDays++;
+                  congBT = 0; // otherwise 0 — khop dung pipeline that
+                } else {
+                  congBT = congBTraw;
+                  // Canh bao (khong doi ket qua tinh — ham bac thang da tu "chan" gia tri nay
+                  // roi): cong BT ghi khac voi bac thang chuan co the la nhap nham cong hoac
+                  // nham loai ngay (thuong/Chu Nhat), nen kiem tra lai du lieu nguon.
+                  var capThisDay = isSunday ? 1.5 : 1.0;
+                  var stepOff = Math.abs(congBT/0.5 - Math.round(congBT/0.5)) > 0.001;
+                  var overCap = congBT - capThisDay > 0.001;
+                  if(overCap || stepOff){
+                    capIssues.push({dk:dk, congBT:congBT, isSunday:isSunday, overCap:overCap, stepOff:stepOff});
+                  }
+                }
+                threshold = slThamChieuTan(congBT, isSunday) * cfg.giaKl;
+              }
+              floorSum += (payDay > threshold) ? payDay : threshold;
+            }
+          });
+        }
+        r.individualWorkDays = workDays;
+        r.buLuong = round2(floorSum - actualSum);
+
+        if(capIssues.length){
+          var issueList = capIssues.slice(0,5).map(function(ci){
+            var reason = ci.overCap ? ("vượt trần "+(ci.isSunday?"1,5 (Chủ Nhật)":"1 (ngày thường)")) : "không theo bậc thang 0,5";
+            return dispDate(new Date(ci.dk+"T00:00:00Z"))+" ("+fmt(ci.congBT,2)+" công, "+reason+")";
+          }).join("; ") + (capIssues.length>5 ? "; và "+(capIssues.length-5)+" ngày khác" : "");
+          warnings.push({type:"cong_bt_bat_thuong", maPB:r.maPB, hoTen:r.hoTen,
+            msg:"\""+r.hoTen+"\" ("+r.maPB+") có công BT ghi khác bậc thang chuẩn ở "+capIssues.length+" ngày trong bảng công theo ngày — "+issueList+". Công cụ đã tự quy về đúng bậc gần nhất theo công thức gốc (không nội suy), nhưng nên kiểm tra lại xem có nhập nhầm công/nhầm loại ngày (thường/Chủ Nhật) hay không.", severity:"warn"});
+        }
+        if(attendDailyLookup && missingDays > 0){
+          warnings.push({type:"no_attend_daily_day", maPB:r.maPB, hoTen:r.hoTen,
+            msg:"\""+r.hoTen+"\" ("+r.maPB+") thiếu công BT theo ngày cho "+missingDays+" ngày có sản lượng — những ngày đó tạm coi công BT = 0 (khớp đúng cách hệ thống gốc xử lý dữ liệu thiếu), tức KHÔNG có mức tham chiếu bù lương cho (các) ngày đó (không phải vì đã đạt định mức) — kiểm tra lại xem có sót dữ liệu chấm công cho (các) ngày này không.", severity:"warn"});
+        }
+      });
+      if(!attendDailyLookup){
+        warnings.push({type:"no_attend_daily_table",
+          msg:"Chưa tải \"Bảng công theo ngày\" — bù lương cá nhân đang dùng mức sàn CỐ ĐỊNH ("+fmt(cfg.mucSan,0)+"đ cho mỗi ngày có sản lượng) thay vì mức tham chiếu đúng theo bậc thang công BT từng ngày (bậc 0/16.666.667/33.333.333/49.999.999 đ tùy công BT và ngày thường/Chủ Nhật) như đúng công thức gốc Đại Hiệp. Với những ngày công BT < 1 công, cách tính tạm này thường TRẢ CAO HƠN mức đúng. Tải bảng công theo ngày (mục \"Chấm công, đơn giá & bù lương\") để tính chính xác.", severity:"danger"});
+      }
+    }
+
+    rows.forEach(function(r){ r.tongThucNhan = round2(r.tienSanLuong) + r.buLuong; });
+
+    return {rows:rows, deptTotals:deptTotals, deptGroupAvg:deptGroupAvg, warnings:warnings, coChe:cfg.coChe, cfg:cfg, usedAttendDaily: !!attendDailyLookup};
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Rendering results                                                  */
+  /* ---------------------------------------------------------------- */
+  function renderResults(res){
+    document.getElementById("card-results").style.display = "block";
+    document.getElementById("card-export").style.display = "block";
+    markStepDone(3);
+    markStepActive(4);
+
+    var deptCodes = Object.keys(res.byDeptInfo).sort();
+    var empKeys = Object.keys(res.byEmpInfo);
+    var totalUnalloc = deptCodes.reduce(function(s,d){return s + (res.byDeptInfo[d].unallocated||0);}, 0);
+
+    // date range label
+    var rangeEl = document.getElementById("result-range");
+    if(res.dateKeys.length){
+      rangeEl.textContent = "Từ " + res.dateKeys[0].split("-").reverse().join("/") + " đến " + res.dateKeys[res.dateKeys.length-1].split("-").reverse().join("/");
+    } else { rangeEl.textContent = ""; }
+
+    // tiles
+    var tiles = document.getElementById("tiles");
+    tiles.innerHTML =
+      tile("Tổng khối lượng", fmt(res.totalKl,2)+" tấn", "") +
+      tile("Số phòng ban", deptCodes.length, "") +
+      tile("Số công nhân nhận phân bổ", empKeys.length, "") +
+      tile("Chưa phân bổ được", fmt(totalUnalloc,2)+" tấn", totalUnalloc>0.005 ? "warn" : "good");
+    function tile(label,val,cls){
+      return '<div class="tile '+(cls||"")+'"><div class="label">'+label+'</div><div class="val">'+val+'</div></div>';
+    }
+
+    // warnings (allocation warnings + luong/bu luong warnings, danger truoc warn, gop lam 1 danh sach)
+    var warnPanel = document.getElementById("warn-panel");
+    var warnList = document.getElementById("warn-list");
+    var allWarnings = res.warnings.concat(state.luong ? state.luong.warnings : []);
+    allWarnings.sort(function(a,b){
+      return (a.severity==="danger"?0:1) - (b.severity==="danger"?0:1);
+    });
+    if(allWarnings.length){
+      warnPanel.style.display = "block";
+      warnList.innerHTML = allWarnings.slice(0,50).map(function(w){
+        return '<li class="'+(w.severity==="danger"?"danger":"")+'">'+ (w.severity==="danger"?"⛔":"⚠️") +' '+escapeHtml(w.msg)+'</li>';
+      }).join("") + (allWarnings.length>50 ? '<li>… và '+(allWarnings.length-50)+' cảnh báo khác (xem sheet "Đối soát phiếu cân" trong file Excel xuất ra).</li>' : "");
+    } else {
+      warnPanel.style.display = "none";
+    }
+
+    // bars (department totals)
+    var maxTotal = Math.max.apply(null, deptCodes.map(function(d){return res.byDeptInfo[d].total;}).concat([0.0001]));
+    document.getElementById("dept-bars").innerHTML = deptCodes.map(function(d){
+      var info = res.byDeptInfo[d];
+      var pct = Math.max(2, (info.total/maxTotal)*100);
+      return '<div class="bar-row"><div class="name" title="'+escapeHtml(info.tenPB)+'">'+escapeHtml(d)+' — '+escapeHtml(info.tenPB)+'</div>'+
+             '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+
+             '<div class="val">'+fmt(info.total,2)+' tấn</div></div>';
+    }).join("");
+
+    // tabs
+    state.activeTab = state.activeTab || "dept";
+    document.querySelectorAll(".tab").forEach(function(t){
+      t.classList.toggle("active", t.dataset.tab === state.activeTab);
+      t.onclick = function(){ state.activeTab = t.dataset.tab; renderResults(res); };
+    });
+    var content = document.getElementById("tab-content");
+    if(state.activeTab === "dept") content.innerHTML = renderDeptTable(res, deptCodes);
+    else if(state.activeTab === "emp") content.innerHTML = renderEmpTable(res, deptCodes, empKeys);
+    else if(state.activeTab === "luong") content.innerHTML = renderLuongTable(state.luong);
+    else content.innerHTML = renderAuditTable(res);
+  }
+
+  function renderDeptTable(res, deptCodes){
+    var dateKeys = res.dateKeys;
+    var html = '<table class="data"><thead><tr><th>Mã PB</th><th>Tên phòng ban</th>';
+    dateKeys.forEach(function(dk){ html += '<th>'+dispDate(new Date(dk+"T00:00:00Z"))+'</th>'; });
+    html += '<th>Tổng cộng</th><th>Chưa phân bổ</th></tr></thead><tbody>';
+    var grandTotals = {}; var grandAll=0, grandUnalloc=0;
+    deptCodes.forEach(function(d){
+      var info = res.byDeptInfo[d];
+      html += '<tr><td>'+escapeHtml(d)+'</td><td>'+escapeHtml(info.tenPB)+'</td>';
+      dateKeys.forEach(function(dk){
+        var v = (res.byDeptDay[d]||{})[dk] || 0;
+        grandTotals[dk] = (grandTotals[dk]||0)+v;
+        html += '<td>'+(v?fmt(v,2):"")+'</td>';
+      });
+      grandAll += info.total; grandUnalloc += (info.unallocated||0);
+      html += '<td><b>'+fmt(info.total,2)+'</b></td><td>'+(info.unallocated>0.005 ? '<span class="chip warn">'+fmt(info.unallocated,2)+'</span>' : "")+'</td></tr>';
+    });
+    html += '<tr class="total-row"><td colspan="2">Tổng cộng</td>';
+    dateKeys.forEach(function(dk){ html += '<td>'+fmt(grandTotals[dk]||0,2)+'</td>'; });
+    html += '<td>'+fmt(grandAll,2)+'</td><td>'+(grandUnalloc>0.005?fmt(grandUnalloc,2):"")+'</td></tr>';
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function renderEmpTable(res, deptCodes, empKeys){
+    var dateKeys = res.dateKeys;
+    var html = '<table class="data"><thead><tr><th>Mã PB</th><th>Họ và tên</th>';
+    dateKeys.forEach(function(dk){ html += '<th>'+dispDate(new Date(dk+"T00:00:00Z"))+'</th>'; });
+    html += '<th>Tổng cộng</th></tr></thead><tbody>';
+    deptCodes.forEach(function(d){
+      var keysInDept = empKeys.filter(function(k){ return res.byEmpInfo[k].maPB === d; })
+        .sort(function(a,b){ return res.byEmpInfo[b].total - res.byEmpInfo[a].total; });
+      if(!keysInDept.length) return;
+      html += '<tr class="dept-row"><td>'+escapeHtml(d)+'</td><td>'+escapeHtml(res.byDeptInfo[d].tenPB)+'</td>'+dateKeys.map(function(){return "<td></td>";}).join("")+'<td>'+fmt(res.byDeptInfo[d].total,2)+'</td></tr>';
+      keysInDept.forEach(function(k){
+        var info = res.byEmpInfo[k];
+        html += '<tr><td></td><td>'+escapeHtml(info.hoTen)+(info.maNV?' <span class="chip neutral">'+escapeHtml(info.maNV)+'</span>':'')+'</td>';
+        dateKeys.forEach(function(dk){
+          var v = (res.byEmpDay[k]||{})[dk] || 0;
+          html += '<td>'+(v?fmt(v,2):"")+'</td>';
+        });
+        html += '<td><b>'+fmt(info.total,2)+'</b></td></tr>';
+      });
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function renderAuditTable(res){
+    var html = '<table class="data"><thead><tr><th>Phiếu cân</th><th>Ngày</th><th>Mã PB</th><th>Khối lượng</th><th>Số người nhận</th><th>KL/người</th><th>Người nhận / Ghi chú</th></tr></thead><tbody>';
+    res.audit.slice(0,2000).forEach(function(a){
+      html += '<tr><td>'+escapeHtml(a.phieu)+'</td><td>'+(a.ngay?dispDate(a.ngay):"—")+'</td><td>'+escapeHtml(a.maPB)+'</td><td>'+fmt(a.kl,2)+'</td><td>'+a.soNguoi+'</td><td>'+(a.share?fmt(a.share,3):"")+'</td>'+
+        '<td style="text-align:left;white-space:normal;">'+ (a.note ? '<span class="chip warn">'+escapeHtml(a.note)+'</span>' : escapeHtml(a.names.join(", "))) +'</td></tr>';
+    });
+    html += '</tbody></table>';
+    if(res.audit.length>2000) html += '<div class="empty-state">Đang hiển thị 2.000/'+res.audit.length+' phiếu — file Excel xuất ra có đầy đủ.</div>';
+    return html;
+  }
+
+  function renderLuongTable(luong){
+    if(!luong){
+      return '<div class="empty-state">Chưa có bảng công — nạp "Bảng công cả tháng" ở bước 4 để tính tiền sản lượng và bù lương.</div>';
+    }
+    var showBd = !!state.bdEnabled;
+    var html = '<table class="data"><thead><tr><th>Mã PB</th><th>Họ và tên</th><th>Số công</th><th>KL (tấn)</th>'+
+      (showBd ? '<th>Số xe BD</th>' : '') +
+      '<th>Lương sản lượng</th>'+ (showBd ? '<th>Lương ban dăm</th>' : '') +
+      '<th>Bù lương</th><th>Tổng cộng</th></tr></thead><tbody>';
+    var deptCodes = Object.keys(luong.deptTotals).sort();
+    var grandSL=0, grandBD=0, grandBu=0, grandTong=0;
+    deptCodes.forEach(function(d){
+      var rowsInDept = luong.rows.filter(function(r){return r.maPB===d;})
+        .sort(function(a,b){return b.tongThucNhan - a.tongThucNhan;});
+      if(!rowsInDept.length) return;
+      html += '<tr class="dept-row"><td>'+escapeHtml(d)+'</td><td>'+escapeHtml(luong.deptTotals[d].tenPB)+'</td><td></td><td></td>'+(showBd?'<td></td>':'')+'<td></td>'+(showBd?'<td></td>':'')+'<td></td><td></td></tr>';
+      rowsInDept.forEach(function(r){
+        grandSL += r.luongSanLuong; grandBD += r.luongBanDam; grandBu += r.buLuong; grandTong += r.tongThucNhan;
+        html += '<tr><td></td><td>'+escapeHtml(r.hoTen)+(r.maNV?' <span class="chip neutral">'+escapeHtml(r.maNV)+'</span>':'')+'</td>'+
+          '<td>'+(r.soCong!=null?fmt(r.soCong,1):'<span class="chip warn">?</span>')+'</td>'+
+          '<td>'+fmt(r.tanKl,2)+'</td>'+ (showBd? '<td>'+fmt(r.xeBd,2)+'</td>':'') +
+          '<td>'+fmt(r.luongSanLuong,0)+'</td>'+ (showBd? '<td>'+fmt(r.luongBanDam,0)+'</td>':'') +
+          '<td>'+(r.buLuong>0?fmt(r.buLuong,0):'')+'</td>'+
+          '<td><b>'+fmt(r.tongThucNhan,0)+'</b></td></tr>';
+      });
+    });
+    html += '<tr class="total-row"><td colspan="2">TỔNG CỘNG</td><td></td><td></td>'+(showBd?'<td></td>':'')+
+      '<td>'+fmt(grandSL,0)+'</td>'+(showBd?'<td>'+fmt(grandBD,0)+'</td>':'')+'<td>'+fmt(grandBu,0)+'</td><td>'+fmt(grandTong,0)+'</td></tr>';
+    html += '</tbody></table>';
+    var cocheLabel = luong.coChe==="group" ? "Theo bình quân cả tổ" : (luong.coChe==="individual" ? "Theo từng cá nhân (mẫu Đại Hiệp — theo ngày, không chặn theo ngưỡng công)" : "Không áp dụng");
+    html += '<div style="padding:12px;font-size:12px;color:var(--ink-faint);">Cơ chế bù lương: <b>'+cocheLabel+'</b>'+
+      (luong.cfg && luong.cfg.soNgayChuan ? ' · Số ngày chuẩn/tháng (tự động): <b>'+luong.cfg.soNgayChuan+'</b>' : '') +
+      (luong.coChe==="individual" ? ' · Bảng công theo ngày: <b>'+(luong.usedAttendDaily?'đã tải':'CHƯA TẢI — đang dùng mức sàn cố định tạm thời')+'</b>' : '') +
+      (luong.warnings.length ? ' · '+luong.warnings.length+' cảnh báo liên quan bù lương (xem mục "Cần kiểm tra lại" phía trên hoặc file Excel để biết chi tiết).' : '') + '</div>';
+    return html;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Excel export — styled via ExcelJS (SheetJS CE cannot write styles) */
+  /* ---------------------------------------------------------------- */
+  var PAL = {
+    header: "FF2F6E4F", headerText: "FFFFFFFF",
+    title: "FF1F4E37", subtitle: "FF59665B",
+    total: "FFE3E8DA", dept: "FFDCE8DE",
+    warnRow: "FFF3E3CD", border: "FFD3DCC7", zebra: "FFF6F8F1"
+  };
+  var THIN = {style:"thin", color:{argb:PAL.border}};
+  var BORDER_ALL = {top:THIN, left:THIN, bottom:THIN, right:THIN};
+  var FONT = "Calibri";
+
+  function round2(n){ return Math.round((n||0)*100)/100; }
+  function round3(n){ return Math.round((n||0)*1000)/1000; }
+
+  function reportMeta(){
+    return {
+      donVi: (document.getElementById("inp-donvi").value || "").trim(),
+      thang: (document.getElementById("inp-thang").value || "").trim(),
+      nguoiLap: (document.getElementById("inp-nguoilap").value || "").trim()
+    };
+  }
+
+  // Uoc luong so dong can wrap cho 1 doan text trong 1 o gop rong `totalWidthUnits` don vi cot
+  // Excel, chu co `fontSize` pt in dam — dung de tranh tieu de bao cao (thuong ghep "Ten don vi —
+  // Ten bao cao", co the rat dai) bi TRAN RA NGOAI trang in khi sheet hep (vd sheet tong hop 5 cot).
+  function estimateWrappedLines(text, totalWidthUnits, fontSize){
+    var pxWidth = totalWidthUnits * 7;   // ~7px moi don vi do rong cot Excel (xap xi chuan)
+    var charPx = fontSize * 0.85;        // be rong trung binh 1 ky tu in dam, uoc luong
+    var charsPerLine = Math.max(10, Math.floor(pxWidth / charPx));
+    return Math.max(1, Math.ceil(String(text||"").length / charsPerLine));
+  }
+
+  function addTitleBlock(ws, totalCols, title, meta){
+    var fullTitle = (meta.donVi ? meta.donVi.toUpperCase()+" — " : "") + title;
+    var totalWidthUnits = 0;
+    for(var c=1;c<=totalCols;c++){ totalWidthUnits += (ws.getColumn(c).width || 10); }
+
+    // Tu dong giam co chu / tang chieu cao dong khi tieu de qua dai so voi be rong sheet,
+    // thay vi de chu tran ra ngoai le trang in (loi da gap: sheet hep vd "Tong hop phong ban"
+    // chi 5 cot nhung tieu de ghep ten don vi dai lai co dinh size 14 khong wrap).
+    var fontSize = 14;
+    var lines = estimateWrappedLines(fullTitle, totalWidthUnits, fontSize);
+    if(lines > 2){ fontSize = 12; lines = estimateWrappedLines(fullTitle, totalWidthUnits, fontSize); }
+    if(lines > 3){ fontSize = 11; lines = estimateWrappedLines(fullTitle, totalWidthUnits, fontSize); }
+
+    ws.mergeCells(1,1,1,totalCols);
+    var t = ws.getCell(1,1);
+    t.value = fullTitle;
+    t.font = {name:FONT, bold:true, size:fontSize, color:{argb:PAL.title}};
+    t.alignment = {horizontal:"center", vertical:"middle", wrapText:true};
+    ws.getRow(1).height = Math.max(24, lines * (fontSize + 9));
+
+    var subParts = [];
+    if(meta.thang) subParts.push("Kỳ báo cáo: " + meta.thang);
+    subParts.push("Xuất lúc: " + new Date().toLocaleString("vi-VN"));
+    if(meta.nguoiLap) subParts.push("Người lập: " + meta.nguoiLap);
+    var subText = subParts.join("   •   ");
+    var subLines = estimateWrappedLines(subText, totalWidthUnits, 10);
+    ws.mergeCells(2,1,2,totalCols);
+    var s = ws.getCell(2,1);
+    s.value = subText;
+    s.font = {name:FONT, italic:true, size:10, color:{argb:PAL.subtitle}};
+    s.alignment = {horizontal:"center", wrapText:true};
+    ws.getRow(2).height = Math.max(16, subLines * 15);
+    return 4; // next free row = header row (row 3 = spacer)
+  }
+
+  function styleHeaderRow(row, colCount){
+    for(var c=1;c<=colCount;c++){
+      var cell = row.getCell(c);
+      cell.font = {name:FONT, bold:true, size:10, color:{argb:PAL.headerText}};
+      cell.fill = {type:"pattern", pattern:"solid", fgColor:{argb:PAL.header}};
+      cell.alignment = {horizontal:"center", vertical:"middle", wrapText:true};
+      cell.border = BORDER_ALL;
+    }
+    row.height = 30;
+  }
+
+  function styleDataRow(row, colCount, opts){
+    opts = opts || {};
+    for(var c=1;c<=colCount;c++){
+      var cell = row.getCell(c);
+      cell.border = BORDER_ALL;
+      cell.font = {name:FONT, size:10, bold: !!opts.bold, italic: !!opts.italic};
+      var fill = opts.fill || (opts.zebra && row.number % 2 === 0 ? PAL.zebra : null);
+      if(fill) cell.fill = {type:"pattern", pattern:"solid", fgColor:{argb:fill}};
+      if(opts.textCols && opts.textCols.indexOf(c) >= 0){
+        cell.alignment = {horizontal:"left", vertical:"middle", wrapText:false};
+      } else {
+        cell.alignment = {horizontal:"center", vertical:"middle"};
+        if(opts.numCols && opts.numCols.indexOf(c) >= 0){
+          cell.numFmt = opts.numFmt || "#,##0.00";
+          cell.alignment.horizontal = "right";
+        }
+      }
+    }
+  }
+
+  function addSignatureBlock(ws, totalCols, startRow, nguoiLap){
+    var half = Math.max(1, Math.floor(totalCols/2));
+    ws.mergeCells(startRow,1,startRow,totalCols);
+    var d = ws.getCell(startRow,1);
+    d.value = "……, ngày ….. tháng ….. năm ……….";
+    d.font = {name:FONT, italic:true, size:10};
+    d.alignment = {horizontal:"right"};
+
+    var r2 = startRow+1;
+    ws.mergeCells(r2,1,r2,half);
+    ws.mergeCells(r2,half+1,r2,totalCols);
+    ws.getCell(r2,1).value = "NGƯỜI LẬP BẢNG";
+    ws.getCell(r2,half+1).value = "GIÁM ĐỐC / TRƯỞNG ĐƠN VỊ";
+    [ws.getCell(r2,1), ws.getCell(r2,half+1)].forEach(function(c){
+      c.font = {name:FONT, bold:true, size:10.5};
+      c.alignment = {horizontal:"center"};
+    });
+
+    var r3 = r2+4;
+    ws.mergeCells(r3,1,r3,half);
+    ws.getCell(r3,1).value = nguoiLap || "";
+    ws.getCell(r3,1).font = {name:FONT, italic:true, size:10};
+    ws.getCell(r3,1).alignment = {horizontal:"center"};
+    return r3;
+  }
+
+  function setColWidths(ws, widths){
+    widths.forEach(function(w, i){ ws.getColumn(i+1).width = w; });
+  }
+
+  function buildDeptSummarySheet(wb, sheetName, title, res, deptCodes, meta, colLabels){
+    colLabels = colLabels || ["Tổng khối lượng (tấn)","Chưa phân bổ (tấn)"];
+    var cols = 5;
+    var ws = wb.addWorksheet(sheetName, {views:[{state:"frozen", ySplit:0}]});
+    ws.pageSetup = {orientation:"portrait", fitToPage:true, fitToWidth:1, fitToHeight:0};
+    setColWidths(ws, [14,28,12,20,16]);
+    var headerRowIdx = addTitleBlock(ws, cols, title, meta);
+    var hRow = ws.getRow(headerRowIdx);
+    hRow.values = ["Mã phòng ban","Tên phòng ban","Số nhân sự",colLabels[0],colLabels[1]];
+    styleHeaderRow(hRow, cols);
+    ws.views = [{state:"frozen", ySplit: headerRowIdx}];
+
+    var r = headerRowIdx+1, g1=0, g2=0, g3=0;
+    deptCodes.forEach(function(d){
+      var info = res.byDeptInfo[d];
+      var row = ws.getRow(r); row.values = [d, info.tenPB, info.empCount, round2(info.total), round2(info.unallocated||0)];
+      styleDataRow(row, cols, {zebra:true, textCols:[1,2], numCols:[3,4,5]});
+      row.getCell(3).numFmt = "0";
+      g1+=info.empCount; g2+=info.total; g3+=(info.unallocated||0);
+      r++;
+    });
+    var totalRow = ws.getRow(r);
+    totalRow.values = ["TỔNG CỘNG","", g1, round2(g2), round2(g3)];
+    ws.mergeCells(r,1,r,2);
+    styleDataRow(totalRow, cols, {bold:true, fill:PAL.total, textCols:[1,2], numCols:[3,4,5]});
+    totalRow.getCell(3).numFmt = "0";
+    r+=2;
+    addSignatureBlock(ws, cols, r, meta.nguoiLap);
+    return ws;
+  }
+
+  function buildDeptDaySheet(wb, sheetName, title, res, deptCodes, meta){
+    var dateKeys = res.dateKeys;
+    var dateLabels = dateKeys.map(function(dk){ return dispDate(new Date(dk+"T00:00:00Z")); });
+    var cols = 2 + dateKeys.length + 1;
+    var ws = wb.addWorksheet(sheetName);
+    ws.pageSetup = {orientation:"landscape", fitToPage:true, fitToWidth:1, fitToHeight:0};
+    setColWidths(ws, [14,28].concat(dateLabels.map(function(){return 8.5;}), [14]));
+    var headerRowIdx = addTitleBlock(ws, cols, title, meta);
+    var hRow = ws.getRow(headerRowIdx);
+    hRow.values = ["Mã phòng ban","Tên phòng ban"].concat(dateLabels, ["Tổng cộng"]);
+    styleHeaderRow(hRow, cols);
+    ws.views = [{state:"frozen", xSplit:2, ySplit: headerRowIdx}];
+
+    var r = headerRowIdx+1;
+    var grand = dateKeys.map(function(){return 0;});
+    var grandAll = 0;
+    var numCols = []; for(var c=3;c<=cols;c++) numCols.push(c);
+    deptCodes.forEach(function(d){
+      var info = res.byDeptInfo[d];
+      if(!info) return;
+      var vals = [d, info.tenPB];
+      dateKeys.forEach(function(dk,i){ var v=(res.byDeptDay[d]||{})[dk]||0; grand[i]+=v; vals.push(round2(v)); });
+      vals.push(round2(info.total));
+      grandAll += info.total;
+      var row = ws.getRow(r); row.values = vals;
+      styleDataRow(row, cols, {zebra:true, textCols:[1,2], numCols:numCols});
+      r++;
+    });
+    var totalRow = ws.getRow(r);
+    totalRow.values = ["TỔNG CỘNG",""].concat(grand.map(round2), [round2(grandAll)]);
+    ws.mergeCells(r,1,r,2);
+    styleDataRow(totalRow, cols, {bold:true, fill:PAL.total, textCols:[1,2], numCols:numCols});
+    return ws;
+  }
+
+  function buildEmpDaySheet(wb, sheetName, title, res, deptCodes, empKeys, meta){
+    var dateKeys = res.dateKeys;
+    var dateLabels = dateKeys.map(function(dk){ return dispDate(new Date(dk+"T00:00:00Z")); });
+    var cols = 4 + dateKeys.length + 1;
+    var ws = wb.addWorksheet(sheetName);
+    ws.pageSetup = {orientation:"landscape", fitToPage:true, fitToWidth:1, fitToHeight:0};
+    setColWidths(ws, [14,24,14,22].concat(dateLabels.map(function(){return 8.5;}), [14]));
+    var headerRowIdx = addTitleBlock(ws, cols, title, meta);
+    var hRow = ws.getRow(headerRowIdx);
+    hRow.values = ["Mã phòng ban","Tên phòng ban","Mã nhân viên","Họ và tên"].concat(dateLabels, ["Tổng cộng"]);
+    styleHeaderRow(hRow, cols);
+    ws.views = [{state:"frozen", xSplit:4, ySplit: headerRowIdx}];
+
+    var r = headerRowIdx+1;
+    var numCols = []; for(var c=5;c<=cols;c++) numCols.push(c);
+    var grandAll = 0;
+    deptCodes.forEach(function(d){
+      var keysInDept = empKeys.filter(function(k){ return res.byEmpInfo[k].maPB === d; })
+        .sort(function(a,b){ return res.byEmpInfo[b].total - res.byEmpInfo[a].total; });
+      if(!keysInDept.length) return;
+      var deptRow = ws.getRow(r);
+      deptRow.values = [d, res.byDeptInfo[d].tenPB, "", ""].concat(dateKeys.map(function(){return "";}), [round2(res.byDeptInfo[d].total)]);
+      ws.mergeCells(r,3,r,4);
+      styleDataRow(deptRow, cols, {bold:true, fill:PAL.dept, textCols:[1,2,3,4], numCols:[cols]});
+      r++;
+      keysInDept.forEach(function(k){
+        var info = res.byEmpInfo[k];
+        var vals = ["", "", info.maNV||"", info.hoTen];
+        dateKeys.forEach(function(dk){ vals.push(round2((res.byEmpDay[k]||{})[dk] || 0)); });
+        vals.push(round2(info.total));
+        var row = ws.getRow(r); row.values = vals;
+        styleDataRow(row, cols, {zebra:true, textCols:[1,2,3,4], numCols:numCols});
+        grandAll += info.total;
+        r++;
+      });
+    });
+    var totalRow = ws.getRow(r);
+    totalRow.values = ["TỔNG CỘNG","","",""].concat(dateKeys.map(function(){return "";}), [round2(grandAll)]);
+    ws.mergeCells(r,1,r,4);
+    styleDataRow(totalRow, cols, {bold:true, fill:PAL.total, textCols:[1,2,3,4], numCols:[cols]});
+    r+=2;
+    addSignatureBlock(ws, cols, r, meta.nguoiLap);
+    return ws;
+  }
+
+  function buildAuditSheet(wb, sheetName, title, res, meta, colLabels){
+    colLabels = colLabels || ["Khối lượng","KL/người"];
+    var cols = 8;
+    var ws = wb.addWorksheet(sheetName);
+    ws.pageSetup = {orientation:"landscape", fitToPage:true, fitToWidth:1, fitToHeight:0};
+    setColWidths(ws, [12,12,12,16,12,14,40,34]);
+    var headerRowIdx = addTitleBlock(ws, cols, title, meta);
+    var hRow = ws.getRow(headerRowIdx);
+    hRow.values = ["Phiếu","Ngày","Mã phòng ban",colLabels[0],"Số người nhận",colLabels[1],"Danh sách người nhận","Ghi chú"];
+    styleHeaderRow(hRow, cols);
+    ws.views = [{state:"frozen", ySplit: headerRowIdx}];
+
+    var r = headerRowIdx+1;
+    res.audit.forEach(function(a){
+      var row = ws.getRow(r);
+      row.values = [a.phieu, a.ngay?(dispDate(a.ngay)+"/"+a.ngay.getUTCFullYear()):"", a.maPB, round2(a.kl), a.soNguoi, a.share?round3(a.share):"", a.names.join(", "), a.note];
+      var flagged = !!a.note;
+      styleDataRow(row, cols, {zebra: !flagged, fill: flagged?PAL.warnRow:null, textCols:[2,7,8], numCols:[4,6]});
+      row.getCell(1).alignment = {horizontal:"right", vertical:"middle"};
+      row.getCell(1).numFmt = "0";
+      row.getCell(5).alignment = {horizontal:"right", vertical:"middle"};
+      row.getCell(5).numFmt = "0";
+      r++;
+    });
+    if(r > headerRowIdx+1){
+      ws.autoFilter = {from:{row:headerRowIdx, column:1}, to:{row:r-1, column:cols}};
+    }
+    return ws;
+  }
+
+  function buildLuongSheet(wb, luong, meta, bdOn){
+    var headers = ["Mã phòng ban","Tên phòng ban","Mã nhân viên","Họ và tên","Số công","Khối lượng (tấn)"];
+    var widths  = [14,24,14,22,10,14];
+    if(bdOn){ headers.push("Số xe BD"); widths.push(10); }
+    headers.push("Lương sản lượng"); widths.push(16);
+    if(bdOn){ headers.push("Lương ban dăm"); widths.push(16); }
+    headers.push("Bù lương","Tổng cộng"); widths.push(16,16);
+    var cols = headers.length;
+
+    var colSoCong = 5, colKl = 6;
+    var colXeBd = bdOn ? 7 : null;
+    var colLsl = bdOn ? 8 : 7;
+    var colLbd = bdOn ? 9 : null;
+    var colBu = bdOn ? 10 : 8;
+    var colTong = bdOn ? 11 : 9;
+
+    var ws = wb.addWorksheet("Tien luong va bu luong");
+    ws.pageSetup = {orientation:"landscape", fitToPage:true, fitToWidth:1, fitToHeight:0};
+    setColWidths(ws, widths);
+    var cocheLabel = luong.coChe==="group" ? "theo bình quân cả tổ" : (luong.coChe==="individual" ? "theo từng cá nhân — mẫu Đại Hiệp, theo ngày" : "không áp dụng");
+    var headerRowIdx = addTitleBlock(ws, cols, "LƯƠNG SẢN LƯỢNG"+(bdOn?" / LƯƠNG BAN DĂM":"")+" & BÙ LƯƠNG (cơ chế: "+cocheLabel+")", meta);
+    var hRow = ws.getRow(headerRowIdx);
+    hRow.values = headers;
+    styleHeaderRow(hRow, cols);
+    ws.views = [{state:"frozen", xSplit:4, ySplit: headerRowIdx}];
+
+    var r = headerRowIdx+1;
+    var textCols = [1,2,3,4];
+    var numCols = []; for(var c=5;c<=cols;c++) numCols.push(c);
+    var deptCodesL = Object.keys(luong.deptTotals).sort();
+    var grand = {tanKl:0, xeBd:0, sl:0, bd:0, bu:0, tong:0};
+    deptCodesL.forEach(function(d){
+      var rowsInDept = luong.rows.filter(function(rr){return rr.maPB===d;})
+        .sort(function(a,b){return b.tongThucNhan - a.tongThucNhan;});
+      if(!rowsInDept.length) return;
+      var deptVals = new Array(cols).fill("");
+      deptVals[0] = d; deptVals[1] = luong.deptTotals[d].tenPB;
+      var deptRow = ws.getRow(r); deptRow.values = deptVals;
+      ws.mergeCells(r,3,r,4);
+      styleDataRow(deptRow, cols, {bold:true, fill:PAL.dept, textCols:textCols, numCols:numCols});
+      r++;
+      rowsInDept.forEach(function(rr){
+        var vals = new Array(cols).fill("");
+        vals[2] = rr.maNV||""; vals[3] = rr.hoTen;
+        vals[colSoCong-1] = rr.soCong!=null ? round2(rr.soCong) : "";
+        vals[colKl-1] = round2(rr.tanKl);
+        if(bdOn) vals[colXeBd-1] = round2(rr.xeBd);
+        vals[colLsl-1] = round2(rr.luongSanLuong);
+        if(bdOn) vals[colLbd-1] = round2(rr.luongBanDam);
+        vals[colBu-1] = round2(rr.buLuong);
+        vals[colTong-1] = round2(rr.tongThucNhan);
+        var row = ws.getRow(r); row.values = vals;
+        styleDataRow(row, cols, {zebra:true, textCols:textCols, numCols:numCols});
+        row.getCell(colSoCong).numFmt = "0.0";
+        row.getCell(colKl).numFmt = "#,##0.00";
+        if(bdOn) row.getCell(colXeBd).numFmt = "#,##0.00";
+        row.getCell(colLsl).numFmt = "#,##0";
+        if(bdOn) row.getCell(colLbd).numFmt = "#,##0";
+        row.getCell(colBu).numFmt = "#,##0";
+        row.getCell(colTong).numFmt = "#,##0";
+        grand.tanKl+=rr.tanKl; grand.xeBd+=rr.xeBd; grand.sl+=rr.luongSanLuong; grand.bd+=rr.luongBanDam; grand.bu+=rr.buLuong; grand.tong+=rr.tongThucNhan;
+        r++;
+      });
+    });
+    var totalVals = new Array(cols).fill("");
+    totalVals[0] = "TỔNG CỘNG";
+    totalVals[colKl-1] = round2(grand.tanKl);
+    if(bdOn) totalVals[colXeBd-1] = round2(grand.xeBd);
+    totalVals[colLsl-1] = round2(grand.sl);
+    if(bdOn) totalVals[colLbd-1] = round2(grand.bd);
+    totalVals[colBu-1] = round2(grand.bu);
+    totalVals[colTong-1] = round2(grand.tong);
+    var totalRow = ws.getRow(r); totalRow.values = totalVals;
+    ws.mergeCells(r,1,r,4);
+    styleDataRow(totalRow, cols, {bold:true, fill:PAL.total, textCols:textCols, numCols:numCols});
+    totalRow.getCell(colKl).numFmt = "#,##0.00";
+    if(bdOn) totalRow.getCell(colXeBd).numFmt = "#,##0.00";
+    totalRow.getCell(colLsl).numFmt = "#,##0";
+    if(bdOn) totalRow.getCell(colLbd).numFmt = "#,##0";
+    totalRow.getCell(colBu).numFmt = "#,##0";
+    totalRow.getCell(colTong).numFmt = "#,##0";
+    r+=2;
+    var noteParts = [];
+    if(luong.cfg && luong.cfg.soNgayChuan) noteParts.push("Số ngày chuẩn/tháng tự động theo dữ liệu: "+luong.cfg.soNgayChuan+" ngày.");
+    if(luong.coChe==="individual"){
+      if(luong.usedAttendDaily){
+        noteParts.push("Cơ chế cá nhân tính theo TỪNG NGÀY sản xuất (mẫu Đại Hiệp, đúng theo bậc thang công thức gốc): ngày nào có sản lượng thì tiền ngày đó = MAX(sản lượng ngày × đơn giá, SL Tham chiếu ngày × đơn giá) — SL Tham chiếu tra theo bậc thang công BT (0 / 16,666667 / 33,333333 / 49,9999999 tấn, tùy công BT và ngày thường/Chủ Nhật), không phải phép nhân liên tục; không áp dụng ngưỡng công tháng; không áp dụng cho lương ban dăm.");
+      } else {
+        noteParts.push("Cơ chế cá nhân (mẫu Đại Hiệp) nhưng CHƯA có bảng công theo ngày — đang tạm dùng mức sàn cố định "+fmt(luong.cfg.mucSan,0)+"đ/ngày có sản lượng thay vì mức tham chiếu theo công BT thực tế từng ngày; số bù lương có thể chưa khớp công thức gốc, thường bị TÍNH CAO HƠN đúng.");
+      }
+    }
+    if(luong.warnings.length) noteParts.push(luong.warnings.length+" cảnh báo liên quan chấm công/bù lương — xem sheet \"Đối soát phiếu cân\" hoặc bảng trên trong ứng dụng để biết chi tiết.");
+    if(noteParts.length){
+      ws.getCell(r,1).value = "Ghi chú: " + noteParts.join(" ");
+      ws.getCell(r,1).font = {name:FONT, italic:true, size:9.5, color:{argb:PAL.subtitle}};
+      r+=2;
+    }
+    addSignatureBlock(ws, cols, r, meta.nguoiLap);
+    return ws;
+  }
+
+  function rawSheet(wb, name, kind){
+    if(!state[kind].workbook) return;
+    var ws = wb.addWorksheet(name);
+    var headers = state[kind].headers.map(function(h){return h.label;});
+    setColWidths(ws, headers.map(function(){return 16;}));
+    var hRow = ws.getRow(1); hRow.values = headers;
+    styleHeaderRow(hRow, headers.length);
+    ws.views = [{state:"frozen", ySplit:1}];
+    var r = 2;
+    state[kind].rows.forEach(function(rowData){
+      var vals = state[kind].headers.map(function(h){
+        var v = rowData[h.idx];
+        if(v instanceof Date) return dispDate(v)+"/"+v.getUTCFullYear();
+        return v;
+      });
+      var row = ws.getRow(r); row.values = vals;
+      styleDataRow(row, headers.length, {zebra:true, textCols: headers.map(function(_,i){return i+1;})});
+      r++;
+    });
+  }
+
+  function buildGuideSheet(wb, meta, ctx){
+    // Chon do rong cot duoi nguong ~89 don vi (be rong in vua 1 trang portrait KHONG can co
+    // che do "fit to width" cua Excel/LibreOffice, vi buoc chuyen doi PDF headless dung o day
+    // khong luon ap dung dung fitToPage) — tranh lap lai loi tran chu ra ngoai le trang vua sua.
+    var colWidth = 82;
+    var ws = wb.addWorksheet("Huong dan su dung");
+    ws.pageSetup = {orientation:"portrait", fitToPage:true, fitToWidth:1, fitToHeight:0};
+    setColWidths(ws, [colWidth]);
+    var r = addTitleBlock(ws, 1, "HƯỚNG DẪN SỬ DỤNG FILE BÁO CÁO", meta);
+
+    function heading(text){
+      var row = ws.getRow(r);
+      row.getCell(1).value = text;
+      row.getCell(1).font = {name:FONT, bold:true, size:12, color:{argb:PAL.title}};
+      row.getCell(1).alignment = {vertical:"middle"};
+      row.height = 20;
+      r++;
+    }
+    function para(text){
+      var lines = estimateWrappedLines(text, colWidth, 10.5);
+      var row = ws.getRow(r);
+      row.getCell(1).value = text;
+      row.getCell(1).font = {name:FONT, size:10.5};
+      row.getCell(1).alignment = {wrapText:true, vertical:"top"};
+      row.height = Math.max(16, lines*14);
+      r++;
+    }
+    function spacer(){ r++; }
+
+    para("File này được tạo tự động bởi công cụ \"Phân bổ khối lượng tính lương\" (phan_bo_khoi_luong.html) — công cụ chạy hoàn toàn trên máy tính của người dùng, không gửi dữ liệu lương đi đâu cả. Vui lòng rà soát lại các cảnh báo (nếu có, xem sheet \"Đối soát...\") trước khi dùng để trả lương chính thức.");
+    spacer();
+    heading("1. DANH SÁCH CÁC SHEET TRONG FILE NÀY");
+    para("• Tổng hợp phòng ban: tổng khối lượng (tấn) mỗi phòng ban nhận trong tháng, và phần chưa phân bổ được (nếu có phiếu cân không tìm được người nhận hợp lệ).");
+    para("• Phân bổ theo phòng ban: giống sheet trên nhưng chia theo từng ngày trong tháng — dùng để đối chiếu ngày nào phòng ban nào có sản lượng cao/thấp bất thường.");
+    para("• Chi tiết công nhân: khối lượng (tấn) mỗi công nhân nhận được, theo từng ngày và tổng tháng, nhóm theo phòng ban.");
+    para("• Đối soát phiếu cân: liệt kê từng phiếu cân gốc — ngày nào, phòng ban nào, chia cho bao nhiêu người, mỗi người bao nhiêu — dùng để tra cứu khi có thắc mắc hoặc phát hiện chênh lệch với chấm công thực tế.");
+    if(ctx.bdOn){
+      para("• Tổng hợp BD / BD - Phòng ban / BD - Công nhân / Đối soát BD: 4 sheet có cấu trúc y hệt 4 sheet trên nhưng dành cho luồng BƠM/BAN DĂM — đơn vị tính ở các sheet này là XE (số xe), KHÔNG PHẢI TẤN.");
+    }
+    if(ctx.luongOn){
+      para("• Tiền lương và bù lương: bảng tính lương sản lượng, lương ban dăm (nếu có bật) và bù lương cho từng công nhân, đã cộng thành tổng thực nhận — xem cách tính chi tiết ở mục 3 bên dưới.");
+    }
+    para("• Dữ liệu - ...: các sheet chép lại nguyên văn dữ liệu gốc mà bạn đã tải lên khi chạy công cụ, để tiện đối chiếu — không phải sheet kết quả tính toán.");
+    spacer();
+    heading("2. QUY TẮC PHÂN BỔ KHỐI LƯỢNG / SỐ XE");
+    para("Với mỗi phiếu cân, khối lượng (hoặc số xe) được CHIA ĐỀU cho các công nhân đang làm việc trong phòng ban phụ trách phiếu đó và KHÔNG có tên trong cột \"NV vắng\" của đúng phiếu đó (so khớp theo từ cuối cùng trong họ tên). Nếu một phiếu không tìm được người nhận hợp lệ, khối lượng/số xe đó được tính vào \"chưa phân bổ được\" thay vì bị bỏ sót âm thầm — xem chi tiết ở sheet \"Đối soát...\".");
+    if(ctx.luongOn){
+      spacer();
+      heading("3. CƠ CHẾ TÍNH LƯƠNG ĐANG DÙNG TRONG FILE NÀY");
+      para("Đơn giá khối lượng: " + fmt(ctx.giaKl,0) + " đ/tấn" + (ctx.bdOn ? "   •   Đơn giá bơm/ban dăm: " + fmt(ctx.giaBd,0) + " đ/xe" : "") + "   •   Mức sàn bù lương: " + fmt(ctx.mucSan,0) + " đ/ngày công.");
+      if(ctx.coChe === "group"){
+        para("Cơ chế bù lương: THEO BÌNH QUÂN CẢ TỔ. Với mỗi phòng ban: lấy tổng tiền sản lượng cả tổ chia cho số ngày chuẩn/tháng (tự động lấy theo tháng có dữ liệu = " + ctx.soNgayChuan + " ngày) rồi chia tiếp cho số người trong tổ, ra bình quân đ/người/ngày. Nếu bình quân này THẤP HƠN mức sàn, mỗi người ĐỦ ĐIỀU KIỆN (có từ " + ctx.nguong + " công/tháng trở lên trong bảng chấm công) được bù thêm (mức sàn − bình quân tổ) × số công riêng của người đó. Người dưới ngưỡng công thì không được bù (bù = 0).");
+      } else if(ctx.coChe === "individual"){
+        para("Cơ chế bù lương: THEO TỪNG CÁ NHÂN (đúng công thức gốc trong file mẫu Đại Hiệp — sheet \"CONG CN\", đối chiếu lại với pipeline Power Query + DAX thật của đơn vị). Với MỖI NGÀY người đó có sản lượng: SL Tham chiếu ngày tra theo BẬC THANG công BT ngày đó (công BT lấy từ \"Bảng công theo ngày\" nếu có tải lên) — KHÔNG phải phép nhân liên tục 33,333333 × công BT: ngày thường công BT<0,5→0, 0,5≤công BT<1→16,666667, công BT≥1→33,333333 tấn quy đổi; Chủ Nhật công BT<0,5→0, 0,5≤công BT<1→16,666667, 1≤công BT<1,5→33,333333, công BT≥1,5→49,9999999 tấn quy đổi. Tiền ngày đó = MAX(sản lượng ngày × đơn giá, SL Tham chiếu ngày × đơn giá). Chủ Nhật có trần công BT cao hơn (1,5 thay vì 1) nên SL Tham chiếu Chủ Nhật cũng cao hơn tương ứng (tối đa ~50 tấn quy đổi thay vì 33,33 tấn) — công cụ tự xác định ngày thường/Chủ Nhật theo đúng ngày thật trong dữ liệu, không cần nhập tay. Ngày nào KHÔNG có dữ liệu công BT (dù đã tải bảng công theo ngày) được coi công BT = 0 (khớp đúng cách hệ thống gốc xử lý — không suy ra mức sàn cố định), nghĩa là ngày đó không có bù lương chứ không phải đã đạt định mức — có cảnh báo riêng cho từng người/ngày bị thiếu. Bù lương cả tháng = tổng phần chênh lệch của những ngày sản lượng thấp hơn mức tham chiếu. Cơ chế này KHÔNG áp dụng ngưỡng công tối thiểu/tháng (khác cơ chế theo tổ), và KHÔNG áp dụng cho lương bơm/ban dăm (chỉ tính trên khối lượng/tấn). Công cụ có đối chiếu công BT đã nhập với bậc thang chuẩn (trần theo đúng loại ngày, bước 0,5) — nếu có ngày ghi khác bậc thang sẽ cảnh báo rõ tên người + ngày để kiểm tra lại số liệu nguồn."
+          + (ctx.attendDailyUsed
+            ? ""
+            : " ⚠ File xuất lần này CHƯA có \"Bảng công theo ngày\" nên đang tạm dùng mức sàn CỐ ĐỊNH " + fmt(ctx.mucSan,0) + "đ/ngày có sản lượng thay cho SL Tham chiếu theo công BT thực tế — số bù lương thường bị TÍNH CAO HƠN mức đúng đối với các ngày công BT dưới 1 công. Xem cảnh báo trong sheet \"Đối soát...\"/mục \"Cần kiểm tra lại\" trên ứng dụng, và tải \"Bảng công theo ngày\" ở bước 4 để tính chính xác."));
+      } else {
+        para("Cơ chế bù lương: KHÔNG ÁP DỤNG cho lần xuất file này — cột \"Bù lương\" luôn bằng 0, số tiền chỉ gồm lương sản lượng (cộng lương ban dăm nếu có bật).");
+      }
+    }
+    spacer();
+    heading("4. LƯU Ý KHI ĐỐI CHIẾU SỐ LIỆU");
+    para("Nếu số liệu có vẻ chưa đúng, nên kiểm tra lại theo thứ tự: (1) cột \"NV vắng\" trên phiếu cân gốc có ghi đúng và đủ tên người vắng hôm đó không; (2) bảng phòng ban có đủ và đúng mã phòng ban của mọi phiếu cân không (phiếu dùng mã lạ sẽ bị cảnh báo \"chưa phân bổ được\"); (3) với người nghỉ NGUYÊN NGÀY, cần ghi tên vào cột NV vắng của TẤT CẢ các phiếu cân trong ngày đó của phòng ban, không chỉ 1 phiếu — thiếu sót này là nguyên nhân sai lệch phổ biến nhất.");
+    para("Nếu thấy cảnh báo \"KHÁC THÁNG với phần lớn dữ liệu\": nghĩa là có phiếu cân trong file gốc ghi ngày thuộc một tháng khác hẳn so với đa số phiếu còn lại (ví dụ lẫn 1 phiếu ghi 31/05 vào lô dữ liệu tháng 06) — công cụ vẫn tính đúng theo ĐÚNG ngày đã đọc được từ file, không tự đổi ngày; cần quay lại file khối lượng/bơm-ban dăm gốc, tìm đúng số phiếu được nêu trong cảnh báo và xác nhận lại xem đó là ngày thật hay bị nhập nhầm ngày/tháng khi lập phiếu.");
+    para("Đây là file do công cụ tự động tính toán để hỗ trợ kế toán — vẫn cần người phụ trách rà soát lại trước khi dùng làm căn cứ trả lương chính thức.");
+    return ws;
+  }
+
+  async function buildExportWorkbook(res, deptCodes, empKeys, resBd, luong){
+    var wb = new ExcelJS.Workbook();
+    wb.creator = "HAK Group — Công cụ phân bổ khối lượng";
+    wb.created = new Date();
+    var meta = reportMeta();
+    var bdOn = !!(resBd && state.bdEnabled);
+
+    buildGuideSheet(wb, meta, {
+      bdOn: bdOn,
+      luongOn: !!luong,
+      coChe: luong ? luong.coChe : "none",
+      giaKl: luong ? luong.cfg.giaKl : 0,
+      giaBd: luong ? luong.cfg.giaBd : 0,
+      mucSan: luong ? luong.cfg.mucSan : 0,
+      nguong: luong ? luong.cfg.nguong : 0,
+      attendDailyUsed: luong ? !!luong.usedAttendDaily : false,
+      soNgayChuan: luong ? luong.cfg.soNgayChuan : ""
+    });
+    wb.views = [{activeTab: 0}];
+
+    buildDeptSummarySheet(wb, "Tong hop phong ban", "BẢNG TỔNG HỢP PHÂN BỔ SẢN LƯỢNG THEO PHÒNG BAN", res, deptCodes, meta);
+    buildDeptDaySheet(wb, "Phan bo theo phong ban", "PHÂN BỔ SẢN LƯỢNG THEO PHÒNG BAN THEO NGÀY", res, deptCodes, meta);
+    buildEmpDaySheet(wb, "Chi tiet cong nhan", "PHÂN BỔ SẢN LƯỢNG CHI TIẾT CÔNG NHÂN", res, deptCodes, empKeys, meta);
+    buildAuditSheet(wb, "Doi soat phieu can", "ĐỐI SOÁT PHÂN BỔ THEO TỪNG PHIẾU CÂN", res, meta);
+
+    if(bdOn){
+      var deptCodesBd = Object.keys(resBd.byDeptInfo).sort();
+      var empKeysBd = Object.keys(resBd.byEmpInfo);
+      buildDeptSummarySheet(wb, "Tong hop BD", "BẢNG TỔNG HỢP PHÂN BỔ BƠM/BAN DĂM THEO PHÒNG BAN", resBd, deptCodesBd, meta, ["Tổng số xe","Chưa phân bổ (xe)"]);
+      buildDeptDaySheet(wb, "BD - Phong ban", "PHÂN BỔ BƠM/BAN DĂM THEO PHÒNG BAN THEO NGÀY", resBd, deptCodesBd, meta);
+      buildEmpDaySheet(wb, "BD - Cong nhan", "PHÂN BỔ BƠM/BAN DĂM CHI TIẾT CÔNG NHÂN", resBd, deptCodesBd, empKeysBd, meta);
+      buildAuditSheet(wb, "Doi soat BD", "ĐỐI SOÁT PHÂN BỔ BƠM/BAN DĂM THEO TỪNG PHIẾU", resBd, meta, ["Số xe","Xe/người"]);
+    }
+
+    if(luong){
+      buildLuongSheet(wb, luong, meta, bdOn);
+    }
+
+    rawSheet(wb, "Du lieu - Khoi luong", "kl");
+    if(bdOn) rawSheet(wb, "Du lieu - Bom ban dam", "bd");
+    rawSheet(wb, "Du lieu - Phong ban", "pb");
+    if(luong) rawSheet(wb, "Du lieu - Cham cong", "attend");
+    if(luong && luong.usedAttendDaily) rawSheet(wb, "Du lieu - Cham cong theo ngay", "attendDaily");
+
+    return wb;
+  }
+
+  function triggerBlobDownload(buffer, filename, mime){
+    var blob = new Blob([buffer], {type: mime});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Templates — same styled look, filled with sample rows              */
+  /* ---------------------------------------------------------------- */
+  async function downloadTemplate(kind){
+    var wb = new ExcelJS.Workbook();
+    var meta = {donVi:"", thang:"", nguoiLap:""};
+    if(kind === "kl" || kind === "bd"){
+      var isBd = kind === "bd";
+      var cols = 8;
+      var ws = wb.addWorksheet(isBd ? "Bom ban dam" : "Khoi luong");
+      setColWidths(ws, [10,12,12,10,10,15,12,26]);
+      var headerRowIdx = addTitleBlock(ws, cols, isBd ? "MẪU BẢNG BƠM/BAN DĂM" : "MẪU BẢNG KHỐI LƯỢNG (PHIẾU CÂN)", meta);
+      var hRow = ws.getRow(headerRowIdx);
+      hRow.values = isBd
+        ? ["Phiếu","Ngày","Biển số","Cân lần 1","Cân lần 2","Số xe","Mã phòng ban","NV vắng"]
+        : ["Phiếu cân","Ngày cân 1","Biển số 1","Cân lần 1","Cân lần 2","KL hàng (Tấn)","Mã phòng ban","NV vắng"];
+      styleHeaderRow(hRow, cols);
+      ws.views = [{state:"frozen", ySplit: headerRowIdx}];
+      var sample = isBd ? [
+        [201,"01/06/2026","43A-97033","","",1,"02.02","Kiểu, Long, Lynh, Định"],
+        [202,"01/06/2026","92K-9181","","",1,"02.02",""],
+        [203,"01/06/2026","92C-07490","","",1,"02.01",""]
+      ] : [
+        [4979,"01/06/2026","43A-97033",7540,4410,3.13,"02.02","Kiểu, Long, Lynh, Định"],
+        [4980,"01/06/2026","92K-9181",13770,4660,9.11,"02.02",""],
+        [4987,"01/06/2026","92C-07490",22160,6050,16.11,"02.01",""]
+      ];
+      var r = headerRowIdx+1;
+      sample.forEach(function(vals){
+        var row = ws.getRow(r); row.values = vals;
+        styleDataRow(row, cols, {zebra:true, textCols:[2,3,7,8], numCols:[6]});
+        [1,4,5].forEach(function(ci){ row.getCell(ci).alignment = {horizontal:"right", vertical:"middle"}; row.getCell(ci).numFmt = "0"; });
+        row.getCell(6).numFmt = isBd ? "0" : "#,##0.00";
+        r++;
+      });
+      var buf = await wb.xlsx.writeBuffer();
+      triggerBlobDownload(buf, isBd ? "mau_bang_bom_ban_dam.xlsx" : "mau_bang_khoi_luong.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    } else if(kind === "pb"){
+      var cols2 = 6;
+      var ws2 = wb.addWorksheet("Phong ban");
+      setColWidths(ws2, [12,24,14,22,12,12]);
+      var headerRowIdx2 = addTitleBlock(ws2, cols2, "MẪU BẢNG PHÒNG BAN (DANH SÁCH NHÂN SỰ)", meta);
+      var hRow2 = ws2.getRow(headerRowIdx2);
+      hRow2.values = ["Mã phòng ban","Tên phòng ban","Mã nhân viên","Họ và tên","Ngày vào làm","Ngày nghỉ việc"];
+      styleHeaderRow(hRow2, cols2);
+      ws2.views = [{state:"frozen", ySplit: headerRowIdx2}];
+      var sample2 = [
+        ["02.01","Công nhân sản xuất 1","03.001.001","Trần Công Đức","01/01/2025",""],
+        ["02.01","Công nhân sản xuất 1","03.001.002","Phạm Ngọc Anh","01/01/2025",""],
+        ["02.02","Công nhân sản xuất 2","03.002.001","Đỗ Hồng Quang","01/01/2025",""]
+      ];
+      var r2 = headerRowIdx2+1;
+      sample2.forEach(function(vals){
+        var row = ws2.getRow(r2); row.values = vals;
+        styleDataRow(row, cols2, {zebra:true, textCols:[1,2,3,4,5,6]});
+        r2++;
+      });
+      var buf2 = await wb.xlsx.writeBuffer();
+      triggerBlobDownload(buf2, "mau_bang_phong_ban.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    } else if(kind === "attend"){
+      var cols3 = 3;
+      var ws3 = wb.addWorksheet("Cham cong");
+      setColWidths(ws3, [14,24,12]);
+      var headerRowIdx3 = addTitleBlock(ws3, cols3, "MẪU BẢNG CÔNG CẢ THÁNG", meta);
+      var hRow3 = ws3.getRow(headerRowIdx3);
+      hRow3.values = ["Mã nhân viên","Họ và tên","Số công"];
+      styleHeaderRow(hRow3, cols3);
+      ws3.views = [{state:"frozen", ySplit: headerRowIdx3}];
+      var sample3 = [
+        ["03.001.001","Trần Công Đức",26],
+        ["03.001.002","Phạm Ngọc Anh",12],
+        ["03.002.001","Đỗ Hồng Quang",28]
+      ];
+      var r3 = headerRowIdx3+1;
+      sample3.forEach(function(vals){
+        var row = ws3.getRow(r3); row.values = vals;
+        styleDataRow(row, cols3, {zebra:true, textCols:[1,2], numCols:[3]});
+        row.getCell(3).numFmt = "0.0";
+        r3++;
+      });
+      var buf3 = await wb.xlsx.writeBuffer();
+      triggerBlobDownload(buf3, "mau_bang_cham_cong.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    } else if(kind === "attendDaily"){
+      var sampleDays = [1,2,3,7]; // vai ngay mau, gom 1 Chu Nhat (7) de minh hoa tran 1.5 cong
+      var cols4 = 2 + sampleDays.length;
+      var ws4 = wb.addWorksheet("Cham cong theo ngay");
+      setColWidths(ws4, [14,24].concat(sampleDays.map(function(){return 9;})));
+      var headerRowIdx4 = addTitleBlock(ws4, cols4, "MẪU BẢNG CÔNG THEO NGÀY (CÔNG BT)", meta);
+      var hRow4 = ws4.getRow(headerRowIdx4);
+      hRow4.values = ["Mã nhân viên","Họ và tên"].concat(sampleDays);
+      styleHeaderRow(hRow4, cols4);
+      ws4.views = [{state:"frozen", ySplit: headerRowIdx4}];
+      var sample4 = [
+        ["03.001.001","Trần Công Đức", 1, 1, 1, 1.5],
+        ["03.001.002","Phạm Ngọc Anh", 1, 0.5, 1, 1.5],
+        ["03.002.001","Đỗ Hồng Quang", 0, 1, 1, 1.5]
+      ];
+      var r4 = headerRowIdx4+1;
+      sample4.forEach(function(vals){
+        var row = ws4.getRow(r4); row.values = vals;
+        styleDataRow(row, cols4, {zebra:true, textCols:[1,2]});
+        for(var ci=3; ci<=cols4; ci++){ row.getCell(ci).numFmt = "0.0"; row.getCell(ci).alignment = {horizontal:"center", vertical:"middle"}; }
+        r4++;
+      });
+      var buf4 = await wb.xlsx.writeBuffer();
+      triggerBlobDownload(buf4, "mau_bang_cham_cong_theo_ngay.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    }
+  }
+  document.getElementById("btn-template-kl").addEventListener("click", function(){ downloadTemplate("kl"); });
+  document.getElementById("btn-template-bd").addEventListener("click", function(){ downloadTemplate("bd"); });
+  document.getElementById("btn-template-pb").addEventListener("click", function(){ downloadTemplate("pb"); });
+  document.getElementById("btn-template-attend").addEventListener("click", function(){ downloadTemplate("attend"); });
+  document.getElementById("btn-template-attend-daily").addEventListener("click", function(){ downloadTemplate("attendDaily"); });
+
+  /* ---------------------------------------------------------------- */
+  /* Wire up compute + export                                          */
+  /* ---------------------------------------------------------------- */
+  setupDropzone("kl");
+  setupDropzone("bd");
+  setupDropzone("pb");
+  setupDropzone("attend");
+  setupDropzone("attendDaily");
+
+  document.getElementById("btn-compute").addEventListener("click", function(){
+    var klRows = extractProductionRows("kl");
+    var pbRows = extractPbRows();
+    if(!klRows.length){ alert("Không tìm thấy dòng dữ liệu hợp lệ trong bảng khối lượng."); return; }
+    if(!pbRows.length){ alert("Không tìm thấy dòng dữ liệu hợp lệ trong bảng phòng ban."); return; }
+    var res = computeAllocation(klRows, pbRows);
+    state.result = res;
+
+    var resBd = null;
+    if(state.bdEnabled && state.bd.workbook){
+      var bdRows = extractProductionRows("bd");
+      if(bdRows.length) resBd = computeAllocation(bdRows, pbRows, "xe");
+    }
+    state.resultBd = resBd;
+
+    var soNgayChuanAuto = daysInMonthFromDateKeys(res.dateKeys);
+    document.getElementById("inp-songaychuan").value = soNgayChuanAuto;
+
+    var luong = null;
+    if(state.attend.workbook){
+      var attendRows = extractAttendRows();
+      if(attendRows.length){
+        var cfg = {
+          giaKl: toNumber(document.getElementById("inp-giakl").value) || 0,
+          giaBd: toNumber(document.getElementById("inp-giabd").value) || 0,
+          mucSan: toNumber(document.getElementById("inp-mucsan").value) || 0,
+          nguong: toNumber(document.getElementById("inp-nguong").value) || 0,
+          soNgayChuan: soNgayChuanAuto,
+          coChe: document.getElementById("sel-cochebu").value
+        };
+        var attendDailyRows = (cfg.coChe === "individual" && state.attendDaily.workbook) ? extractAttendDailyRows() : [];
+        luong = computeLuong(res, resBd, attendRows, pbRows, cfg, attendDailyRows);
+      }
+    }
+    state.luong = luong;
+
+    state.activeTab = "dept";
+    renderResults(res);
+    document.getElementById("card-results").scrollIntoView({behavior:"smooth", block:"start"});
+  });
+
+  document.getElementById("btn-export").addEventListener("click", async function(){
+    if(!state.result) return;
+    var btn = document.getElementById("btn-export");
+    var noteEl = document.getElementById("export-note");
+    btn.disabled = true; noteEl.textContent = "Đang tạo file…";
+    try{
+      var deptCodes = Object.keys(state.result.byDeptInfo).sort();
+      var empKeys = Object.keys(state.result.byEmpInfo);
+      var wb = await buildExportWorkbook(state.result, deptCodes, empKeys, state.resultBd, state.luong);
+      var stamp = new Date();
+      var fname = "Phan_bo_khoi_luong_" + stamp.getFullYear() + String(stamp.getMonth()+1).padStart(2,"0") + String(stamp.getDate()).padStart(2,"0") + ".xlsx";
+      var buf = await wb.xlsx.writeBuffer();
+      triggerBlobDownload(buf, fname, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      noteEl.textContent = "Đã tải: " + fname;
+    }catch(err){
+      noteEl.textContent = "Lỗi khi tạo file: " + err.message;
+    }finally{
+      btn.disabled = false;
+    }
+  });
+
+  markStepActive(1);
+})();
+</script>
+</body>
+</html>

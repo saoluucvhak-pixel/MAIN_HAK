@@ -1,0 +1,129 @@
+<h3>Hệ thống Quản lý Nhân sự (QL_NHANSU)</h3>
+<p><i>Tài liệu mô tả đúng phiên bản đang chạy trên nhánh main của kho mã nguồn QL_NHANSU (Google Apps Script). Cập nhật lần cuối theo bản deploy gần nhất.</i></p>
+<h3>Mục lục</h3>
+<ul>
+<li>Giới thiệu chung</li>
+<li>Mô hình quyền — 2 lớp tách biệt</li>
+<li>Thiết lập lần đầu (dành cho Admin)</li>
+<li>Vai trò người dùng trong app</li>
+<li>Giao diện tổng quan</li>
+<li>Quản lý hồ sơ nhân viên</li>
+<li>Hợp đồng lao động và các mục con</li>
+<li>Danh mục dùng chung</li>
+<li>Cơ chế Nháp → Duyệt</li>
+<li>Cơ chế lịch sử phiên bản (Hiệu lực từ / đến)</li>
+<li>Quản lý người dùng trong app</li>
+<li>Báo cáo</li>
+<li>Nhập / xuất dữ liệu Excel</li>
+<li>Menu hệ thống</li>
+<li>Xử lý sự cố thường gặp</li>
+<li>Lưu ý an toàn dữ liệu</li>
+</ul>
+<h3>1. Giới thiệu chung</h3>
+<p>QL_NHANSU là ứng dụng web quản lý nhân sự chạy trên nền Google Apps Script, dữ liệu lưu trong 3 Google Sheet tách biệt (không phải sheet gắn với script):</p>
+<ul>
+<li><b>DM_CONGTY_HAK</b> — hồ sơ công ty và toàn bộ danh mục dùng chung (chức vụ, phòng ban, lương, phụ cấp, bảo hiểm, thuế TNCN...).</li>
+<li><b>THONGTINNHANSU_HAK</b> — danh sách nhân viên và toàn bộ hồ sơ/hợp đồng của từng người.</li>
+<li><b>Draft_NHANSU_HAK</b> — nhật ký các bản nháp đang chờ duyệt (nhật ký thao tác).</li>
+</ul>
+<p>Ứng dụng được mở qua 1 link web (dạng .../macros/s/xxx/exec) — ai mở link cũng chạy dưới đúng tài khoản Google của người đó, không phải tài khoản người tạo app.</p>
+<h3>2. Mô hình quyền — 2 lớp tách biệt</h3>
+<p>Đây là điểm quan trọng nhất cần nắm để tránh lỗi &quot;không tải được dữ liệu&quot; hoặc &quot;chưa có quyền truy cập&quot;:</p>
+<table style="border-collapse:collapse;width:100%;margin:10px 0;"><tr><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Lớp quyền</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Quản lý ở đâu</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Tác dụng</th></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">1. Quyền trên file Google Sheet (Drive)</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Nút Share/Chia sẻ gốc của Google Sheet</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Quyết định người đó có đọc/ghi được dữ liệu thô trên 3 sheet hay không. Thiếu quyền này → mở app báo lỗi &quot;You do not have permission...&quot;.</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">2. Quyền trong app (bảng DM_NGUOIDUNG)</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Mục &quot;Người dùng&quot; trong app</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Quyết định vai trò (Admin/Quản lý/Nhân viên) và những gì người đó được thấy/thao tác trong app. Thiếu quyền này → app tự chặn, hiện màn &quot;chưa có quyền truy cập&quot; kèm nút đổi tài khoản.</td></tr></table>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>Quy tắc:</b> mỗi khi thêm người dùng mới, phải làm ĐỦ CẢ 2 bước — share cả 3 Google Sheet cho họ (Chỉnh sửa nếu họ cần thao tác/duyệt, Chỉ xem nếu chỉ cần xem), rồi vào app thêm họ ở mục &quot;Người dùng&quot; với đúng vai trò.</div>
+<h3>3. Thiết lập lần đầu (dành cho Admin)</h3>
+<ul>
+<li>Mở link web app lần đầu — nếu chưa cấu hình, app hiện màn hình yêu cầu dán 3 link Google Sheet (DM_CONGTY_HAK, THONGTINNHANSU_HAK, Draft_NHANSU_HAK).</li>
+<li>Dán đúng link từng sheet, bấm &quot;Lưu &amp; Bắt đầu&quot; — hệ thống tự mở thử cả 3 sheet để xác nhận có quyền truy cập trước khi lưu.</li>
+<li>Sau khi lưu, bấm &quot;Khởi tạo cấu trúc dữ liệu&quot; — hệ thống tự tạo đủ các sheet còn thiếu và nạp danh mục mẫu (chức vụ, phòng ban, lương, phụ cấp...) nếu đang trống. Không đụng tới dữ liệu đã có.</li>
+<li>Email đầu tiên trùng với ADMIN_EMAIL khai báo trong code sẽ tự động được cấp quyền Admin ngay lần đầu mở app (khi bảng người dùng còn trống).</li>
+</ul>
+<h3>4. Vai trò người dùng trong app</h3>
+<table style="border-collapse:collapse;width:100%;margin:10px 0;"><tr><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Vai trò</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Xem dữ liệu</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Thêm/Sửa/Hủy</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Duyệt bản nháp</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Quản lý người dùng</th></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Admin</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Toàn bộ</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Có (ghi trực tiếp với hồ sơ công ty, còn lại qua nháp)</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Có</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Toàn bộ (kể cả Quản lý)</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Quản lý</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Toàn bộ</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Theo cấu hình</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Chỉ khi được bật &quot;Cho phép duyệt&quot;</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Chỉ được thêm/sửa Nhân viên, không đụng được Quản lý khác</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Nhân viên</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Toàn bộ</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Chỉ khi được bật &quot;Cho phép thao tác&quot;</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Không</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Không</td></tr></table>
+<p>Mọi thay đổi dữ liệu do Nhân viên/Quản lý gửi lên đều vào bản nháp trước, phải có người có quyền duyệt bấm &quot;Duyệt&quot; thì mới ghi vào dữ liệu chính thức (xem mục 9). Riêng Hồ sơ công ty do Admin sửa thì ghi thẳng, không qua nháp.</p>
+<h3>5. Giao diện tổng quan</h3>
+<ul>
+<li><b>Thanh bên trái (sidebar):</b> Trang chủ, ô tìm nhân viên, danh sách nhân viên, danh mục lương/thuế, mục &quot;Báo cáo&quot;, &quot;Chờ duyệt&quot; (kèm số lượng đang chờ), &quot;Người dùng&quot; (Admin/Quản lý), &quot;Hệ thống&quot; (Admin).</li>
+<li><b>Trang chủ:</b> tổng quan nhanh, lối tắt vào các mục hay dùng.</li>
+<li><b>Trang chi tiết nhân viên:</b> xem/sửa từng mục hồ sơ theo tab (thông tin cá nhân, học vấn, nhân thân, hợp đồng...).</li>
+</ul>
+<h3>6. Quản lý hồ sơ nhân viên</h3>
+<p>Thêm nhân viên mới theo hướng dẫn từng bước (4 bước), có thể bỏ qua các bước không bắt buộc:</p>
+<ul>
+<li><b>Thông tin cơ bản</b> (bắt buộc) — mã NV, họ tên, CCCD, ngày vào hệ thống, trạng thái.</li>
+<li><b>Thông tin cá nhân</b> (tùy chọn) — CCCD chi tiết, ngày sinh, giới tính, hộ khẩu...</li>
+<li><b>Hợp đồng lao động</b> (tùy chọn) — số HĐLĐ, ngày vào làm, loại hợp đồng.</li>
+<li><b>Phân công phòng ban/chức vụ</b> (tùy chọn).</li>
+</ul>
+<p>Mã nhân viên có thể được tự sinh theo cấu trúc &quot;Mã phòng ban . Mã chức vụ . Số thứ tự&quot; khi chọn đủ Phòng ban + Chức vụ.</p>
+<p>Toàn bộ hồ sơ nhân viên được tổ chức thành các mục con (bảng &quot;Nhân viên&quot; là bảng mẹ, các mục dưới đây là bảng con trực tiếp):</p>
+<ul>
+<li>Thông tin cá nhân · Trình độ học vấn · Nhân thân · Thông tin thanh toán (ngân hàng) · Sức khỏe · Người liên hệ khẩn cấp · Nghề nghiệp trước đây · Quá trình công tác nội bộ · Hợp đồng lao động (xem mục 7).</li>
+</ul>
+<h3>7. Hợp đồng lao động và các mục con</h3>
+<p>Mỗi hợp đồng lao động (HĐLĐ) của nhân viên lại có thêm các mục con riêng, mở bằng cách bấm vào 1 hợp đồng cụ thể:</p>
+<table style="border-collapse:collapse;width:100%;margin:10px 0;"><tr><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Mục</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Nội dung</th></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Khám sức khỏe</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Lịch sử khám sức khỏe định kỳ</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Quyền lợi phép</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Số ngày phép được cấp/cộng dồn theo năm</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Nghỉ phép</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Đơn nghỉ phép, có trạng thái duyệt riêng</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Nghỉ không lương</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Đơn nghỉ không lương</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Nghỉ ốm</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Đơn nghỉ ốm, có giấy chứng nhận BHXH</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Chi tiết hợp đồng</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Lương cơ bản/thỏa thuận, phòng ban, chức vụ, hình thức lương, BHXH, thuế TNCN, phụ cấp, tăng ca... áp dụng theo từng phụ lục</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Nội quy / kỷ luật</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Ghi nhận vi phạm và cách xử lý</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Khen thưởng</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Ghi nhận khen thưởng</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Công tác</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Lịch công tác</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Nghỉ việc</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Thông tin khi chấm dứt hợp đồng</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Chấm công tăng ca</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Số công tăng ca theo kỳ</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Nghỉ lễ / Tết</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Ngày nghỉ lễ áp dụng</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Ca sản xuất</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Phân ca làm việc</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Cấp phát trang thiết bị / bảo hộ</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Theo dõi cấp phát đồ bảo hộ lao động</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Tài liệu đính kèm</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Upload file lên Google Drive (giới hạn 5MB/file)</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Chấm công</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Bảng công theo kỳ</td></tr></table>
+<h3>8. Danh mục dùng chung</h3>
+<p>Nằm trong nhóm &quot;Danh mục&quot; ở sidebar — dùng chung cho toàn công ty, được tham chiếu khi lập hồ sơ nhân viên:</p>
+<ul>
+<li><b>Chức vụ, Phòng ban</b> — cơ cấu tổ chức.</li>
+<li><b>Hình thức lương</b> (có mục con &quot;Chi tiết bổ sung&quot; theo ngưỡng) — lương thời gian (LTG) / lương sản phẩm (LSP).</li>
+<li><b>Phụ cấp, Tăng ca, Hỗ trợ</b> — các khoản cộng thêm và công thức tính.</li>
+<li><b>Mức đóng bảo hiểm</b> — tỷ lệ BHXH/BHYT/BHTN/KPCĐ, phần doanh nghiệp và người lao động đóng.</li>
+<li><b>Thuế TNCN</b> (có mục con &quot;Bậc thuế lũy tiến&quot;) — khấu trừ vãng lai hoặc lũy tiến theo bậc.</li>
+<li><b>Giảm trừ gia cảnh</b> — mức giảm trừ bản thân/người phụ thuộc theo từng thời kỳ.</li>
+<li><b>Danh mục công</b> — các loại công dùng khi chấm công/tính lương.</li>
+<li><b>Hồ sơ công ty</b> — tên, địa chỉ, MST, người đại diện pháp luật (chỉ 1 dòng duy nhất, chỉ Admin sửa).</li>
+</ul>
+<h3>9. Cơ chế Nháp → Duyệt</h3>
+<p>Mọi thao tác Thêm/Sửa/Hủy của Nhân viên và Quản lý (trừ Hồ sơ công ty do Admin sửa) đều đi qua quy trình sau:</p>
+<ul>
+<li>Người có quyền thao tác bấm Thêm/Sửa/Hủy → dữ liệu được ghi vào bản nháp (sheet Draft_NHANSU_HAK), chưa ảnh hưởng gì tới dữ liệu chính.</li>
+<li>Người có quyền duyệt vào mục &quot;Chờ duyệt&quot;, xem từng thay đổi, bấm &quot;Duyệt&quot; hoặc &quot;Từ chối&quot;.</li>
+<li>Duyệt xong dữ liệu mới thật sự được ghi vào bản chính; Từ chối thì bản nháp bị loại bỏ, không ảnh hưởng gì.</li>
+</ul>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>Lưu ý khi &quot;Hủy&quot; một bản ghi:</b> hệ thống không xóa vật lý — chỉ đánh dấu trạng thái &quot;Hủy&quot; và giữ nguyên toàn bộ dữ liệu cũ (đã được kiểm tra kỹ, không còn lỗi mất dữ liệu ở bước này).</div>
+<h3>10. Cơ chế lịch sử phiên bản (Hiệu lực từ / đến)</h3>
+<p>Hầu hết các bảng (trừ Hồ sơ công ty và Người dùng) áp dụng cơ chế lưu lịch sử đầy đủ: mỗi lần Thêm/Sửa/Hủy không ghi đè lên dòng cũ mà luôn thêm 1 dòng mới, giữ nguyên mã (_id) để các bảng con vẫn liên kết đúng. Mỗi dòng có:</p>
+<ul>
+<li><b>Hiệu lực từ ngày</b> — ngày bắt đầu áp dụng dòng này.</li>
+<li><b>Hiệu lực đến ngày</b> — tự động tính (để trống nghĩa là đang áp dụng, vô thời hạn) khi có dòng mới hơn cùng mã xuất hiện.</li>
+<li><b>Trạng thái bản ghi</b> — Thêm mới / Sửa / Hủy.</li>
+</ul>
+<p>Nhờ vậy, app luôn có thể tra lại đúng dữ liệu tại một thời điểm bất kỳ trong quá khứ (dùng ở báo cáo &quot;Lịch sử nhân sự&quot;).</p>
+<h3>11. Quản lý người dùng trong app</h3>
+<p>Mục &quot;Người dùng&quot; (Admin và Quản lý thấy được, Quản lý chỉ thấy danh sách Nhân viên):</p>
+<ul>
+<li>Thêm người dùng mới: nhập đúng email Google thật, họ tên, chọn vai trò.</li>
+<li>Với vai trò Quản lý: bật/tắt &quot;Cho phép duyệt&quot; bản nháp.</li>
+<li>Với vai trò Nhân viên: bật/tắt &quot;Cho phép thao tác&quot; (Thêm/Sửa/Hủy).</li>
+<li>Khóa tài khoản: đổi Trạng thái sang &quot;Khóa&quot; — người đó vẫn còn trong danh sách nhưng không đăng nhập được nữa.</li>
+</ul>
+<p><i>Nhắc lại: thêm ở đây chưa đủ — phải share Google Sheet cho họ theo mục 2 thì mới dùng được app.</i></p>
+<h3>12. Báo cáo</h3>
+<table style="border-collapse:collapse;width:100%;margin:10px 0;"><tr><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Báo cáo</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Nội dung</th></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">HĐLĐ sắp hết hạn</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Danh sách hợp đồng sắp/đã hết hạn trong 90 ngày</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Tình hình nhân sự</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Đang làm việc, tuyển mới, nghỉ việc trong 1 khoảng thời gian chọn được</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Lịch sử nhân sự</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Tra toàn bộ thay đổi của 1 nhân viên trong khoảng ngày chọn</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Thống kê nghỉ phép/ốm</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Biểu đồ theo tháng và theo từng nhân viên</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Vi phạm chưa xử lý</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Danh sách vi phạm nội quy đang chờ xử lý</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Sắp tới</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Sinh nhật và hợp đồng sắp hết hạn trong 30 ngày</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Xuất dữ liệu</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Xuất từng bảng ra CSV/Excel</td></tr></table>
+<p>Nhiều báo cáo hỗ trợ nút In và Xuất Excel.</p>
+<h3>13. Nhập / xuất dữ liệu Excel</h3>
+<ul>
+<li><b>Tải file mẫu:</b> Menu hệ thống → &quot;Tải file mẫu để nhập dữ liệu ban đầu&quot; — file Excel có sẵn đúng tên sheet và tiêu đề cột.</li>
+<li><b>Nhập dữ liệu ban đầu:</b> Menu hệ thống → &quot;Tải dữ liệu ban đầu từ file Excel&quot; — ghi thẳng vào bản chính (không qua nháp), chỉ dùng khi khởi tạo lần đầu, chỉ Admin được làm.</li>
+<li><b>Xuất dữ liệu:</b> mục Báo cáo → &quot;Xuất dữ liệu&quot;, xuất từng bảng ra CSV/Excel.</li>
+</ul>
+<h3>14. Menu hệ thống (chỉ Admin thấy đủ)</h3>
+<ul>
+<li><b>Khởi tạo / đồng bộ lại cấu trúc dữ liệu</b> — tạo sheet còn thiếu, nạp danh mục nếu trống. Không xóa dữ liệu đã có.</li>
+<li><b>Tải file mẫu để nhập dữ liệu ban đầu</b></li>
+<li><b>Tải dữ liệu ban đầu từ file Excel</b></li>
+<li><b>Đổi liên kết dữ liệu</b> — dùng khi muốn tái sử dụng app này cho một công ty/bộ dữ liệu khác. Dữ liệu hiện tại không bị xóa.</li>
+<li><b>Sửa lỗi mất số 0 đầu</b> (CCCD, SĐT, số tài khoản...) — ép định dạng Văn bản cho các ô nhập từ nay về sau. Không tự khôi phục số 0 đã mất trước đó.</li>
+<li><b>Xoá toàn bộ dữ liệu</b> (giữ nguyên cấu trúc cột) — không thể hoàn tác, cần gõ đúng cụm xác nhận. Chỉ dùng khi cần làm lại từ đầu.</li>
+</ul>
+<h3>15. Xử lý sự cố thường gặp</h3>
+<table style="border-collapse:collapse;width:100%;margin:10px 0;"><tr><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Hiện tượng</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Nguyên nhân thường gặp</th><th style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left; background:#f3f4f6;font-weight:600;">Cách xử lý</th></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Màn hình trắng, console báo lỗi liên quan &quot;authDialog&quot;</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Hộp thoại xin cấp quyền Google bị vỡ (thường do quyền yêu cầu bị tăng lên)</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Người đó (nếu có quyền vào trình soạn thảo) chạy thử 1 hàm bất kỳ trong Apps Script để kích hoạt popup cấp quyền chuẩn của Google. Nếu là nhân viên thường không có quyền vào trình soạn thảo, cần báo Admin xử lý ở tầng code.</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">&quot;Exception: Invalid argument: id&quot;</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Cấu hình liên kết 3 Google Sheet bị sai/rỗng</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Menu hệ thống → &quot;Đổi liên kết dữ liệu&quot; → dán lại đúng 3 link.</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">&quot;Không xác định được tài khoản...&quot; / màn &quot;chưa có quyền truy cập&quot;</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Email chưa được thêm vào mục &quot;Người dùng&quot; trong app, hoặc bị Khóa</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Admin/Quản lý vào mục &quot;Người dùng&quot; thêm/mở khóa đúng email đó.</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">&quot;You do not have permission...&quot; khi tải dữ liệu</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Chưa được share quyền trên chính file Google Sheet</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Share cả 3 Google Sheet cho email đó (xem mục 2).</td></tr><tr><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Số 0 đầu (CCCD, SĐT...) bị mất khi nhập</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Google Sheets tự chuyển ô thành số</td><td style="border:1px solid #e5e7eb;padding:6px 10px;text-align:left;">Menu hệ thống → &quot;Sửa lỗi mất số 0 đầu&quot; (chỉ áp dụng cho dữ liệu nhập từ sau đó).</td></tr></table>
+<h3>16. Lưu ý an toàn dữ liệu</h3>
+<ul>
+<li>Chức năng &quot;Xoá toàn bộ dữ liệu&quot; trong Menu hệ thống là không thể hoàn tác — luôn sao lưu (tải file Sheet về, hoặc dùng &quot;Xuất dữ liệu&quot;) trước khi dùng.</li>
+<li>Không sửa tay trực tiếp trên Google Sheet nếu không thật sự cần thiết — vì hệ thống dùng cơ chế lịch sử phiên bản (mục 10), sửa tay có thể làm sai lệch dữ liệu hoặc phá vỡ liên kết bảng cha - con (_id/_parentId).</li>
+<li>Cột đầu tiên mỗi sheet (_id) là khóa nội bộ tự sinh — tuyệt đối không sửa tay.</li>
+<li>Việc cấp/thu hồi quyền truy cập Google Sheet cho từng người nên thực hiện qua nút Share gốc của Google Sheet (mục 2) — hiện tại ứng dụng không có chức năng chia sẻ quyền ngay trong webapp (đã thử nghiệm và loại bỏ vì gây lỗi màn hình trắng cho toàn bộ người dùng).</li>
+</ul>

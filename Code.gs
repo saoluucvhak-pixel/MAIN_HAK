@@ -118,7 +118,7 @@ function getMenu() {
         { id: 'hd_thanhtoan', type: 'guide', name: 'Thanh toán gỗ keo',       content: _includeGuide('Guide_ThanhToan') },
         { id: 'hd_vay',       type: 'guide', name: 'Vay ngân hàng',           content: _includeGuide('Guide_Vay') },
         { id: 'hd_updatekt',  type: 'guide', name: 'Update dữ liệu kế toán',  content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_nhansu',    type: 'guide', name: 'Nhân sự',                 content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
+        { id: 'hd_nhansu',    type: 'guide', name: 'Nhân sự',                 content: _includeGuide('Guide_NhanSu') },
         { id: 'hd_luong',     type: 'guide', name: 'Tiền lương',              content: _includeGuide('Guide_Luong') },
         { id: 'hd_fsc',       type: 'guide', name: 'Đánh giá FSC',            content: _includeGuide('Guide_FSC') }
       ]

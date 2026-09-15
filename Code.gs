@@ -59,7 +59,7 @@ function _includeGuide(filename) {
  * deploy webapp riêng) được phép nhúng qua getToolContent() — chỉ cho phép
  * đúng các file trong danh sách này, không đọc file tuỳ ý theo tên client gửi lên.
  */
-var TOOL_FILES = ['Tool_PhanBoKhoiLuong'];
+var TOOL_FILES = ['Tool_PhanBoKhoiLuong', 'Tool_DoiChieuThueGTGT'];
 
 /**
  * Trả về nội dung HTML đầy đủ của 1 công cụ độc lập để client nhúng vào
@@ -124,7 +124,7 @@ function getMenu() {
     {
       id: 'congcu', type: 'group', icon: '🧮', name: 'Công cụ kế toán',
       children: [
-        { id: 'gtgt', type: 'placeholder', name: 'Đối chiếu thuế GTGT', note: 'Đang phát triển' },
+        { id: 'cc_doichieugtgt', type: 'tool', name: 'Đối chiếu thuế GTGT', toolFile: 'Tool_DoiChieuThueGTGT' },
         { id: 'cc_phanbokhoiluong', type: 'tool', name: 'Phân bổ khối lượng tính lương', toolFile: 'Tool_PhanBoKhoiLuong' }
       ]
     },

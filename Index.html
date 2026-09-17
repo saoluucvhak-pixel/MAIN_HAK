@@ -282,6 +282,32 @@
       frame.src = url;
     }
 
+    // Công cụ độc lập (type:'tool') nhúng bằng srcdoc thay vì src — nội dung lấy
+    // từ getToolContent() phía server, không phải URL bên ngoài, nên không dùng
+    // chung cơ chế timeout/X-Frame-Options của iframe 'link'.
+    function loadToolIntoFrame(id, item) {
+      showFrameLoading(id, item.name);
+      google.script.run
+        .withSuccessHandler(function (html) {
+          var frame = document.getElementById('frame-' + id);
+          if (frame) frame.srcdoc = html;
+          if (currentId === id) clearFrameStatus();
+        })
+        .withFailureHandler(function (err) {
+          if (currentId !== id) return;
+          clearFrameStatus();
+          var wrap = document.createElement('div');
+          wrap.className = 'frame-status panel center-panel danger';
+          wrap.id = 'frame-status';
+          wrap.innerHTML = '<div class="big-icon">⚠️</div><h2>Không tải được "' + item.name + '"</h2>' +
+            '<div>' + (err && err.message ? err.message : 'Có lỗi khi tải công cụ.') + '</div>' +
+            '<button class="retry-btn" id="retry-btn">↻ Thử lại</button>';
+          document.getElementById('frame-area').appendChild(wrap);
+          document.getElementById('retry-btn').onclick = function () { loadToolIntoFrame(id, item); };
+        })
+        .getToolContent(item.toolFile);
+    }
+
     function escapeAttr(s) {
       return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     }
@@ -380,7 +406,7 @@
       if (!item) return;
       currentId = id;
       document.getElementById('current-name').textContent = item.name;
-      document.getElementById('reload-btn').style.display = (item.type === 'link' && item.url) ? 'inline-block' : 'none';
+      document.getElementById('reload-btn').style.display = ((item.type === 'link' && item.url) || item.type === 'tool') ? 'inline-block' : 'none';
 
       if (item.type === 'link') {
         if (!item.url) {
@@ -414,6 +440,21 @@
         }
         frame.classList.add('active');
 
+      } else if (item.type === 'tool') {
+        clearMissingMsg();
+        document.getElementById('welcome-screen').style.display = 'none';
+        document.querySelectorAll('iframe').forEach(function (f) { f.classList.remove('active'); });
+        var toolFrame = document.getElementById('frame-' + id);
+        if (!toolFrame) {
+          toolFrame = document.createElement('iframe');
+          toolFrame.id = 'frame-' + id;
+          document.getElementById('frame-area').appendChild(toolFrame);
+          loadToolIntoFrame(id, item);
+        } else {
+          clearFrameStatus();
+        }
+        toolFrame.classList.add('active');
+
       } else if (item.type === 'placeholder') {
         showCenterPanel('warn', '🚧', item.name, item.note || 'Đang phát triển.');
 
@@ -430,7 +471,9 @@
     document.getElementById('reload-btn').onclick = function () {
       if (!currentId) return;
       var item = findItem(currentId);
-      if (item && item.url) retryFrame(currentId, item.name, item.url);
+      if (!item) return;
+      if (item.type === 'tool') loadToolIntoFrame(currentId, item);
+      else if (item.url) retryFrame(currentId, item.name, item.url);
     };
 
     google.script.run.withSuccessHandler(function (result) {

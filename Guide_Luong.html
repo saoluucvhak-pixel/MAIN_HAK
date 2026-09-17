@@ -1,0 +1,282 @@
+<h3>Hướng dẫn sử dụng</h3>
+<p>Quy trình lập bảng lương hàng tháng và cách dùng từng tab.</p>
+
+<h4>Cài đặt liên kết 5 file (làm TRƯỚC TIÊN)</h4>
+<p>Hệ thống trải trên <b>5 Google Sheet riêng biệt</b>: Danh mục, Draft (bảng nháp), Data (dữ liệu đã nạp), Xử lý (báo cáo/chứng từ kỳ đang làm), Lưu trữ (lịch sử các kỳ đã chốt). Tạo sẵn 5 Google Sheet trống (đặt tên gì cũng được), copy URL mỗi file dán vào đúng ô tương ứng rồi bấm Lưu — làm 1 LẦN DUY NHẤT khi setup, sau đó mới bấm "Khởi tạo cấu trúc bảng" ở bước kế tiếp.</p>
+<ul>
+  <li>Danh mục</li>
+  <li>Draft</li>
+  <li>Data</li>
+  <li>Xử lý</li>
+  <li>Lưu trữ</li>
+</ul>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Apps Script project (Extensions → Apps Script) nên GẮN VÀO FILE XỬ LÝ — mở File Xử lý trên Google Sheet để menu "⚙️ HAK Group" và các trigger tự động hoạt động đúng.</div>
+
+<h4>Nguồn Danh mục &amp; Nhân sự (tải tự động mỗi lần Tính lương)</h4>
+<p>Danh mục và Nhân sự KHÔNG còn nhập/sửa trực tiếp trên webapp — lấy từ 2 Google Sheet ngoài do công ty quản lý. Mỗi lần bấm "Tính lương" (hoặc "Kiểm tra bảng lương"), webapp TỰ TẢI VỀ bản mới nhất, CHỈ LẤY đúng phạm vi đang hiệu lực của kỳ đang chọn. Dán URL 2 file sau (mặc định đã điền sẵn theo link công ty cung cấp — chỉ cần đổi nếu công ty đổi sang file khác):</p>
+<ul>
+  <li><b>Danh mục</b> — DM_CONGTY_HAK</li>
+  <li><b>Nhân sự</b> — THONGTINNHANSU_HAK</li>
+</ul>
+<p>Có chức năng "Đồng bộ thử ngay" để kiểm tra việc đồng bộ dữ liệu cho một kỳ (năm/tháng) cụ thể trước khi dùng chính thức.</p>
+
+<h4>Cài đặt lần đầu — khởi tạo cấu trúc bảng</h4>
+<p>Bấm nút "Khởi tạo cấu trúc bảng" 1 LẦN DUY NHẤT khi mới dùng webapp cho 1 Google Sheet — tự tạo đủ toàn bộ sheet (dữ liệu vào, danh mục, đầu ra) đúng cấu trúc, có định dạng tiêu đề, đúng thứ tự. Chạy lại nhiều lần vẫn an toàn — sheet đã có dữ liệu sẽ KHÔNG bị đụng tới, chỉ tạo thêm sheet còn thiếu.</p>
+
+<h4>Nhập dữ liệu ban đầu (đã có sẵn file cũ)</h4>
+<p>Nếu đơn vị đã có sẵn file dữ liệu cũ (kiểu "DL_LUONG_&lt;đơn vị&gt;_&lt;kỳ&gt;.xlsx" — nhiều sheet trong 1 file), tải NGUYÊN FILE lên tab Nhập liệu — webapp tự nhận diện các sheet quen thuộc (Nhân sự, Chi tiết nhân sự, Chấm công, Sản lượng, Bơm dăm, Phát sinh lương, Ứng lương) và nạp thẳng vào đúng chỗ, không cần tách ra nạp riêng từng phần. Sheet nào không nhận diện được sẽ báo rõ tên để tự kiểm tra/nạp tay.</p>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Nạp THẲNG vào bảng chính (không qua bảng nháp) — vì đây là dữ liệu khởi tạo ban đầu. Sau khi nạp xong, LUÔN chạy tab "Kiểm tra bảng lương" trước khi Tính lương lần đầu.</div>
+
+<h4>Quy trình lập bảng lương hàng tháng</h4>
+<ol>
+  <li><b>Cập nhật danh mục (DM_*)</b> — Chỉ làm lại khi công ty đổi chính sách lương/BHXH/thuế — không phải làm mỗi tháng. Sửa trực tiếp trong Google Sheet.</li>
+  <li><b>Cập nhật hồ sơ nhân sự</b> — Vào tab <b>Nhân sự</b>: thêm người mới vào, sửa thông tin lương/chức vụ khi có thay đổi, cho nghỉ việc khi có người thôi việc.</li>
+  <li><b>Nạp bảng chấm công</b> — Vào tab <b>Nhập liệu</b>, tải file chấm công (.xlsx/.csv) của tháng lên — không cần gõ tay.</li>
+  <li><b>Nạp phiếu cân sản lượng / bơm dăm</b> — Cũng ở tab <b>Nhập liệu</b>, tải file phiếu cân lên, chọn đúng loại (Sản lượng chính / Bơm dăm).</li>
+  <li><b>Chạy kiểm tra trước khi tính</b> — Vào tab <b>Kiểm tra bảng lương</b>, bấm Chạy kiểm tra để phát hiện lỗi dữ liệu (mã sai, công bất thường, tạm ứng lệch kỳ...) trước khi tính lương chính thức.</li>
+  <li><b>Sửa lỗi rồi kiểm tra lại</b> — Xử lý các dòng "Lỗi" trong nhật ký (cảnh báo có thể chấp nhận nếu đã hiểu rõ nguyên nhân) — lặp lại bước 5 tới khi sạch lỗi.</li>
+  <li><b>Tính lương</b> — Vào tab <b>Bảng lương</b>, chọn đúng năm/tháng, bấm Tính lương. Kết quả ghi vào RP_BANGLUONG, RP_BHXH, RP_THUETNCN.</li>
+  <li><b>Kiểm tra lại tổng cuối</b> — Chạy lại tab Kiểm tra bảng lương — mục "7. Sai tổng bảng lương" sẽ xác nhận tổng thực lĩnh khớp.</li>
+  <li><b>Xem báo cáo</b> — Vào các tab <b>Báo cáo</b> (tiền lương / nhân sự / bảo hiểm / thuế TNCN) để xem tổng hợp, in ra nếu cần nộp hoặc lưu trữ.</li>
+  <li><b>Đối chiếu chứng từ giấy (thủ công)</b> — Đối chiếu RP_BANGLUONG với ảnh/PDF chấm công vân tay, giấy xác nhận tăng ca, bảng cơm nếu có — webapp chưa tự động hoá được bước này.</li>
+</ol>
+
+<h4>Quy chế lương — Cách tính theo bộ phận</h4>
+<p>Bảng dưới đây tổng hợp cách tính lương và phụ cấp hiện hành theo từng bộ phận. Khi có điều chỉnh mức lương/phụ cấp, cập nhật trực tiếp các dòng tương ứng trong tab Danh mục — không cần sửa lại nội dung hướng dẫn này.</p>
+
+<table style="border-collapse:collapse">
+  <tr>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Bộ phận (Mã PB)</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Cách tính lương chính</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Phụ cấp trách nhiệm</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Ghi chú</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Văn phòng, Kế toán (01.01)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian — chia theo ngày công (TG1-TG4, tuỳ người)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Có thể hưởng Tiền cơm (HT.01) nếu có gán mã hỗ trợ</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Trạm cân (01.02)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian, thường chia ca (TG2/TG3 — không trừ hoặc trừ ít ngày CN)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Làm theo ca, chấm công đủ 3 ca/ngày</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Quản đốc (01.03)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian (TG1) hoặc Lương cố định (CĐ)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>TN.03</b> — 1.000.000đ/tháng, cố định</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Phụ cấp quản lý cố định, không theo công</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tạp vụ (01.04)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương công nhật (CN1/CN2) — đơn giá/ngày × công thực tế</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Ngưỡng đóng BH: đủ 15 công/tháng</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Bảo vệ (01.05)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian hoặc công nhật, tuỳ ca trực</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Kinh doanh (01.06)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian (TG1)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>TN.04</b> — 570.000đ/tháng, cố định</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">KCS (01.07)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian, chia ca (TG2/TG3)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Làm ca giống Trạm cân</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Cơ khí (01.08)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian hoặc công nhật</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>TN.01</b> — đủ công chuẩn: 300.000đ; thiếu: 300.000×(công/công chuẩn)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Phụ cấp tỷ lệ theo công, không cố định</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Cơ giới (01.09)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian, chia ca</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Có thể hưởng <b>HT.02</b> (hỗ trợ lương cơ giới) nếu công &lt; công chuẩn</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Thủ kho (01.10)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian (TG1)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Ben hàng (01.11)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian hoặc công nhật</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tổ 1/2 — CN sản xuất (02.01/02.02)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>Lương sản phẩm (SP)</b> — 6.000đ/tấn sản lượng, có bù nếu thiếu ngưỡng</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;"><b>TN.02</b> — đủ (công chuẩn−5): 200.000đ; thiếu: tỷ lệ theo công</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Ngưỡng đóng BH: đủ 15 công. Có thể hưởng thêm Bơm dăm (10.000đ/xe, dùng chung "Lương phụ")</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tổ 1/2 — CN công nhật (02.03/02.04)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương công nhật (CN1/CN2) — đơn giá/ngày × công thực tế</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Ngưỡng đóng BH: đủ 15 công/tháng</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Vận tải (04.06)</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương khoán cố định (CĐ) theo thâm niên/tuyến</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">—</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Không chia theo công (trừ khi có ghi chú riêng)</td>
+  </tr>
+</table>
+
+<p><b>4 công thức lương nền (áp dụng theo Mã tiền lương 1 của từng người, không phải cố định theo bộ phận):</b></p>
+<table style="border-collapse:collapse">
+  <tr>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Mã</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Tên</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Công thức</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">CĐ</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Cố định</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương thời gian = Lương thỏa thuận (không đổi theo công)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">TG1</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Thời gian 1</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Công chuẩn = số ngày trong tháng − số Chủ nhật. Lương = (Lương thỏa thuận / Công chuẩn) × Công tính TG</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">TG2</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Thời gian 2</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Công chuẩn = số ngày trong tháng (không trừ CN) — dùng cho khối làm ca liên tục</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">TG3 / TG4</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Thời gian 3 / 4</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Công chuẩn = số ngày trong tháng − 4 (TG3) hoặc − 2 (TG4)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">CN1 / CN2</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Công nhật</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Công chuẩn = công thực tế (luôn khớp) → Lương = Lương thỏa thuận (đơn giá/ngày) × Công thực tế</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">SP</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Sản phẩm</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương sản lượng = 6.000đ × số tấn; NẾU có Lương thời gian song song thì vẫn cộng thêm theo công thức CN ở trên (đơn giá/ngày × công)</td>
+  </tr>
+</table>
+
+<p><b>Phụ cấp công tác (tự động theo NHÃN chấm công, không cần gán riêng cho từng người):</b></p>
+<table style="border-collapse:collapse">
+  <tr>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Nhãn (ghi kèm số công, vd "1QC")</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Ý nghĩa</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Đơn giá/ngày</th>
+  </tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">QC</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Công tác điểm QC</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">100.000đ</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">QS</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Công tác điểm QS</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">120.000đ</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">ĐH</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Công tác điểm ĐH</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">30.000đ</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">ĐN</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Công tác điểm ĐN</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">120.000đ</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">DQ1</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Công tác điểm DQ</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">500.000đ</td></tr>
+</table>
+<p>Ví dụ: chấm công ngày ghi "1QC" = 1 công bình thường + tự động cộng thêm 100.000đ phụ cấp công tác cho ngày đó — không cần khai riêng.</p>
+
+<p><b>Hỗ trợ (2 loại, dùng 2 mã khác nhau trên hồ sơ mỗi người):</b></p>
+<table style="border-collapse:collapse">
+  <tr>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Mã</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Tên</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Công thức</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">HT.01 (gán ở "Mã hỗ trợ")</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Tiền cơm</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">20.000đ × Ngày cơm (từ hình thức công "CC" hoặc DL_TIENCOM)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">HT.02 (gán ở "Mã hỗ trợ 2")</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Hỗ trợ lương cơ giới</td>
+    <td style="border:1px solid #e5e7eb;padding:6px 10px;">Nếu công thực tế &lt; công chuẩn: (công chuẩn − công thực tế) × 150.000đ</td>
+  </tr>
+</table>
+
+<p><b>Tăng ca (5 mã, hệ số 50% trừ TC5 là lương khoán):</b></p>
+<table style="border-collapse:collapse">
+  <tr>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Mã</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Công thức</th>
+  </tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">TC1</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">(Công tính lương − Công lễ − công trung chuyển − ngày phép − công tăng ca − công chuẩn) × 50% + công tăng ca × 50%</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">TC2</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Như TC1, trừ thêm Công di chuyển</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">TC3</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">(Công tăng ca + Công chủ nhật) × 50%</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">TC4</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Công tăng ca × 50%</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">TC5</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Lương khoán cố định 6.000.000đ, chia công chuẩn rồi nhân công tăng ca (không dùng hệ số %)</td></tr>
+</table>
+
+<p><b>Bảo hiểm &amp; Thuế TNCN:</b></p>
+<ul>
+  <li><b>Ngưỡng đóng BHXH</b>: khối Sản xuất/Công nhật/Sản phẩm/Bơm dăm cần đủ 15 công/tháng; khối còn lại cần đủ 20 công/tháng — thiếu ngưỡng thì công ty truy thu lại phần đã đóng.</li>
+  <li><b>Tỷ lệ BHXH đầy đủ (BH_KPCD.01)</b>: Công ty đóng 17,5% BHXH + 3% BHYT + 1% BHTN + 2% KPCĐ; Người lao động đóng 8% BHXH + 1,5% BHYT + 1% BHTN + 0,5% KPCĐ.</li>
+  <li><b>Thuế TNCN theo "Mã TNCN"</b> của từng người: <b>TNCN0</b> = miễn thuế; <b>TNCN1</b> = khấu trừ cố định 10% trên tổng thu nhập gộp (hợp đồng ngắn hạn); <b>TNCN2</b>/không khai = tính luỹ tiến 7 bậc theo luật (giảm trừ bản thân 11.000.000đ, mỗi người phụ thuộc 4.400.000đ).</li>
+</ul>
+
+<h4>Chi tiết: Lương sản lượng, Tiền bơm dăm, Bù sản lượng, Phụ cấp</h4>
+
+<p><b>1. Lương sản lượng (mã "SP")</b></p>
+<p>Công thức: <b>Lương sản lượng = Sản lượng cá nhân trong kỳ (tấn) × Đơn giá</b> (6.000đ/tấn theo mức hiện hành, khai ở cột "Số tiền khoán" trong DM_LUONG). Sản lượng cá nhân lấy từ các phiếu cân trong tháng (sheet DL_SANLUONG) — nếu 1 phiếu cân chia cho nhiều người cùng ca thì phải tách thành nhiều dòng, mỗi dòng ghi đúng phần sản lượng của người đó. Nhập phiếu cân qua tab <b>Nhập liệu</b> (tải file, chọn Loại "Sản lượng chính") hoặc tab <b>Ứng lương &amp; Bơm dăm</b> (thêm tay từng phiếu).</p>
+
+<p><b>2. Tiền bơm dăm</b></p>
+<p>Công thức: <b>Lương bơm dăm = Số xe bơm dăm trong kỳ × Đơn giá</b> (10.000đ/xe theo mức hiện hành — lưu ý kỹ thuật: dùng chung cột "Lương phụ" trong DM_LUONG của mã "SP", không phải cột riêng). Đây là khoản <b>CỘNG THÊM RIÊNG</b>, tính độc lập với lương sản lượng, cùng cộng vào tổng thu nhập. Dữ liệu số xe lấy từ DL_BANDAM — nhập qua tab Nhập liệu (chọn Loại "Bơm dăm") hoặc tab Ứng lương &amp; Bơm dăm.</p>
+
+<p><b>3. Bù sản lượng (khi sản lượng thấp)</b></p>
+<p>Chỉ áp dụng cho người mã "SP" — nếu sản lượng bình quân mỗi công THẤP HƠN ngưỡng tối thiểu (15 tấn/công theo mức hiện hành), được bù thêm 200.000đ/công thiếu (cột "Đơn giá bù lương" trong DM_LUONG). Webapp có <b>2 phương án tính</b> (chọn ở dropdown "Phương pháp bù sản lượng" tại tab Bảng lương):</p>
+<ul>
+  <li><b>Theo tháng</b> (mặc định): so bình quân CẢ THÁNG (tổng sản lượng ÷ tổng công) với ngưỡng.</li>
+  <li><b>Theo ngày</b>: so sản lượng/công của TỪNG NGÀY với ngưỡng rồi cộng dồn phần bù — chính xác hơn khi sản lượng không đều giữa các ngày trong tháng.</li>
+</ul>
+<p>Mức ngưỡng và đơn giá bù có thể thay đổi theo quyết định của công ty — khi điều chỉnh, sửa trực tiếp 2 cột "ĐK_Bù lương (công tối thiểu)" và "Đơn giá bù lương" ở dòng mã "SP" trong tab <b>Danh mục</b> → chọn "Hình thức lương".</p>
+
+<p><b>4. Phụ cấp — 2 kiểu tính, phân biệt qua chữ "cố định" trong "Cách tính"</b></p>
+<ul>
+  <li><b>Cố định hàng tháng</b> (vd TN.03, TN.04): luôn nhận đủ số tiền, không phụ thuộc số công đi làm trong tháng.</li>
+  <li><b>Tỷ lệ theo công</b> (vd TN.01, TN.02): nếu tổng công ≥ ngưỡng (= công chuẩn − số công ghi ở cột "Tham chiếu") thì nhận đủ 100% số tiền; nếu thiếu thì nhận theo tỷ lệ Số tiền ÷ Công chuẩn × Tổng công thực tế.
+  <br>Ví dụ TN.02 (Phụ cấp trách nhiệm BP SX, 200.000đ, Tham chiếu=5, công chuẩn=27): ngưỡng đủ = 27−5 = 22 công. Nếu người đó chỉ đi 18 công (chưa đủ 22) → phụ cấp = 200.000 ÷ 27 × 18 ≈ <b>133.333đ</b> (không phải 200.000đ).</li>
+  <li><b>Phụ cấp công tác</b> (QC/QS/ĐH/ĐN/DQ1): tính riêng theo NHÃN chấm công (xem bảng ở trên), không thuộc 2 kiểu trên — luôn tính theo số ngày có nhãn × đơn giá, không phụ thuộc tổng công cả tháng.</li>
+</ul>
+
+<h4>Các tab trong webapp</h4>
+<table style="border-collapse:collapse">
+  <tr>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Tab</th>
+    <th style="border:1px solid #e5e7eb;padding:6px 10px;">Dùng để</th>
+  </tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">Bảng lương</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Tính lương cho 1 kỳ (năm/tháng) — ghi đè kết quả kỳ trước.</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhân sự</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Xem / thêm / sửa / cho nghỉ việc nhân viên trực tiếp trên web.</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">Nhập liệu</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Tải file Excel/CSV chấm công và phiếu cân sản lượng lên, không cần gõ tay.</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">Kiểm tra bảng lương</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Chạy checklist kiểm soát tự động, xem nhật ký lỗi/cảnh báo.</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo tiền lương</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Tổng hợp thu nhập/thực lĩnh toàn công ty và theo phòng ban.</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo nhân sự</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Cơ cấu nhân sự theo phòng ban, chức vụ, trạng thái làm việc.</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo bảo hiểm</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Tổng hợp BHXH/BHYT/BHTN công ty và người lao động đóng.</td></tr>
+  <tr><td style="border:1px solid #e5e7eb;padding:6px 10px;">Báo cáo thuế TNCN</td><td style="border:1px solid #e5e7eb;padding:6px 10px;">Chi tiết thuế TNCN từng người và tổng số thuế phải nộp.</td></tr>
+</table>
+
+<h4>Lưu ý quan trọng</h4>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;">
+  <b>⚠️ Lưu ý:</b>
+  <ul style="margin:6px 0 0;padding-left:18px;">
+    <li>Báo cáo Tiền lương / Bảo hiểm / Thuế TNCN luôn ứng với <b>lần "Tính lương" gần nhất</b> — tính lại kỳ khác sẽ ghi đè báo cáo cũ.</li>
+    <li>File .xlsx/.xls ở tab Nhập liệu cần đã bật Advanced Service "Drive API" trong Apps Script (xem HUONG_DAN_WEBAPP.md) — file .csv không cần.</li>
+    <li>Sửa thông tin nhân viên sẽ ghi đè hồ sơ cũ (không giữ lịch sử thay đổi lương qua từng thời kỳ) — xem chi tiết trong HUONG_DAN_WEBAPP.md.</li>
+    <li>Nút "In báo cáo" dùng chức năng in của trình duyệt — chọn "Lưu thành PDF" ở hộp thoại in nếu muốn xuất file PDF.</li>
+  </ul>
+</div>

@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đối chiếu 3 nguồn thuế GTGT</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+  :root{
+    --paper:#F3F4F6; --ink:#1F2937; --ink-soft:#6B7280;
+    --line:#E5E7EB; --line-strong:#CBD5E1;
+    --pine:#2563EB; --pine-dark:#1D4ED8; --pine-tint:#DBEAFE;
+    --gold:#B45309; --gold-tint:#FEF3C7;
+    --red:#DC2626; --red-tint:#FEE2E2; --yellow-tint:#FEF3C7; --green-tint:#DCFCE7; --redrow-tint:#FEE2E2;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:"Segoe UI",-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:14.5px;}
+  .wrap{max-width:1040px; margin:0 auto; padding:34px 20px 70px;}
+  header.top{border-bottom:2px solid var(--pine); padding-bottom:16px; margin-bottom:24px;}
+  header.top h1{font-family:var(--serif); font-weight:600; font-size:25px; margin:0 0 6px; color:var(--pine-dark);}
+  header.top p{margin:0; color:var(--ink-soft); font-size:13.5px; max-width:680px; line-height:1.5;}
+
+  .card{background:#fff; border:1px solid var(--line); border-radius:5px; padding:20px 22px; margin-bottom:18px;}
+  .card h2{font-size:14px; margin:0 0 12px; color:var(--pine-dark); font-weight:700; border-bottom:1px solid var(--line); padding-bottom:8px;}
+
+  .seg{display:flex; gap:2px; margin-bottom:16px; width:fit-content; border:1px solid var(--pine); border-radius:4px; overflow:hidden;}
+  .seg button{border:none; background:#fff; color:var(--pine-dark); padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:var(--sans);}
+  .seg button.active{background:var(--pine); color:#fff;}
+
+  .three-col{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px;}
+  @media (max-width:820px){.three-col{grid-template-columns:1fr;}}
+
+  .file-box label.name-label{display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px; font-weight:600;}
+  .file-box .hint{font-size:11px; color:var(--ink-soft); margin-bottom:6px;}
+  .drop{border:1.5px dashed var(--line-strong); border-radius:4px; padding:18px 12px; text-align:center; cursor:pointer; background:#F9FAFB;}
+  .drop:hover{border-color:var(--pine);}
+  .drop.has-file{border-style:solid; border-color:var(--pine); background:var(--pine-tint);}
+  .drop .fname{font-size:13px; font-weight:600; color:var(--pine-dark); word-break:break-all;}
+  .drop .sub{font-size:11.5px; color:var(--ink-soft); margin-top:4px;}
+  input[type=file]{display:none;}
+
+  .detect-box{margin-top:8px; font-size:11.5px; color:var(--ink-soft); background:#F9FAFB; border:1px solid var(--line); border-radius:4px; padding:7px 9px; display:none;}
+  .detect-box.show{display:block;}
+  .detect-box b{color:var(--pine-dark);}
+  .detect-box .fail{color:var(--red); font-weight:600;}
+
+  .colmap-box{margin-top:8px; display:none; border:1px solid var(--line); border-radius:4px; padding:8px 9px; background:#fff;}
+  .colmap-box.show{display:block;}
+  .colmap-box .colmap-title{font-size:11px; font-weight:700; color:var(--pine-dark); margin-bottom:6px;}
+  .colmap-row{display:flex; align-items:center; gap:6px; margin-bottom:5px;}
+  .colmap-row label{font-size:11px; color:var(--ink-soft); width:92px; flex-shrink:0;}
+  .colmap-row select{flex:1; font-size:11px; padding:4px 5px; border:1px solid var(--line-strong); border-radius:3px; font-family:var(--sans);}
+  .colmap-box .btn-apply{margin-top:4px; width:100%; font-size:11.5px; padding:6px 10px;}
+
+  .sheetlist-box{margin-top:8px; display:none; border:1px solid var(--line); border-radius:4px; padding:8px 9px; background:#fff;}
+  .sheetlist-box.show{display:block;}
+  .sheet-row{display:flex; align-items:center; justify-content:space-between; font-size:11.5px; padding:3px 0; gap:6px;}
+  .sheet-row label{display:flex; align-items:center; gap:6px; cursor:pointer;}
+  .sheet-row input[type=checkbox]{accent-color:var(--pine);}
+  .sheet-row .sheet-ok{color:var(--pine); font-family:var(--mono); font-size:10.5px;}
+  .sheet-row .sheet-bad{color:var(--red); font-size:10.5px;}
+
+  .tol-row{display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--ink-soft); margin-top:16px;}
+  .tol-row input[type=number]{width:90px; border:1px solid var(--line-strong); border-radius:3px; padding:6px 8px; font-family:var(--mono); font-size:13.5px;}
+
+  .btn{border:none; border-radius:4px; padding:10px 20px; font-size:14px; font-weight:600; cursor:pointer; font-family:var(--sans); display:inline-flex; align-items:center; gap:7px;}
+  .btn-pine{background:var(--pine); color:#fff;} .btn-pine:hover{background:var(--pine-dark);}
+  .btn-gold{background:var(--gold); color:#fff;} .btn-gold:hover{background:#92400E;}
+  .btn-ghost{background:transparent; color:var(--pine-dark); border:1px solid var(--line-strong);}
+  .btn:disabled{background:#9CA3AF; cursor:not-allowed;}
+
+  .row-actions{display:flex; justify-content:space-between; align-items:center; margin-top:16px; flex-wrap:wrap; gap:10px;}
+  .warning-text{font-size:12.5px; color:var(--red);}
+
+  .kytag{background:var(--pine-tint); border-radius:4px; padding:10px 14px; font-size:12.5px; color:var(--pine-dark); margin-bottom:14px;}
+  .kytag b{font-weight:700;}
+
+  .finding{border-radius:5px; padding:12px 14px; margin-bottom:10px; border-left:4px solid var(--red); background:var(--red-tint); font-size:13px; line-height:1.6;}
+  .finding.ok{border-left-color:var(--pine); background:var(--pine-tint);}
+  .finding b{color:var(--red-dark, var(--red));}
+
+  table.compare{border-collapse:collapse; width:100%; font-size:13px; margin-top:6px;}
+  table.compare th{background:var(--paper); text-align:left; padding:8px 10px; font-weight:700; color:var(--pine-dark); font-size:11.5px; border-bottom:1px solid var(--line);}
+  table.compare td{padding:7px 10px; border-bottom:1px solid #E5E7EB;}
+  table.compare td.num{font-family:var(--mono); text-align:right;}
+  table.compare tr.diff td{background:var(--redrow-tint); font-weight:700;}
+
+  .summary-line{font-size:14px; margin:16px 0 10px; padding:10px 14px; background:var(--pine-tint); border-radius:4px; color:var(--pine-dark); font-weight:600;}
+  .summary-line span.n{font-family:var(--mono);}
+
+  .result-scroll{max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:4px;}
+  table.result{border-collapse:collapse; width:100%; font-size:12.8px;}
+  table.result th{position:sticky; top:0; background:var(--paper); text-align:left; padding:7px 9px; font-weight:700; color:var(--pine-dark); font-size:11px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.result td{padding:6px 9px; border-bottom:1px solid #E5E7EB; white-space:nowrap;}
+  table.result td.num{font-family:var(--mono); text-align:right;}
+  table.result tr.ok td{background:var(--green-tint);}
+  table.result tr.warn td{background:var(--yellow-tint);}
+  table.result tr.bad td{background:var(--redrow-tint);}
+  table.result tr.kyhieusai td{background:var(--gold-tint);}
+  .empty-state{padding:30px 20px; text-align:center; color:var(--ink-soft); font-size:13px;}
+
+  .footer-actions{display:flex; gap:10px; margin-top:16px; align-items:center; flex-wrap:wrap;}
+  .small-note{font-size:12.5px; color:var(--ink-soft);}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>ĐỐI CHIẾU 3 NGUỒN THUẾ GTGT</h1>
+    <p>Sổ sách kế toán (phần mềm) ↔ HĐĐT Cục Thuế (độc lập) ↔ Tờ khai 01/GTGT đã nộp (XML). Tự nhận diện cột, tự đối chiếu từng hóa đơn và tổng theo chỉ tiêu tờ khai.</p>
+  </header>
+
+  <div class="card">
+    <h2>LOẠI ĐỐI CHIẾU</h2>
+    <div class="seg" id="loaiSeg">
+      <button class="active" data-loai="mua">MUA VÀO (CT23/CT24)</button>
+      <button data-loai="ban">BÁN RA (CT27/CT28)</button>
+    </div>
+
+    <div class="three-col">
+      <div class="file-box">
+        <label class="name-label">Sổ sách kế toán (phần mềm)</label>
+        <div class="hint">1 file Excel — <a href="#" id="linkMauSS" style="color:var(--pine-dark);font-weight:700;">tải file mẫu</a></div>
+        <div class="drop" id="dropSS"><div class="fname">Nhấn chọn file .xlsx</div><div class="sub">hoặc kéo thả</div></div>
+        <input type="file" id="fileSS" accept=".xlsx,.xls">
+        <div class="detect-box" id="detectSS"></div>
+        <div class="sheetlist-box" id="sheetlistSS"></div>
+        <div class="colmap-box" id="colmapSS"></div>
+      </div>
+      <div class="file-box">
+        <label class="name-label">HĐĐT Cục Thuế</label>
+        <div class="hint">Có thể chọn nhiều file (kg_ma/co_ma/máy tính tiền...) — <a href="#" id="linkMauHD" style="color:var(--pine-dark);font-weight:700;">tải file mẫu</a></div>
+        <div class="drop" id="dropHD"><div class="fname">Nhấn chọn 1 hoặc nhiều file .xlsx</div><div class="sub">hoặc kéo thả</div></div>
+        <input type="file" id="fileHD" accept=".xlsx,.xls" multiple>
+        <div class="detect-box" id="detectHD"></div>
+        <div class="sheetlist-box" id="sheetlistHD"></div>
+        <div class="colmap-box" id="colmapHD"></div>
+      </div>
+      <div class="file-box">
+        <label class="name-label">Tờ khai 01/GTGT đã nộp</label>
+        <div class="hint">File XML kết xuất từ HTKK</div>
+        <div class="drop" id="dropTK"><div class="fname">Nhấn chọn file .xml</div><div class="sub">hoặc kéo thả</div></div>
+        <input type="file" id="fileTK" accept=".xml">
+        <div class="detect-box" id="detectTK"></div>
+      </div>
+    </div>
+
+    <div class="tol-row">
+      <span>Mức chênh lệch vẫn coi là khớp:</span>
+      <input type="number" id="tolerance" value="1000">
+      <span>đồng</span>
+    </div>
+
+    <div class="row-actions">
+      <span class="warning-text" id="mainWarning"></span>
+      <button class="btn btn-pine" id="btnReconcile" disabled>Đối chiếu ngay</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <div class="kytag" id="kyTag"></div>
+
+    <h2>Đối chiếu theo chỉ tiêu tờ khai</h2>
+    <div id="chiTieuArea"></div>
+
+    <div id="kyHieuSaiArea"></div>
+    <div id="thieuKyHieuArea"></div>
+
+    <h2 style="margin-top:20px;">Đối chiếu chi tiết từng hóa đơn (Sổ sách ↔ HĐĐT)</h2>
+    <div class="summary-line" id="summaryLine"></div>
+    <div class="result-scroll"><table class="result" id="resultTable"></table></div>
+
+    <div class="footer-actions">
+      <button class="btn btn-gold" id="btnExport">Tải báo cáo Excel đầy đủ (.xlsx)</button>
+      <button class="btn btn-ghost" id="btnRestart">Làm lại từ đầu</button>
+      <span class="small-note" id="exportNote"></span>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center; margin:16px 0 0; font-size:11px; color:var(--ink-soft);">Phiên bản 2026-09-15.11 — nếu số này không đổi sau khi chị tải lại trang, trình duyệt đang dùng bản lưu tạm (cache), bấm Ctrl+F5.</div>
+
+<script>
+let LOAI = 'mua';
+document.querySelectorAll('#loaiSeg button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#loaiSeg button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); LOAI = b.dataset.loai;
+  });
+});
+
+// ===== Bộ từ khóa dò cột =====
+const KW = {
+  ky_hieu:   ['ky hieu hoa don','ky hieu hd','ky hieu'],
+  so_hd:     ['so hoa don'],
+  so_ct:     ['so chung tu'],
+  ngay:      ['ngay lap','ngay hoa don','ngay chung tu','ngay hach toan'],
+  ten:       ['ten nguoi ban','ten nguoi mua','khach hang','nha cung cap'],
+  gia_tri:   ['gia tri hhdv mua vao chua co thue','doanh so ban chua co thue gtgt','tong tien chua thue','doanh thu chua thue','tong tien hang','gia tri hang hoa','gia tri'],
+  thue:      ['thue gtgt','tong tien thue'],
+  chiet_khau:['tien chiet khau','chiet khau thuong mai','chiet khau'],
+};
+function stripDia(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/gi, m=> m==='đ'?'d':'D'); }
+function norm(s){ return stripDia(String(s||'')).toLowerCase().trim(); }
+// QUAN TRỌNG: duyệt theo TỪNG TỪ KHÓA trước (ưu tiên từ khóa cụ thể nhất ở đầu danh sách),
+// rồi mới duyệt qua các cột — để tránh nhận nhầm cột chung chung (vd "Ký hiệu MẪU SỐ" chứa
+// chữ "ký hiệu") trước khi kịp tìm đúng cột cụ thể hơn (vd "Ký hiệu HÓA ĐƠN") ở xa hơn trong dòng.
+function timCot(rowNorm, kws){
+  for(const kw of kws){
+    for(let i=0;i<rowNorm.length;i++){ if(rowNorm[i].includes(kw)) return i; }
+  }
+  return -1;
+}
+function timViTriCot(rows){
+  const n = Math.min(10, rows.length);
+  for(let r=0;r<n;r++){
+    const rowNorm = (rows[r]||[]).map(c=>norm(c));
+    const vt = { dongTieuDe:r, ky_hieu:timCot(rowNorm,KW.ky_hieu), so_hd:timCot(rowNorm,KW.so_hd), so_ct:timCot(rowNorm,KW.so_ct),
+      ngay:timCot(rowNorm,KW.ngay), ten:timCot(rowNorm,KW.ten), gia_tri:timCot(rowNorm,KW.gia_tri), thue:timCot(rowNorm,KW.thue), chiet_khau:timCot(rowNorm,KW.chiet_khau) };
+    const coDinhDanh = vt.so_hd>=0 && (vt.ky_hieu>=0 || vt.so_ct>=0);
+    const soPhu = [vt.ngay, vt.gia_tri, vt.thue].filter(v=>v>=0).length;
+    if(coDinhDanh && soPhu>=2) return vt;
+  }
+  return null;
+}
+// SheetJS (thư viện đọc Excel) khi bật cellDates sẽ tự chuyển số ngày trong Excel thành đối
+// tượng Date theo múi giờ máy đang chạy — với múi giờ Việt Nam, việc này tính SAI (lùi 1 ngày)
+// do dữ liệu múi giờ lịch sử của Đông Dương trong trình duyệt. Để tránh hẳn, ta không dùng
+// cellDates, mà tự đọc SỐ SERIAL GỐC của Excel và quy đổi bằng số học thuần — không đụng tới
+// bất kỳ đối tượng Date/múi giờ nào nên luôn đúng bất kể máy đặt múi giờ gì.
+function formatNgay(v){
+  if(typeof v === 'number' && v>0){
+    // Chuẩn SheetJS: serial 0 = 1899-12-30 (đã tính bù lỗi năm nhuận 1900 của Excel).
+    // 25569 = số ngày từ 1899-12-30 đến 1970-01-01 (mốc epoch Unix).
+    const utcDays = Math.round(v) - 25569;
+    const ms = utcDays * 86400 * 1000;
+    const d0 = new Date(ms); // new Date(số mili-giây) luôn là thời điểm tuyệt đối, không phụ thuộc múi giờ
+    const d=d0.getUTCDate(), m=d0.getUTCMonth()+1, y=d0.getUTCFullYear();
+    return (d<10?'0'+d:d)+'/'+(m<10?'0'+m:m)+'/'+y;
+  }
+  if(v instanceof Date){
+    const d=v.getUTCDate(), m=v.getUTCMonth()+1, y=v.getUTCFullYear();
+    return (d<10?'0'+d:d)+'/'+(m<10?'0'+m:m)+'/'+y;
+  }
+  return v===null||v===undefined?'':String(v);
+}
+function toNum(v){ if(v===null||v===undefined||v==='') return 0; if(typeof v==='number') return v; const s=String(v).replace(/[^0-9.\-]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; }
+function moneyFmt(n){ return new Intl.NumberFormat('vi-VN').format(Math.round(n)); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function normKeyPart(v){ if(v===null||v===undefined) return ''; let s=String(v).trim(); if(/^\d+$/.test(s)) s=String(parseInt(s,10)); return s.toUpperCase(); }
+// Ký hiệu hóa đơn đôi khi bị ghép sẵn với "Ký hiệu mẫu số" ở đầu (vd "1K26TAF" thay vì "K26TAF")
+// tùy phần mềm xuất ra — bỏ số đứng đầu để 2 nguồn so khớp được với nhau.
+function normalizeKyHieu(v){ if(v===null||v===undefined) return ''; return String(v).trim().toUpperCase().replace(/^\d+/, ''); }
+
+function colLetter(i){ let s=''; i++; while(i>0){ let m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); } return s; }
+function docSheet(rows, srcTag, override){
+  const autoVt = timViTriCot(rows);
+  if(!autoVt) return null;
+  const vt = Object.assign({}, autoVt, override||{});
+  const banGhi = [];
+  for(let r=autoVt.dongTieuDe+1; r<rows.length; r++){
+    const row = rows[r]; if(!row) continue;
+    const soHd = vt.so_hd>=0?row[vt.so_hd]:null, kyHieu = vt.ky_hieu>=0?row[vt.ky_hieu]:null, soCT = vt.so_ct>=0?row[vt.so_ct]:null;
+    if(!soHd && !soCT) continue;
+    const giaTriTho = vt.gia_tri>=0?toNum(row[vt.gia_tri]):0;
+    const chietKhau = vt.chiet_khau>=0?toNum(row[vt.chiet_khau]):0;
+    banGhi.push({ ky_hieu:kyHieu, so_hd:soHd, so_ct:soCT, ten:vt.ten>=0?row[vt.ten]:'', ngay:vt.ngay>=0?formatNgay(row[vt.ngay]):'', gia_tri:giaTriTho-chietKhau, thue:vt.thue>=0?toNum(row[vt.thue]):0, srcTag });
+  }
+  return { banGhi, vt, headerRow: rows[autoVt.dongTieuDe]||[] };
+}
+function docWorkbook(wb, fileName, override){
+  let banGhi = []; const sheetInfo = []; let coKyHieu=false, coSoCT=false; let sample=null;
+  wb.SheetNames.forEach(name=>{
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:null});
+    const srcTag = fileName+'::'+name;
+    const res = docSheet(rows, srcTag, override);
+    if(!res){ sheetInfo.push({name, ok:false}); return; }
+    if(res.vt.ky_hieu>=0) coKyHieu=true;
+    if(res.vt.so_ct>=0) coSoCT=true;
+    if(!sample) sample = { headerRow: res.headerRow, vt: res.vt };
+    banGhi = banGhi.concat(res.banGhi);
+    sheetInfo.push({name, ok:true, soDong:res.banGhi.length});
+  });
+  return { banGhi, sheetInfo, coKyHieu, coSoCT, sample };
+}
+function computeKey(x, mode){
+  if(mode==='sochungtu') return normKeyPart(x.so_ct);
+  if(mode==='kyhieu'){
+    const shd = normKeyPart(x.so_hd);
+    if(!shd) return '';
+    const kh = normalizeKyHieu(x.ky_hieu);
+    // Một số phần mềm bỏ trống cột "Ký hiệu HĐ" ở vài dòng (dù vẫn có Số hóa đơn) — vẫn giữ
+    // lại bằng khóa riêng theo Số hóa đơn (đánh dấu ~NOKH~) thay vì bỏ sót hẳn, để còn thấy
+    // được hóa đơn này trong bảng và còn cơ hội ghép với bên kia ở bước đối chiếu bổ sung.
+    return kh ? (kh+'|'+shd) : ('~NOKH~'+shd);
+  }
+  return normKeyPart(x.so_hd);
+}
+// Gộp theo khóa. QUAN TRỌNG: chỉ CỘNG DỒN khi trùng khóa trong CÙNG 1 sheet/file (vd 1 hóa
+// đơn tách nhiều dòng mặt hàng) — còn trùng khóa GIỮA các sheet/file khác nhau (vd người dùng
+// lỡ gộp nhiều lần tải cùng 1 danh sách vào 1 file) thì CHỈ LẤY 1 LẦN, không cộng dồn, để
+// tránh nhân đôi/nhân ba số tiền một cách âm thầm.
+function gopTheoKhoa(banGhi, mode){
+  const perSheet = {};
+  banGhi.forEach(x=>{
+    const key = computeKey(x, mode); if(!key) return;
+    if(!perSheet[x.srcTag]) perSheet[x.srcTag] = {};
+    const bucket = perSheet[x.srcTag];
+    if(!bucket[key]) bucket[key] = { ky_hieu:x.ky_hieu||'', so_hd:x.so_hd||'', so_ct:x.so_ct||'', ten:x.ten, ngay:x.ngay, gia_tri:0, thue:0 };
+    bucket[key].gia_tri += x.gia_tri; bucket[key].thue += x.thue;
+  });
+  const gop = {}; let soTrungKhop=0, soTrungLech=0;
+  Object.values(perSheet).forEach(bucket=>{
+    Object.entries(bucket).forEach(([key, rec])=>{
+      if(!gop[key]){ gop[key] = rec; }
+      else {
+        const dv = Math.abs(gop[key].gia_tri-rec.gia_tri), dt = Math.abs(gop[key].thue-rec.thue);
+        if(dv<=1000 && dt<=1000) soTrungKhop++; else soTrungLech++;
+        // Giữ nguyên bản ghi xuất hiện đầu tiên, KHÔNG cộng dồn thêm lần trùng này.
+      }
+    });
+  });
+  return { gop, soTrungKhop, soTrungLech };
+}
+function nhanDienKey(x){ return x.ky_hieu ? x.ky_hieu : (x.so_ct || x.so_hd); }
+
+// ===== XML tờ khai =====
+function timTag(xmlDoc, tag){
+  let els = xmlDoc.getElementsByTagNameNS('*', tag);
+  if(els.length) return els[0].textContent.trim();
+  els = xmlDoc.getElementsByTagName(tag);
+  if(els.length) return els[0].textContent.trim();
+  return null;
+}
+function docToKhai(xmlText){
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+  if(xmlDoc.querySelector('parsererror')) return null;
+  const get = (tag)=>{ const v = timTag(xmlDoc, tag); return v===null?null:toNum(v); };
+  return {
+    mst: timTag(xmlDoc,'mst'), ten: timTag(xmlDoc,'tenNNT'),
+    ky: timTag(xmlDoc,'kyKKhai'), tuNgay: timTag(xmlDoc,'kyKKhaiTuNgay'), denNgay: timTag(xmlDoc,'kyKKhaiDenNgay'),
+    ngayLap: timTag(xmlDoc,'ngayLapTKhai'), nguoiKy: timTag(xmlDoc,'nguoiKy'), soLan: timTag(xmlDoc,'soLan'),
+    ct23: get('ct23'), ct24: get('ct24'),
+    ct27: get('ct27'), ct28: get('ct28'),
+    ct34: get('ct34'), ct35: get('ct35'),
+  };
+}
+
+// ===== state =====
+const state = { SS:null, HD:null, TK:null };
+
+function setupDrop(side, inputId, multiple){
+  const drop = document.getElementById('drop'+side), input = document.getElementById(inputId);
+  drop.addEventListener('click', ()=>input.click());
+  drop.addEventListener('dragover', e=>e.preventDefault());
+  drop.addEventListener('drop', e=>{ e.preventDefault(); handleFiles(side, e.dataTransfer.files); });
+  input.addEventListener('change', e=>handleFiles(side, e.target.files));
+}
+setupDrop('SS','fileSS'); setupDrop('HD','fileHD'); setupDrop('TK','fileTK');
+
+function handleFiles(side, fileList){
+  const files = Array.from(fileList);
+  if(!files.length) return;
+  const drop = document.getElementById('drop'+side);
+  drop.classList.add('has-file');
+  drop.querySelector('.fname').textContent = files.map(f=>f.name).join(', ');
+  drop.querySelector('.sub').textContent = 'Đã tải — bấm để đổi file khác';
+
+  if(side==='TK'){
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const tk = docToKhai(e.target.result);
+      state.TK = tk;
+      const dbox = document.getElementById('detectTK');
+      dbox.classList.add('show');
+      if(!tk){ dbox.innerHTML = '<span class="fail">Không đọc được file XML — kiểm tra đúng file tờ khai HTKK chưa.</span>'; }
+      else {
+        dbox.innerHTML = 'Đã đọc: <b>'+escapeHtml(tk.ten||'')+'</b> — kỳ <b>'+escapeHtml(tk.ky||'')+'</b> — nộp lần '+escapeHtml(tk.soLan||'0')+
+          '<br>ct23/ct24 (mua vào): '+moneyFmt(tk.ct23)+' / '+moneyFmt(tk.ct24)+
+          '<br>ct27/ct28 (bán ra): '+moneyFmt(tk.ct27)+' / '+moneyFmt(tk.ct28);
+      }
+      checkReady();
+    };
+    reader.readAsText(files[0], 'UTF-8');
+    return;
+  }
+
+  let pending = files.length;
+  const wbList = [];
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      // KHÔNG dùng cellDates:true — thư viện đọc Excel (SheetJS) tự chuyển ngày thành đối
+      // tượng Date theo múi giờ máy đang chạy, và với múi giờ Việt Nam việc này tính sai
+      // (lùi 1 ngày) do một lỗi lịch sử của dữ liệu múi giờ Đông Dương cũ trong trình duyệt.
+      // Đọc số serial gốc rồi tự quy đổi bằng số học thuần (formatNgay) để tránh hẳn vấn đề này.
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      wbList.push({ fileName:file.name, wb });
+      pending--;
+      if(pending===0){
+        // Mặc định bật tất cả sheet của mọi file vừa tải
+        const enabledSheets = new Set();
+        wbList.forEach(({fileName, wb})=> wb.SheetNames.forEach(name=> enabledSheets.add(fileName+'::'+name)));
+        state[side] = { wbList, enabledSheets, override:{}, banGhi:[], sheetInfo:[], coKyHieu:false, coSoCT:false, sample:null };
+        reprocess(side);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// Đọc lại toàn bộ theo đúng: sheet nào đang bật (enabledSheets) + cột đã chọn tay (override)
+function reprocess(side){
+  const st = state[side];
+  let allBanGhi=[], allSheetInfo=[], coKyHieu=false, coSoCT=false, sample=null;
+  st.wbList.forEach(({fileName, wb})=>{
+    wb.SheetNames.forEach(name=>{
+      const tag = fileName+'::'+name;
+      if(!st.enabledSheets.has(tag)){ allSheetInfo.push({name, file:fileName, ok:null, skipped:true}); return; }
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:null});
+      const res = docSheet(rows, tag, st.override);
+      if(!res){ allSheetInfo.push({name, file:fileName, ok:false}); return; }
+      if(res.vt.ky_hieu>=0) coKyHieu=true;
+      if(res.vt.so_ct>=0) coSoCT=true;
+      if(!sample) sample = { headerRow:res.headerRow, vt:res.vt };
+      allBanGhi = allBanGhi.concat(res.banGhi);
+      allSheetInfo.push({name, file:fileName, ok:true, soDong:res.banGhi.length});
+    });
+  });
+  st.banGhi=allBanGhi; st.sheetInfo=allSheetInfo; st.coKyHieu=coKyHieu; st.coSoCT=coSoCT; if(sample) st.sample=sample;
+
+  const dbox = document.getElementById('detect'+side);
+  dbox.classList.add('show');
+  const ok = allSheetInfo.filter(s=>s.ok), fail = allSheetInfo.filter(s=>s.ok===false), skipped = allSheetInfo.filter(s=>s.skipped);
+  if(ok.length===0){
+    dbox.innerHTML = '<span class="fail">Không dò được cột trong sheet nào đang bật.</span>';
+  } else {
+    const mode = coSoCT ? 'sochungtu' : (coKyHieu ? 'kyhieu' : 'sohd');
+    const { gop, soTrungLech } = gopTheoKhoa(allBanGhi, mode);
+    dbox.innerHTML = 'Đã nhận diện <b>'+Object.keys(gop).length+' hóa đơn</b> từ '+ok.length+' sheet'+
+      (fail.length?(', bỏ qua '+fail.length+' sheet không nhận diện được'):'')+
+      (skipped.length?(', '+skipped.length+' sheet đang tắt'):'');
+    if(soTrungLech>0) dbox.innerHTML += '<br><span class="fail">⚠ '+soTrungLech+' hóa đơn trùng khóa giữa các sheet/file nhưng có giá trị KHÁC NHAU — đã lấy giá trị ở lần xuất hiện đầu tiên, nên kiểm tra lại thủ công các hóa đơn này.</span>';
+  }
+  renderSheetList(side);
+  renderColMap(side);
+  checkReady();
+}
+
+// ===== Bảng chọn sheet — bật/tắt từng sheet trong (các) file đã tải =====
+function renderSheetList(side){
+  const box = document.getElementById('sheetlist'+side);
+  const st = state[side];
+  if(!st || !st.wbList || st.wbList.length===0){ box.classList.remove('show'); box.innerHTML=''; return; }
+  const multiFile = st.wbList.length>1;
+  let html = '<div class="colmap-title">Chọn sheet muốn dùng</div>';
+  st.wbList.forEach(({fileName, wb})=>{
+    wb.SheetNames.forEach(name=>{
+      const tag = fileName+'::'+name;
+      const info = st.sheetInfo.find(s=>s.file===fileName && s.name===name);
+      const checked = st.enabledSheets.has(tag);
+      let statusTxt = '';
+      if(info && info.ok) statusTxt = '<span class="sheet-ok">'+info.soDong+' dòng</span>';
+      else if(info && info.ok===false) statusTxt = '<span class="sheet-bad">không nhận diện được</span>';
+      html += '<div class="sheet-row"><label><input type="checkbox" data-tag="'+encodeURIComponent(tag)+'" '+(checked?'checked':'')+'> '+
+        (multiFile? escapeHtml(fileName)+' — ':'')+escapeHtml(name)+'</label> '+statusTxt+'</div>';
+    });
+  });
+  box.innerHTML = html;
+  box.classList.add('show');
+  box.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const tag = decodeURIComponent(cb.dataset.tag);
+      if(cb.checked) st.enabledSheets.add(tag); else st.enabledSheets.delete(tag);
+      reprocess(side);
+    });
+  });
+}
+
+// ===== Bảng cột đã nhận diện — cho sửa tay theo tên cột (header) thật của file =====
+const FIELD_LABELS = [
+  ['ky_hieu','Ký hiệu hóa đơn'], ['so_hd','Số hóa đơn'], ['so_ct','Số chứng từ'],
+  ['ngay','Ngày'], ['ten','Tên đối tác'], ['gia_tri','Giá trị chưa thuế'],
+  ['thue','Thuế GTGT'], ['chiet_khau','Chiết khấu'],
+];
+function renderColMap(side){
+  const box = document.getElementById('colmap'+side);
+  const st = state[side];
+  if(!st || !st.sample){ box.classList.remove('show'); box.innerHTML=''; return; }
+  const { headerRow, vt } = st.sample;
+  let html = '<div class="colmap-title">Cột đã nhận diện (sửa lại nếu chưa đúng, áp dụng cho mọi sheet đang bật)</div>';
+  FIELD_LABELS.forEach(([field, label])=>{
+    const current = (st.override[field]!==undefined) ? st.override[field] : vt[field];
+    let opts = '<option value="-1">— không có —</option>';
+    headerRow.forEach((h,c)=>{
+      const label2 = (h===null||h===undefined||String(h).trim()==='') ? ('(cột '+colLetter(c)+')') : String(h);
+      opts += '<option value="'+c+'"'+(c===current?' selected':'')+'>'+colLetter(c)+' — '+escapeHtml(label2)+'</option>';
+    });
+    html += '<div class="colmap-row"><label>'+label+'</label><select data-field="'+field+'">'+opts+'</select></div>';
+  });
+  html += '<button class="btn btn-ghost btn-apply" id="btnApply'+side+'">Dò lại theo lựa chọn này</button>';
+  box.innerHTML = html;
+  box.classList.add('show');
+  document.getElementById('btnApply'+side).addEventListener('click', ()=>{
+    const override = {};
+    box.querySelectorAll('select[data-field]').forEach(sel=>{ override[sel.dataset.field] = parseInt(sel.value, 10); });
+    state[side].override = override;
+    reprocess(side);
+  });
+}
+
+function checkReady(){
+
+  const btn = document.getElementById('btnReconcile');
+  const okSS = state.SS && state.SS.banGhi.length>0;
+  const okHD = state.HD && state.HD.banGhi.length>0;
+  btn.disabled = !(okSS && okHD);
+  document.getElementById('mainWarning').textContent = (state.SS && state.HD && !(okSS&&okHD)) ? 'Sổ sách hoặc HĐĐT chưa nhận diện được dòng nào.' : '';
+}
+
+// ===== đối chiếu =====
+let RESULT = null;
+
+document.getElementById('btnReconcile').addEventListener('click', ()=>{
+  const tol = toNum(document.getElementById('tolerance').value);
+  let mode, modeLabel;
+  if(state.SS.coSoCT && state.HD.coSoCT){ mode='sochungtu'; modeLabel='Số chứng từ'; }
+  else if(state.SS.coKyHieu && state.HD.coKyHieu){ mode='kyhieu'; modeLabel='Ký hiệu + Số hóa đơn'; }
+  else { mode='sohd'; modeLabel='Số hóa đơn (không có khóa chung tốt hơn)'; }
+
+  const rSS = gopTheoKhoa(state.SS.banGhi, mode);
+  const rHD = gopTheoKhoa(state.HD.banGhi, mode);
+  const gopSS = rSS.gop, gopHD = rHD.gop;
+
+  const keysA = Object.keys(gopSS), keysB = Object.keys(gopHD);
+  const setA = new Set(keysA), setB = new Set(keysB);
+  const commonKeys = keysA.filter(k=>setB.has(k));
+  let onlyAKeys = keysA.filter(k=>!setB.has(k));
+  let onlyBKeys = keysB.filter(k=>!setA.has(k));
+
+  let soKhop=0, soLech=0, soThieu=0, soGhepBoSung=0; const ketQua=[]; const dsKyHieuSai=[]; const dsThieuKyHieu=[];
+  function themDong(a, b, mau, ghiChuThem, kyHieuSaiInfo){
+    const lg=Math.abs((a?a.gia_tri:0)-(b?b.gia_tri:0)), lt=Math.abs((a?a.thue:0)-(b?b.thue:0));
+    let trangThai, ghiChu, cls;
+    if(a&&b){
+      if(lg>tol||lt>tol){ trangThai='🟡 Lệch số tiền'; cls='warn'; ghiChu='Giá trị lệch '+moneyFmt(lg)+'đ, thuế lệch '+moneyFmt(lt)+'đ'; soLech++; }
+      else { trangThai='✅ Khớp'; cls='ok'; ghiChu=''; soKhop++; }
+    } else {
+      trangThai = a ? '🔴 Chỉ có ở Sổ sách' : '🔴 Chỉ có ở HĐĐT'; cls='bad'; ghiChu=''; soThieu++;
+    }
+    if(kyHieuSaiInfo){ trangThai = '⚠️ Sai ký hiệu'; cls='kyhieusai'; }
+    if(ghiChuThem) ghiChu = ghiChu ? (ghiChu+' — '+ghiChuThem) : ghiChuThem;
+    const dong = { hienThi:nhanDienKey(mau), so_hd:mau.so_hd, ten:mau.ten, ngay:mau.ngay, giaTriA:a?a.gia_tri:null, giaTriB:b?b.gia_tri:null, thueA:a?a.thue:null, thueB:b?b.thue:null, trangThai, ghiChu, cls };
+    ketQua.push(dong);
+    if(kyHieuSaiInfo) dsKyHieuSai.push(Object.assign({}, dong, kyHieuSaiInfo));
+    // Ghi nhận riêng những dòng thiếu Ký hiệu (không phải sai, chỉ đơn giản bị bỏ trống) — chỉ
+    // áp dụng khi đang đối chiếu theo chế độ Ký hiệu, vì mode khác không quan tâm cột này.
+    if(mode==='kyhieu' && !kyHieuSaiInfo){
+      if(a && !normalizeKyHieu(a.ky_hieu)) dsThieuKyHieu.push({ nguon:'Sổ sách', so_hd:a.so_hd, ten:a.ten, ngay:a.ngay, gia_tri:a.gia_tri, trangThai });
+      if(b && !normalizeKyHieu(b.ky_hieu)) dsThieuKyHieu.push({ nguon:'HĐĐT', so_hd:b.so_hd, ten:b.ten, ngay:b.ngay, gia_tri:b.gia_tri, trangThai });
+    }
+  }
+
+  commonKeys.forEach(key=> themDong(gopSS[key], gopHD[key], gopSS[key]));
+
+  // Đối chiếu bổ sung: những hóa đơn chưa ghép được (thường vì 1 bên bị bỏ trống cột Ký hiệu,
+  // hoặc ghi SAI ký hiệu — vd gõ nhầm năm "C25" thay vì "C26") thử ghép lại theo [Số hóa đơn +
+  // Tên người bán + Ngày] — 3 trường này cùng khớp thì gần như chắc chắn là cùng 1 hóa đơn
+  // thật. Chỉ ghép khi khớp DUY NHẤT 1-1. Nếu cả 2 bên đều CÓ ký hiệu nhưng khác nhau → đánh
+  // dấu SAI ký hiệu (khác với trường hợp 1 bên chỉ đơn giản bỏ trống).
+  function khoaBoSung(rec){
+    const shd = normKeyPart(rec.so_hd); if(!shd) return '';
+    return shd+'|'+norm(rec.ten)+'|'+norm(rec.ngay);
+  }
+  {
+    const bySoHdA = {}, bySoHdB = {};
+    onlyAKeys.forEach(k=>{ const kk=khoaBoSung(gopSS[k]); if(kk) (bySoHdA[kk]=bySoHdA[kk]||[]).push(k); });
+    onlyBKeys.forEach(k=>{ const kk=khoaBoSung(gopHD[k]); if(kk) (bySoHdB[kk]=bySoHdB[kk]||[]).push(k); });
+    const daGhepA = new Set(), daGhepB = new Set();
+    Object.keys(bySoHdA).forEach(kk=>{
+      if(bySoHdB[kk] && bySoHdA[kk].length===1 && bySoHdB[kk].length===1){
+        const ka=bySoHdA[kk][0], kb=bySoHdB[kk][0];
+        daGhepA.add(ka); daGhepB.add(kb); soGhepBoSung++;
+        const khA = normalizeKyHieu(gopSS[ka].ky_hieu), khB = normalizeKyHieu(gopHD[kb].ky_hieu);
+        if(khA && khB && khA!==khB){
+          themDong(gopSS[ka], gopHD[kb], gopSS[ka], 'SAI KÝ HIỆU — sổ sách ghi "'+gopSS[ka].ky_hieu+'", HĐĐT ghi "'+gopHD[kb].ky_hieu+'"',
+            { kyHieuSS: gopSS[ka].ky_hieu, kyHieuHD: gopHD[kb].ky_hieu });
+        } else {
+          themDong(gopSS[ka], gopHD[kb], gopSS[ka], 'Ghép theo Số hóa đơn + Tên người bán + Ngày (1 bên thiếu Ký hiệu)');
+        }
+      }
+    });
+    onlyAKeys = onlyAKeys.filter(k=>!daGhepA.has(k));
+    onlyBKeys = onlyBKeys.filter(k=>!daGhepB.has(k));
+  }
+
+  onlyAKeys.forEach(k=> themDong(gopSS[k], null, gopSS[k]));
+  onlyBKeys.forEach(k=> themDong(null, gopHD[k], gopHD[k]));
+  const rank = c => c==='bad'?0 : c==='kyhieusai'?1 : c==='warn'?2 : 3;
+  ketQua.sort((x,y)=> rank(x.cls)-rank(y.cls));
+
+  const tongSS = { gia_tri: Object.values(gopSS).reduce((s,x)=>s+x.gia_tri,0), thue: Object.values(gopSS).reduce((s,x)=>s+x.thue,0) };
+  const tongHD = { gia_tri: Object.values(gopHD).reduce((s,x)=>s+x.gia_tri,0), thue: Object.values(gopHD).reduce((s,x)=>s+x.thue,0) };
+  const canhBaoTrungLech = rSS.soTrungLech + rHD.soTrungLech;
+
+  RESULT = { modeLabel, ketQua, soKhop, soLech, soThieu, soGhepBoSung, dsKyHieuSai, dsThieuKyHieu, tongSS, tongHD, tk: state.TK, loai: LOAI, canhBaoTrungLech };
+  renderAll();
+  document.getElementById('resultCard').classList.remove('hidden');
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+function renderAll(){
+  const r = RESULT;
+  const kyBox = document.getElementById('kyTag');
+  if(r.tk) kyBox.innerHTML = 'Tờ khai: <b>'+escapeHtml(r.tk.ten||'')+'</b> — kỳ <b>'+escapeHtml(r.tk.ky||'')+'</b> ('+escapeHtml(r.tk.tuNgay||'')+' – '+escapeHtml(r.tk.denNgay||'')+') — nộp lần '+escapeHtml(r.tk.soLan||'0')+', ngày lập '+escapeHtml(r.tk.ngayLap||'');
+  else kyBox.innerHTML = 'Chưa có tờ khai — chỉ đối chiếu 2 nguồn Sổ sách ↔ HĐĐT.';
+  if(r.canhBaoTrungLech>0){
+    kyBox.innerHTML += '<br><span style="color:var(--red);font-weight:700;">⚠ '+r.canhBaoTrungLech+' hóa đơn xuất hiện nhiều lần giữa các sheet/file (Sổ sách hoặc HĐĐT) với giá trị KHÁC NHAU — công cụ chỉ lấy giá trị lần đầu tiên, chị kiểm tra lại thủ công các hóa đơn này vì có thể ảnh hưởng tới tổng số.</span>';
+  }
+
+  // Danh sách hóa đơn bị sai ký hiệu (2 bên đều có ký hiệu nhưng khác nhau)
+  const ksArea = document.getElementById('kyHieuSaiArea');
+  if(r.dsKyHieuSai && r.dsKyHieuSai.length>0){
+    let html = '<h2 style="margin-top:16px;">⚠️ Hóa đơn bị sai Ký hiệu hóa đơn ('+r.dsKyHieuSai.length+')</h2>';
+    html += '<div class="result-scroll"><table class="result"><thead><tr><th>Số HĐ</th><th>Tên</th><th>Ngày</th><th>Ký hiệu (Sổ sách)</th><th>Ký hiệu (HĐĐT)</th></tr></thead><tbody>';
+    r.dsKyHieuSai.forEach(k=>{
+      html += '<tr class="kyhieusai"><td>'+escapeHtml(k.so_hd)+'</td><td>'+escapeHtml(k.ten)+'</td><td>'+escapeHtml(k.ngay)+'</td>'+
+        '<td style="font-weight:700;">'+escapeHtml(k.kyHieuSS)+'</td><td style="font-weight:700;">'+escapeHtml(k.kyHieuHD)+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    ksArea.innerHTML = html;
+  } else {
+    ksArea.innerHTML = '';
+  }
+
+  // Danh sách hóa đơn thiếu Ký hiệu (bị bỏ trống, không phải sai)
+  const tkhArea = document.getElementById('thieuKyHieuArea');
+  if(r.dsThieuKyHieu && r.dsThieuKyHieu.length>0){
+    let html = '<h2 style="margin-top:16px;">Số hóa đơn thiếu Ký hiệu ('+r.dsThieuKyHieu.length+')</h2>';
+    html += '<div class="result-scroll"><table class="result"><thead><tr><th>Nguồn bị thiếu</th><th>Số HĐ</th><th>Tên</th><th>Ngày</th><th>Giá trị</th><th>Trạng thái sau đối chiếu</th></tr></thead><tbody>';
+    r.dsThieuKyHieu.forEach(k=>{
+      html += '<tr><td>'+escapeHtml(k.nguon)+'</td><td>'+escapeHtml(k.so_hd)+'</td><td>'+escapeHtml(k.ten)+'</td><td>'+escapeHtml(k.ngay)+'</td>'+
+        '<td class="num">'+moneyFmt(k.gia_tri)+'</td><td>'+k.trangThai+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    tkhArea.innerHTML = html;
+  } else {
+    tkhArea.innerHTML = '';
+  }
+
+  // chỉ tiêu
+  const ct = document.getElementById('chiTieuArea');
+  if(!r.tk){ ct.innerHTML = '<div class="empty-state">Tải thêm file tờ khai XML để so theo chỉ tiêu.</div>'; }
+  else {
+    const tkGT = r.loai==='mua' ? r.tk.ct23 : (r.tk.ct27 ?? r.tk.ct34);
+    const tkThue = r.loai==='mua' ? r.tk.ct24 : (r.tk.ct28 ?? r.tk.ct35);
+    const chiTieuLabel = r.loai==='mua' ? 'ct23 / ct24' : 'ct27 / ct28';
+    const dGT_HD = tkGT - r.tongHD.gia_tri, dTH_HD = tkThue - r.tongHD.thue;
+    let html = '<table class="compare"><thead><tr><th>Chỉ tiêu</th><th>HĐĐT (độc lập)</th><th>Sổ sách kế toán</th><th>Đã kê khai (tờ khai)</th><th>Chênh lệch (khai − HĐĐT)</th></tr></thead><tbody>';
+    html += '<tr class="'+(Math.abs(dGT_HD)>1000?'diff':'')+'"><td>Giá trị ('+chiTieuLabel.split('/')[0].trim()+')</td><td class="num">'+moneyFmt(r.tongHD.gia_tri)+'</td><td class="num">'+moneyFmt(r.tongSS.gia_tri)+'</td><td class="num">'+moneyFmt(tkGT)+'</td><td class="num">'+moneyFmt(dGT_HD)+'</td></tr>';
+    html += '<tr class="'+(Math.abs(dTH_HD)>1000?'diff':'')+'"><td>Thuế GTGT ('+chiTieuLabel.split('/')[1].trim()+')</td><td class="num">'+moneyFmt(r.tongHD.thue)+'</td><td class="num">'+moneyFmt(r.tongSS.thue)+'</td><td class="num">'+moneyFmt(tkThue)+'</td><td class="num">'+moneyFmt(dTH_HD)+'</td></tr>';
+    html += '</tbody></table>';
+    if(Math.abs(dGT_HD)>1000 || Math.abs(dTH_HD)>1000){
+      html += '<div class="finding">🔴 Tờ khai <b>lệch với HĐĐT (nguồn độc lập)</b> '+moneyFmt(dGT_HD)+'đ giá trị / '+moneyFmt(dTH_HD)+'đ thuế — kiểm tra các dòng "🔴 Chỉ có ở..." trong bảng chi tiết bên dưới để tìm hóa đơn gây lệch.</div>';
+    } else {
+      html += '<div class="finding ok">✅ Tờ khai khớp với HĐĐT trong ngưỡng cho phép.</div>';
+    }
+    ct.innerHTML = html;
+  }
+
+  document.getElementById('summaryLine').innerHTML =
+    '✅ Khớp <span class="n">'+r.soKhop+'</span> &nbsp;|&nbsp; 🟡 Lệch số tiền <span class="n">'+r.soLech+'</span> &nbsp;|&nbsp; 🔴 Chỉ có 1 bên <span class="n">'+r.soThieu+'</span>'+
+    (r.dsKyHieuSai && r.dsKyHieuSai.length>0 ? ' &nbsp;|&nbsp; ⚠️ Sai ký hiệu <span class="n">'+r.dsKyHieuSai.length+'</span>' : '')+
+    ' &nbsp;— khóa đối chiếu: '+escapeHtml(r.modeLabel)+
+    (r.soGhepBoSung>0 ? ' &nbsp;<span style="color:var(--gold);">('+r.soGhepBoSung+' hóa đơn ghép bổ sung theo Số hóa đơn + Tên + Ngày)</span>' : '');
+
+  const table = document.getElementById('resultTable');
+  if(r.ketQua.length===0){ table.innerHTML='<tr><td class="empty-state">Không có hóa đơn nào.</td></tr>'; return; }
+  let thead = '<thead><tr><th>Định danh</th><th>Số HĐ</th><th>Tên</th><th>Ngày</th><th>Giá trị (Sổ sách)</th><th>Giá trị (HĐĐT)</th><th>Thuế (Sổ sách)</th><th>Thuế (HĐĐT)</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>';
+  let body='<tbody>';
+  r.ketQua.forEach(k=>{
+    body += '<tr class="'+k.cls+'"><td>'+escapeHtml(k.hienThi)+'</td><td>'+escapeHtml(k.so_hd)+'</td><td>'+escapeHtml(k.ten)+'</td><td>'+escapeHtml(k.ngay)+'</td>'+
+      '<td class="num">'+(k.giaTriA!==null?moneyFmt(k.giaTriA):'')+'</td><td class="num">'+(k.giaTriB!==null?moneyFmt(k.giaTriB):'')+'</td>'+
+      '<td class="num">'+(k.thueA!==null?moneyFmt(k.thueA):'')+'</td><td class="num">'+(k.thueB!==null?moneyFmt(k.thueB):'')+'</td>'+
+      '<td>'+k.trangThai+'</td><td>'+escapeHtml(k.ghiChu)+'</td></tr>';
+  });
+  table.innerHTML = thead+body+'</tbody>';
+}
+
+// ===== xuất Excel đẹp bằng ExcelJS =====
+const PINE='FF2563EB', GREEN='FFDCFCE7', YELLOW='FFFEF3C7', REDFILL='FFFEE2E2', BORDER='FFE5E7EB';
+document.getElementById('btnExport').addEventListener('click', async ()=>{
+  const r = RESULT;
+  const btn = document.getElementById('btnExport'); const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Đang tạo file…';
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Đối chiếu 3 nguồn thuế GTGT'; wb.created = new Date();
+
+  const wsSum = wb.addWorksheet('Tổng quan');
+  wsSum.mergeCells('A1:B1'); wsSum.getCell('A1').value = 'ĐỐI CHIẾU 3 NGUỒN THUẾ GTGT — '+(r.loai==='mua'?'MUA VÀO':'BÁN RA');
+  wsSum.getCell('A1').font = {bold:true, size:15, color:{argb:PINE}};
+  if(r.tk){
+    wsSum.mergeCells('A2:B2'); wsSum.getCell('A2').value = (r.tk.ten||'')+' — kỳ '+(r.tk.ky||'')+' — nộp lần '+(r.tk.soLan||'0')+' ngày '+(r.tk.ngayLap||'');
+    wsSum.getCell('A2').font = {italic:true, size:10, color:{argb:'FF6B7280'}};
+  }
+  const info = [ ['✅ Khớp', r.soKhop], ['🟡 Lệch số tiền', r.soLech], ['🔴 Chỉ có ở 1 bên', r.soThieu], ['Khóa đối chiếu', r.modeLabel] ];
+  let rr=4;
+  info.forEach(([l,v])=>{ const row=wsSum.addRow([l,v]); row.getCell(1).font={bold:true};
+    if(l==='✅ Khớp') row.eachCell(c=>c.fill={type:'pattern',pattern:'solid',fgColor:{argb:GREEN}});
+    if(l==='🟡 Lệch số tiền') row.eachCell(c=>c.fill={type:'pattern',pattern:'solid',fgColor:{argb:YELLOW}});
+    if(l==='🔴 Chỉ có ở 1 bên') row.eachCell(c=>c.fill={type:'pattern',pattern:'solid',fgColor:{argb:REDFILL}});
+  });
+  wsSum.getColumn(1).width=26; wsSum.getColumn(2).width=44;
+
+  if(r.tk){
+    const wsCT = wb.addWorksheet('Đối chiếu chỉ tiêu');
+    const tkGT = r.loai==='mua'? r.tk.ct23 : (r.tk.ct27 ?? r.tk.ct34);
+    const tkThue = r.loai==='mua'? r.tk.ct24 : (r.tk.ct28 ?? r.tk.ct35);
+    const headers = ['Chỉ tiêu','HĐĐT (độc lập)','Sổ sách kế toán','Đã kê khai (tờ khai)','Chênh lệch (khai − HĐĐT)'];
+    wsCT.addRow(headers);
+    wsCT.getRow(1).eachCell(c=>{ c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:PINE}}; c.alignment={horizontal:'center',wrapText:true}; });
+    const rows = [
+      ['Giá trị', r.tongHD.gia_tri, r.tongSS.gia_tri, tkGT, tkGT-r.tongHD.gia_tri],
+      ['Thuế GTGT', r.tongHD.thue, r.tongSS.thue, tkThue, tkThue-r.tongHD.thue],
+    ];
+    rows.forEach(row=>{
+      const rrow = wsCT.addRow(row);
+      [2,3,4,5].forEach(ci=>{ rrow.getCell(ci).numFmt='#,##0'; });
+      if(Math.abs(row[4])>1000) rrow.eachCell(c=>c.fill={type:'pattern',pattern:'solid',fgColor:{argb:REDFILL}});
+    });
+    wsCT.columns = [{width:16},{width:20},{width:20},{width:20},{width:22}];
+    wsCT.eachRow(row=>row.eachCell(c=>{ c.border={top:{style:'thin',color:{argb:BORDER}},bottom:{style:'thin',color:{argb:BORDER}},left:{style:'thin',color:{argb:BORDER}},right:{style:'thin',color:{argb:BORDER}}}; }));
+  }
+
+  const wsDetail = wb.addWorksheet('Đối chiếu chi tiết');
+  const headers2 = ['Định danh','Số HĐ','Tên','Ngày','Giá trị (Sổ sách)','Giá trị (HĐĐT)','Thuế (Sổ sách)','Thuế (HĐĐT)','Trạng thái','Ghi chú'];
+  wsDetail.addRow(headers2);
+  wsDetail.getRow(1).eachCell(c=>{ c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:PINE}}; c.alignment={horizontal:'center',wrapText:true}; });
+  wsDetail.views=[{state:'frozen', ySplit:1}];
+  wsDetail.autoFilter = { from:'A1', to:String.fromCharCode(64+headers2.length)+'1' };
+  r.ketQua.forEach(k=>{
+    const row = wsDetail.addRow([k.hienThi,k.so_hd,k.ten,k.ngay,k.giaTriA,k.giaTriB,k.thueA,k.thueB,k.trangThai,k.ghiChu]);
+    const fc = k.cls==='ok'?GREEN:(k.cls==='warn'?YELLOW:(k.cls==='bad'?REDFILL:null));
+    if(fc) row.eachCell(c=>c.fill={type:'pattern',pattern:'solid',fgColor:{argb:fc}});
+    [5,6,7,8].forEach(ci=>{ row.getCell(ci).numFmt='#,##0'; row.getCell(ci).alignment={horizontal:'right'}; });
+  });
+  wsDetail.eachRow(row=>row.eachCell(c=>{ c.border={top:{style:'thin',color:{argb:BORDER}},bottom:{style:'thin',color:{argb:BORDER}},left:{style:'thin',color:{argb:BORDER}},right:{style:'thin',color:{argb:BORDER}}}; }));
+  wsDetail.columns = [{width:16},{width:12},{width:30},{width:12},{width:18},{width:18},{width:16},{width:16},{width:22},{width:34}];
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='doi_chieu_3_nguon_gtgt.xlsx';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  btn.disabled=false; btn.textContent=orig;
+  document.getElementById('exportNote').textContent = 'Đã tải xuống doi_chieu_3_nguon_gtgt.xlsx';
+});
+document.getElementById('btnRestart').addEventListener('click', ()=>location.reload());
+
+// ===== Tải file mẫu (đầu vào / đầu ra tùy theo Loại đối chiếu đang chọn) =====
+async function taiFile(wb, tenFile){
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=tenFile;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function styleHeaderRow(row){
+  row.eachCell(c=>{ c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:PINE}}; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; c.border={top:{style:'thin',color:{argb:BORDER}},bottom:{style:'thin',color:{argb:BORDER}},left:{style:'thin',color:{argb:BORDER}},right:{style:'thin',color:{argb:BORDER}}}; });
+}
+function styleDataRow(row, moneyCols){
+  row.eachCell((c,ci)=>{ c.border={top:{style:'thin',color:{argb:BORDER}},bottom:{style:'thin',color:{argb:BORDER}},left:{style:'thin',color:{argb:BORDER}},right:{style:'thin',color:{argb:BORDER}}}; if(moneyCols.includes(ci)) c.numFmt='#,##0'; });
+}
+
+document.getElementById('linkMauSS').addEventListener('click', async (e)=>{
+  e.preventDefault();
+  const laMua = LOAI==='mua';
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Báo cáo');
+  ws.getCell('A1').value = laMua ? 'BẢNG KÊ HÓA ĐƠN, CHỨNG TỪ HÀNG HÓA, DỊCH VỤ MUA VÀO (MẪU QUẢN TRỊ)' : 'BẢNG KÊ HÓA ĐƠN, CHỨNG TỪ HÀNG HÓA, DỊCH VỤ BÁN RA (MẪU QUẢN TRỊ)';
+  ws.getCell('A1').font = {bold:true, size:12};
+  ws.getCell('A2').value = 'Tháng 8 năm 2026'; ws.getCell('A2').font = {italic:true, size:10};
+  const headers = laMua
+    ? ['Ký hiệu mẫu HĐ','Ký hiệu HĐ','Số chứng từ','Ngày hóa đơn','Số hóa đơn','Tên người bán','MST người bán','Giá trị HHDV mua vào chưa có thuế','Thuế GTGT','Tổng thanh toán']
+    : ['Ký hiệu mẫu HĐ','Ký hiệu HĐ','Số chứng từ','Ngày hóa đơn','Số hóa đơn','Tên người mua','MST người mua','Doanh số bán chưa có thuế GTGT','Thuế GTGT','Tổng thanh toán'];
+  ws.getRow(4).values = headers; styleHeaderRow(ws.getRow(4));
+  const sample = laMua ? [
+    ['1','C26TPN','PCDN00301/01','05/08/2026','1234','CÔNG TY TNHH VÍ DỤ A','0400123456',5000000,400000,5400000],
+    ['1','C26TPN','PCDN00302/01','12/08/2026','1235','CÔNG TY TNHH VÍ DỤ B','0400654321',12000000,960000,12960000],
+    ['1','C26TPN','PCDN00303/01','20/08/2026','1236','CÔNG TY TNHH VÍ DỤ C','0400111222',3000000,240000,3240000],
+  ] : [
+    ['1','C26TBB','HDBR00001/01','05/08/2026','501','CÔNG TY TNHH KHÁCH HÀNG A','0400777888',8000000,640000,8640000],
+    ['1','C26TBB','HDBR00002/01','14/08/2026','502','CÔNG TY TNHH KHÁCH HÀNG B','0400999000',15000000,1200000,16200000],
+    ['1','C26TBB','HDBR00003/01','22/08/2026','503','CÔNG TY TNHH KHÁCH HÀNG C','0400333444',6000000,480000,6480000],
+  ];
+  sample.forEach(r=>{ const row=ws.addRow(r); styleDataRow(row,[8,9,10]); });
+  ws.columns = [{width:14},{width:12},{width:16},{width:12},{width:10},{width:28},{width:14},{width:26},{width:12},{width:14}];
+  ws.views = [{state:'frozen', ySplit:4}];
+
+  const wsH = wb.addWorksheet('Hướng dẫn');
+  wsH.getCell('A1').value = 'CỘT BẮT BUỘC ĐỂ CÔNG CỤ TỰ NHẬN DIỆN ĐƯỢC'; wsH.getCell('A1').font={bold:true,size:12};
+  [
+    '',
+    '- Bắt buộc có 1 trong 2: cột "Ký hiệu hóa đơn"/"Ký hiệu HĐ" HOẶC cột "Số chứng từ"',
+    '- Bắt buộc có cột "Số hóa đơn"',
+    '- Cần thêm ít nhất 2 trong 3 cột: Ngày (lập/hóa đơn/chứng từ/hạch toán), Giá trị (chưa thuế), Thuế GTGT',
+    '- Tên cột không cần trùng khớp tuyệt đối — công cụ tự dò theo từ khóa gần đúng',
+    '- Dòng tiêu đề không cần cố định ở dòng nào — công cụ tự dò trong 10 dòng đầu mỗi sheet',
+  ].forEach((line,i)=>{ wsH.getCell('A'+(i+2)).value = line; wsH.getCell('A'+(i+2)).font={size:10}; });
+  wsH.getColumn(1).width = 100;
+
+  taiFile(wb, laMua ? 'MAU_bang_ke_mua_vao_phan_mem.xlsx' : 'MAU_bang_ke_ban_ra_phan_mem.xlsx');
+});
+
+document.getElementById('linkMauHD').addEventListener('click', async (e)=>{
+  e.preventDefault();
+  const laMua = LOAI==='mua';
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('sheet 1');
+  ws.getCell('A1').value = 'DANH SÁCH HÓA ĐƠN'; ws.getCell('A1').font={bold:true,size:12};
+  ws.getCell('A2').value = 'Từ ngày 01/08/2026 đến ngày 31/08/2026'; ws.getCell('A2').font={italic:true,size:10};
+  const headers = laMua
+    ? ['STT','Ký hiệu mẫu số','Ký hiệu hóa đơn','Số hóa đơn','Ngày lập','MST người bán','Tên người bán','MST người mua','Tên người mua','Tổng tiền chưa thuế','Tổng tiền thuế','Tổng tiền chiết khấu thương mại','Tổng tiền thanh toán','Trạng thái hóa đơn']
+    : ['STT','Ký hiệu mẫu số','Ký hiệu hóa đơn','Số hóa đơn','Ngày lập','MST người bán','Tên người bán','MST người mua','Tên người mua','Tổng tiền chưa thuế','Tổng tiền thuế','Tổng tiền chiết khấu thương mại','Tổng tiền thanh toán','Trạng thái hóa đơn'];
+  ws.getRow(4).values = headers; styleHeaderRow(ws.getRow(4));
+  const tenCty = 'CÔNG TY TNHH HIỆP VĨNH AN', mstCty = '0401633440';
+  const sample = laMua ? [
+    [1,'1','C26TPN','1234','05/08/2026','0400123456','CÔNG TY TNHH VÍ DỤ A',mstCty,tenCty,5000000,400000,0,5400000,'Hóa đơn mới'],
+    [2,'1','C26TPN','1235','12/08/2026','0400654321','CÔNG TY TNHH VÍ DỤ B',mstCty,tenCty,12000000,960000,0,12960000,'Hóa đơn mới'],
+    [3,'1','C26TPN','1236','20/08/2026','0400111222','CÔNG TY TNHH VÍ DỤ C',mstCty,tenCty,3000000,240000,0,3240000,'Hóa đơn mới'],
+  ] : [
+    [1,'1','C26TBB','501','05/08/2026',mstCty,tenCty,'0400777888','CÔNG TY TNHH KHÁCH HÀNG A',8000000,640000,0,8640000,'Hóa đơn mới'],
+    [2,'1','C26TBB','502','14/08/2026',mstCty,tenCty,'0400999000','CÔNG TY TNHH KHÁCH HÀNG B',15000000,1200000,0,16200000,'Hóa đơn mới'],
+    [3,'1','C26TBB','503','22/08/2026',mstCty,tenCty,'0400333444','CÔNG TY TNHH KHÁCH HÀNG C',6000000,480000,0,6480000,'Hóa đơn mới'],
+  ];
+  sample.forEach(r=>{ const row=ws.addRow(r); styleDataRow(row,[10,11,12,13]); });
+  ws.columns = [{width:6},{width:14},{width:14},{width:10},{width:11},{width:15},{width:28},{width:15},{width:28},{width:16},{width:14},{width:16},{width:16},{width:14}];
+  ws.views = [{state:'frozen', ySplit:4}];
+
+  const wsH = wb.addWorksheet('Hướng dẫn');
+  wsH.getCell('A1').value = 'CỘT BẮT BUỘC ĐỂ CÔNG CỤ TỰ NHẬN DIỆN ĐƯỢC'; wsH.getCell('A1').font={bold:true,size:12};
+  [
+    '',
+    '- Bắt buộc có cột "Ký hiệu hóa đơn" và "Số hóa đơn"',
+    '- Cần thêm ít nhất 2 trong 3 cột: Ngày lập, Tổng tiền chưa thuế, Tổng tiền thuế',
+    '- File tải từ Cục Thuế thường tách thành nhiều file theo loại (không mã/có mã/máy tính tiền) — công cụ cho phép chọn NHIỀU FILE cùng lúc ở ô "HĐĐT Cục Thuế", tự gộp lại, không cần gộp thủ công trước',
+  ].forEach((line,i)=>{ wsH.getCell('A'+(i+2)).value = line; wsH.getCell('A'+(i+2)).font={size:10}; });
+  wsH.getColumn(1).width = 100;
+
+  taiFile(wb, laMua ? 'MAU_danh_sach_hoa_don_cuc_thue_mua_vao.xlsx' : 'MAU_danh_sach_hoa_don_cuc_thue_ban_ra.xlsx');
+});
+</script>
+</body>
+</html>

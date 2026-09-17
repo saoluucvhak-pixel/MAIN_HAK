@@ -25,20 +25,51 @@ function doGet(e) {
  *   .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
  */
 var DEFAULT_URLS = {
-  URL_QUY:          'https://script.google.com/macros/s/AKfycbxYLFKIay6WstaVnd-ylWyqSeJhKJo1YVeablwmfytNmI0dCQVC5LIB6tgXetaxp0oA/exec',
-  URL_KHO:          'https://script.google.com/macros/s/AKfycbxrOuwbgruu5p--h2E2UwMWUGM9CmxQZsGH5gu8D-ccgfZj1xB6kLRN2RHpEnf4EkZK0Q/exec',
-  URL_HOPDONG:      'https://script.google.com/macros/s/AKfycbzAibKTnhAe1PQghyJy9CfuwMJ5JQYmS-9qslXLKBWIB-PrstsVwmddSc8d4LjHMUDT/exec',
-  URL_THANHTOAN:    'https://script.google.com/macros/s/AKfycbwvyz6JCkX6VbrgB3icTQZ5zJ96f3HYz8-ePTgI8L94omqxr1JHSdg1RHT8FzjinA1C/exec',
-  URL_VAY:          'https://script.google.com/macros/s/AKfycbxnHJ9-3yN9pvnAT9WQf-kEnHcn-CN-kZpkLGzyXWRCpEA-KnbB-dld7j98m6KxqPcM/exec',
-  URL_UPDATE_KT:    'https://script.google.com/macros/s/AKfycbwL_4AuypxkI5g5N0TBC0sYUWhC9pJxmeBdfD2Yx3AomDHfUOe458weSFyw7QjJudKutw/exec',
-  URL_NHANSU:       'https://script.google.com/macros/s/AKfycbzsOYPhbjPfybPMvYTSTgQryY71cb5IiQ8uTfuP0oJQvSjB2i5_f6hzjVacy1oLdn2NeQ/exec',
+  URL_QUY:          'https://script.google.com/macros/s/AKfycbyX1g0hc770dJzIAcREgBcg3wVAoiQYgFcLoTZoYJzXqfRUW6fGXv9TC9GYIcUOCpqu/exec',
+  URL_KHO:          'https://script.google.com/macros/s/AKfycbx5Cphc5FSTzCiRRBo1zWbBROsmTa7q-1aVgbZgKQGOpvA9oQxa412foTtqBMoiUgNpIg/exec',
+  URL_HOPDONG:      'https://script.google.com/macros/s/AKfycbyVjEB2QdM8KS9GwHxN5hbv2bvpvILRvQ8NlChfPDww79_l3ep0R5ciYe_yQIXY5lJm/exec',
+  URL_THANHTOAN:    'https://script.google.com/macros/s/AKfycby0UxAtq6WOEoVH_Pw9GQyHDO0CTWKAIjyKyfTYW_hcdqUwbwH2rbEtsG5l9M_TVr4LMQ/exec',
+  URL_VAY:          'https://script.google.com/macros/s/AKfycbxyZ8ZtO0ccPOoHDU_f0g--ib15lhHe-SlgEhnDJ6sGuAD-j6WwdmDpLghrf4IAaF7G/exec',
+  URL_UPDATE_KT:    'https://script.google.com/macros/s/AKfycbzokLFi-9Rs7eegV3VCPWdiBQfUfj6ArVag1JyeiCykmuSu90nZ3vPMxrGUjW-ncCUsFw/exec',
+  URL_NHANSU:       'https://script.google.com/macros/s/AKfycbxwGTeM1Y0EEF2bIsdRmbREoMp7_Lz9yJbWZpnoXEIzfJJSUTu_LObbJD9TvfDJohupOw/exec',
   URL_LUONG:        'https://script.google.com/macros/s/AKfycbw9U5JN0kaXDRTCBUvTtDUZRRyWtbSE_z03Lpb8NYx4Sr3gALto23MzuU8bKalXC4X8/exec',
-  URL_FSC:          'https://script.google.com/macros/s/AKfycbzT0-9pyjBk3-4vE0NRHJ7PjW7Y-4GUVEAeacE5iMfA4u8-xOFaallj1zhgS32X8OTJlw/exec'
+  URL_FSC:          'https://script.google.com/macros/s/AKfycbwE3DGYImUdRnD3SHC_YBbt0p0fsgjAW5xzrtYgKyk7yq6O5AvD9FN4B6HDLbIu8c34aw/exec'
 };
 
 function _resolveUrl(key) {
   var props = PropertiesService.getScriptProperties();
   return props.getProperty(key) || DEFAULT_URLS[key] || '';
+}
+
+/**
+ * Đọc nội dung 1 file HTML tĩnh trong project (dùng cho nội dung Hướng dẫn —
+ * mỗi hệ thống con 1 file Guide_*.html riêng, đỡ phải nhét text dài vào Code.gs).
+ * Trả về text mặc định nếu file chưa có (hệ thống con đó chưa viết hướng dẫn riêng).
+ */
+function _includeGuide(filename) {
+  try {
+    return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  } catch (e) {
+    return 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.';
+  }
+}
+
+/**
+ * Danh sách công cụ độc lập (file HTML tự chạy trên trình duyệt, không cần
+ * deploy webapp riêng) được phép nhúng qua getToolContent() — chỉ cho phép
+ * đúng các file trong danh sách này, không đọc file tuỳ ý theo tên client gửi lên.
+ */
+var TOOL_FILES = ['Tool_PhanBoKhoiLuong', 'Tool_DoiChieuThueGTGT'];
+
+/**
+ * Trả về nội dung HTML đầy đủ của 1 công cụ độc lập để client nhúng vào
+ * iframe qua srcdoc (xem type:'tool' trong getMenu() và selectItem() ở Index.html).
+ */
+function getToolContent(toolFile) {
+  if (TOOL_FILES.indexOf(toolFile) === -1) {
+    throw new Error('Công cụ không hợp lệ: ' + toolFile);
+  }
+  return HtmlService.createHtmlOutputFromFile(toolFile).getContent();
 }
 
 /**
@@ -93,21 +124,22 @@ function getMenu() {
     {
       id: 'congcu', type: 'group', icon: '🧮', name: 'Công cụ kế toán',
       children: [
-        { id: 'gtgt', type: 'placeholder', name: 'Đối chiếu thuế GTGT', note: 'Đang phát triển' }
+        { id: 'cc_doichieugtgt', type: 'tool', name: 'Đối chiếu thuế GTGT', toolFile: 'Tool_DoiChieuThueGTGT' },
+        { id: 'cc_phanbokhoiluong', type: 'tool', name: 'Phân bổ khối lượng tính lương', toolFile: 'Tool_PhanBoKhoiLuong' }
       ]
     },
     {
       id: 'huongdan', type: 'group', icon: '📘', name: 'Hướng dẫn',
       children: [
-        { id: 'hd_quy',       type: 'guide', name: 'Quỹ tiền mặt',            content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_kho',       type: 'guide', name: 'Kho gỗ keo',              content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_hopdong',   type: 'guide', name: 'Hợp đồng mua bán gỗ keo', content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_thanhtoan', type: 'guide', name: 'Thanh toán gỗ keo',       content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_vay',       type: 'guide', name: 'Vay ngân hàng',           content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
+        { id: 'hd_quy',       type: 'guide', name: 'Quỹ tiền mặt',            content: _includeGuide('Guide_Quy') },
+        { id: 'hd_kho',       type: 'guide', name: 'Kho gỗ keo',              content: _includeGuide('Guide_Kho') },
+        { id: 'hd_hopdong',   type: 'guide', name: 'Hợp đồng mua bán gỗ keo', content: _includeGuide('Guide_HopDong') },
+        { id: 'hd_thanhtoan', type: 'guide', name: 'Thanh toán gỗ keo',       content: _includeGuide('Guide_ThanhToan') },
+        { id: 'hd_vay',       type: 'guide', name: 'Vay ngân hàng',           content: _includeGuide('Guide_Vay') },
         { id: 'hd_updatekt',  type: 'guide', name: 'Update dữ liệu kế toán',  content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_nhansu',    type: 'guide', name: 'Nhân sự',                 content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_luong',     type: 'guide', name: 'Tiền lương',              content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
-        { id: 'hd_fsc',       type: 'guide', name: 'Đánh giá FSC',            content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' }
+        { id: 'hd_nhansu',    type: 'guide', name: 'Nhân sự',                 content: _includeGuide('Guide_NhanSu') },
+        { id: 'hd_luong',     type: 'guide', name: 'Tiền lương',              content: _includeGuide('Guide_Luong') },
+        { id: 'hd_fsc',       type: 'guide', name: 'Đánh giá FSC',            content: _includeGuide('Guide_FSC') }
       ]
     },
     { id: 'quantri', type: 'admin', icon: '⚙️', name: 'Quản trị' }

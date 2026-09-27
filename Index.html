@@ -173,6 +173,12 @@
     .form-row input, .form-row select { font-size: 12.5px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; }
     .form-row input[type="email"] { flex: 1; min-width: 200px; }
     .admin-card.rong { max-width: 1000px; }
+    .ls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 14px; }
+    .ls-grid label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 3px; font-weight: 600; }
+    .ls-grid input, .ls-grid select { width: 100%; box-sizing: border-box; font-size: 13px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; }
+    .ls-check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 5px 0; }
+    .ls-btn-chinh { font-size: 13px; padding: 9px 20px; border: none; border-radius: 6px; background: var(--sidebar-active); color: #fff; font-weight: 600; cursor: pointer; }
+    .ls-btn-chinh:disabled { opacity: .6; cursor: default; }
     .th-section { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
     .th-section h3 { margin: 0 0 8px; font-size: 14px; }
     .th-mota { color: #6b7280; font-size: 11.5px; margin-top: 2px; }
@@ -228,6 +234,7 @@
      * PHIEN và tự hiện màn đăng nhập nếu lỗi bắt đầu bằng "[AUTH] ".
      * ============================================================ */
     var PHIEN_STORAGE_KEY = 'hak_portal_phien';
+    var MUC_SAU_DANG_NHAP_KEY = 'hak_portal_sau_dang_nhap';
     var LOI_DANG_NHAP_PREFIX = '[AUTH] ';
     var PHIEN = '';
 
@@ -420,18 +427,21 @@
       var cong = (nd && nd.congDangNhapUrl) || '';
       showCardPanel(
         '<div class="login-card"><h2>🔐 Đăng nhập Quản trị</h2>' +
-        '<div class="login-hint">Khu Quản trị (sửa URL, quản lý người dùng) yêu cầu đăng nhập bằng tài khoản Google đã được cấp quyền.</div>' +
+        '<div class="login-hint">Khu Quản trị và Quản lý lâm sản yêu cầu đăng nhập bằng tài khoản Google đã được cấp quyền.</div>' +
         (loi ? '<div class="login-err">' + escapeAttr(loi) + '</div>' : '') +
         (!cong
           ? '<div class="login-hint" style="margin-top:14px;">Chưa cấu hình Cổng đăng nhập. Nếu bạn là chủ hệ thống, mở Portal trực tiếp (không qua link đăng nhập) — bạn sẽ tự động là Quản trị nếu email nằm trong Script Property <code>ADMIN_EMAILS</code>.</div>'
-          : '<a class="btn-google" href="' + escapeAttr(cong) + '" target="_top">Đăng nhập bằng Google</a>') +
+          : '<a class="btn-google" id="btn-dang-nhap-google" href="' + escapeAttr(cong) + '" target="_top">Đăng nhập bằng Google</a>') +
         '</div>'
       );
+      var btnDn = document.getElementById('btn-dang-nhap-google');
+      // Nhớ mục đang mở để quay lại đúng chỗ sau khi đăng nhập xong
+      if (btnDn) btnDn.onclick = function () { try { sessionStorage.setItem(MUC_SAU_DANG_NHAP_KEY, currentId || 'quantri'); } catch (e) {} };
     }
 
     function renderQuanTriDaDangNhap(nd) {
       showCardPanel(
-        '<div class="admin-card' + (quantriTab === 'tonghop' ? ' rong' : '') + '">' +
+        '<div class="admin-card' + (quantriTab === 'tonghop' || quantriTab === 'lamsancfg' ? ' rong' : '') + '">' +
         '<div class="nguoidung-chip">👤 ' + escapeAttr(nd.email) + ' (Quản trị)' +
         '<button class="dang-xuat-btn" id="btn-dang-xuat">Đăng xuất</button></div>' +
         '<h2>⚙️ Quản trị</h2>' +
@@ -440,16 +450,19 @@
         '<button data-tab="nguoidung" class="' + (quantriTab === 'nguoidung' ? 'active' : '') + '">Người dùng</button>' +
         '<button data-tab="cong" class="' + (quantriTab === 'cong' ? 'active' : '') + '">Cổng đăng nhập</button>' +
         '<button data-tab="tonghop" class="' + (quantriTab === 'tonghop' ? 'active' : '') + '">Bảng tổng hợp</button>' +
+        '<button data-tab="lamsancfg" class="' + (quantriTab === 'lamsancfg' ? 'active' : '') + '">Thông số BC lâm sản</button>' +
         '</div>' +
         '<div id="quantri-body">Đang tải...</div></div>'
       );
       document.getElementById('btn-dang-xuat').onclick = dangXuatQuanTri;
+      document.querySelector('.quantri-tabs').style.flexWrap = 'wrap';
       document.querySelectorAll('.quantri-tabs button').forEach(function (btn) {
         btn.onclick = function () { quantriTab = btn.getAttribute('data-tab'); renderQuanTriDaDangNhap(nd); };
       });
       if (quantriTab === 'url') renderTabUrl();
       else if (quantriTab === 'nguoidung') renderTabNguoiDung();
       else if (quantriTab === 'tonghop') renderTabTongHop();
+      else if (quantriTab === 'lamsancfg') renderTabLamSanCfg();
       else renderTabCongDangNhap();
     }
 
@@ -457,7 +470,7 @@
       google.script.run.withSuccessHandler(function () {}).withFailureHandler(function () {}).dangXuat(PHIEN);
       PHIEN = '';
       try { sessionStorage.removeItem(PHIEN_STORAGE_KEY); } catch (e) {}
-      renderAdminPanel();
+      if (currentId === 'lamsan') renderLamSanPanel(); else renderAdminPanel();
     }
 
     /** Sau lỗi [AUTH] ở bất kỳ thao tác Quản trị nào: phiên hết hạn/bị khoá — quay lại màn đăng nhập. */
@@ -758,6 +771,179 @@
       }).catch(thLoi);
     }
 
+    // =================================================================
+    // QUẢN LÝ LÂM SẢN — lập báo cáo Mẫu 04/14/29 (cần đăng nhập)
+    // =================================================================
+    function lsIso(d) {
+      function p(n) { return (n < 10 ? '0' : '') + n; }
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    }
+    /** Kỳ báo cáo nhanh → [từ ngày, đến ngày] (tự điền form). */
+    function lsKy(kieu, nam, thang) {
+      nam = Number(nam); thang = Number(thang);
+      if (kieu === 'thang') return [new Date(nam, thang - 1, 1), new Date(nam, thang, 0)];
+      if (kieu === 'quy') { var q = Math.ceil(thang / 3); return [new Date(nam, (q - 1) * 3, 1), new Date(nam, q * 3, 0)]; }
+      if (kieu === '6t1') return [new Date(nam, 0, 1), new Date(nam, 5, 30)];
+      if (kieu === '6t2') return [new Date(nam, 6, 1), new Date(nam, 11, 31)];
+      if (kieu === 'nam') return [new Date(nam, 0, 1), new Date(nam, 11, 31)];
+      if (kieu === 'luyke') { var h = new Date(); return [new Date(nam, 0, 1), nam === h.getFullYear() ? h : new Date(nam, 11, 31)]; }
+      return null;
+    }
+
+    function renderLamSanPanel() {
+      google.script.run
+        .withSuccessHandler(function (nd) {
+          if (!nd.daDangNhap || nd.vaiTro !== 'ADMIN') { hienManHinhDangNhapQuanTri(nd, ''); return; }
+          showCardPanel('<div class="admin-card rong">' +
+            '<div class="nguoidung-chip">👤 ' + escapeAttr(nd.email) + '<button class="dang-xuat-btn" id="btn-dang-xuat">Đăng xuất</button></div>' +
+            '<h2>🪵 Quản lý lâm sản</h2><div id="ls-body">Đang tải tham số...</div></div>');
+          document.getElementById('btn-dang-xuat').onclick = dangXuatQuanTri;
+          call('getLamSanInfo', []).then(veLamSan).catch(function (err) {
+            if (!xuLyLoiQuanTri(err)) document.getElementById('ls-body').innerHTML = '<div class="login-err">' + escapeAttr(err.message || err) + '</div>';
+          });
+        })
+        .withFailureHandler(function () { hienManHinhDangNhapQuanTri({ congDangNhapUrl: '' }, ''); })
+        .thongTinDangNhap(PHIEN);
+    }
+
+    function veLamSan(info) {
+      var body = document.getElementById('ls-body');
+      if (!body) return;
+      var ts = info.thamSo || {};
+      var homNay = new Date();
+      var namOpts = '';
+      for (var y = homNay.getFullYear() + 1; y >= homNay.getFullYear() - 5; y--) namOpts += '<option' + (y === homNay.getFullYear() ? ' selected' : '') + '>' + y + '</option>';
+      var thangOpts = '';
+      for (var m = 1; m <= 12; m++) thangOpts += '<option value="' + m + '"' + (m === homNay.getMonth() + 1 ? ' selected' : '') + '>Tháng ' + m + '</option>';
+      var bcHtml = info.baoCao.map(function (b) {
+        return '<label class="ls-check"><input type="checkbox" class="ls-bc" value="' + b.key + '" checked> ' + escapeAttr(b.ten) +
+          ' <span class="th-mota">(' + b.sheets.join(', ') + ')</span></label>';
+      }).join('');
+      var lc = info.lanCuoi;
+      body.innerHTML =
+        (info.loiThamSo ? '<div class="login-err" style="margin-bottom:10px">⚠️ ' + escapeAttr(info.loiThamSo) + ' — kiểm tra ở Quản trị &gt; Thông số BC lâm sản.</div>' : '') +
+        '<div class="th-section" style="border-top:none;margin-top:0;padding-top:0"><h3>1️⃣ Kỳ báo cáo <span class="th-mota">(chọn nhanh — Từ/Đến ngày tự điền)</span></h3>' +
+        '<div class="ls-grid">' +
+          '<div><label>Kiểu kỳ</label><select id="ls-kieu">' +
+            '<option value="thang">Theo tháng</option><option value="quy">Theo quý</option>' +
+            '<option value="6t1">6 tháng đầu năm</option><option value="6t2">6 tháng cuối năm</option>' +
+            '<option value="nam">Cả năm</option><option value="luyke">Lũy kế từ đầu năm</option>' +
+            '<option value="tuychon" selected>Tùy chọn (đang lưu)</option></select></div>' +
+          '<div><label>Năm</label><select id="ls-nam">' + namOpts + '</select></div>' +
+          '<div id="ls-o-thang"><label>Tháng / quý chứa tháng</label><select id="ls-thang">' + thangOpts + '</select></div>' +
+          '<div><label>Từ ngày</label><input type="date" id="ls-tu" value="' + escapeAttr(ts.tuNgay || '') + '"></div>' +
+          '<div><label>Đến ngày</label><input type="date" id="ls-den" value="' + escapeAttr(ts.denNgay || '') + '"></div>' +
+          '<div><label>Tồn đầu kỳ (tấn) tại Từ ngày</label><input type="number" step="0.001" id="ls-ton" value="' + escapeAttr(ts.tonDau === undefined ? '' : ts.tonDau) + '"></div>' +
+        '</div>' +
+        '<div class="th-mota" style="margin-top:6px">Tự điền sẵn theo tham số đang lưu trong Thamso_RPKL (Mẫu: ' + escapeAttr((ts.dsMau || []).join(', ')) +
+          (ts.hang ? '; Tiêu hao SX: ' + escapeAttr(ts.hang['Tiêu hao SX']) : '') + '). Khi lập báo cáo, kỳ + tồn đầu sẽ được ghi lại vào Thamso_RPKL.</div></div>' +
+        '<div class="th-section"><h3>2️⃣ Báo cáo cần lập</h3>' + bcHtml + '</div>' +
+        '<div class="th-section"><button class="ls-btn-chinh" id="ls-lap">📑 Lập báo cáo</button>' +
+          '<div id="admin-msg" style="margin-top:10px; font-size:13px;"></div><div id="ls-ketqua"></div></div>' +
+        '<div class="th-section"><h3>📂 File liên quan</h3>' +
+          '<a class="th-link-btn" href="' + escapeAttr(info.urlBaoCao) + '" target="_blank" rel="noopener">📊 Mở file báo cáo (Google Sheet)</a>' +
+          (info.urlMauBaoCao ? '<a class="th-link-btn" href="' + escapeAttr(info.urlMauBaoCao) + '" target="_blank" rel="noopener">⬇ Tải file mẫu báo cáo (.xlsx)</a>' : '') +
+          (info.urlMauThamSo ? '<a class="th-link-btn" href="' + escapeAttr(info.urlMauThamSo) + '" target="_blank" rel="noopener">⬇ Tải file tham số (.xlsx)</a>' : '') +
+          (lc ? '<div class="th-mota" style="margin-top:6px">Lần lập gần nhất: ' + escapeAttr(thGioLocal(lc.luc)) + ' — kỳ ' + escapeAttr(lc.tuNgay) + ' → ' + escapeAttr(lc.denNgay) +
+            ' (' + escapeAttr(lc.boi) + ', ' + lc.giay + ' giây)</div>' : '') +
+        '</div>';
+
+      var kieuSel = document.getElementById('ls-kieu');
+      function tuDien() {
+        var k = kieuSel.value;
+        document.getElementById('ls-o-thang').style.visibility = (k === 'thang' || k === 'quy') ? 'visible' : 'hidden';
+        var ky = lsKy(k, document.getElementById('ls-nam').value, document.getElementById('ls-thang').value);
+        if (ky) { document.getElementById('ls-tu').value = lsIso(ky[0]); document.getElementById('ls-den').value = lsIso(ky[1]); }
+      }
+      kieuSel.onchange = tuDien;
+      document.getElementById('ls-nam').onchange = tuDien;
+      document.getElementById('ls-thang').onchange = tuDien;
+      ['ls-tu', 'ls-den'].forEach(function (id) { document.getElementById(id).oninput = function () { kieuSel.value = 'tuychon'; tuDien(); }; });
+      tuDien();
+
+      document.getElementById('ls-lap').onclick = function () {
+        var btn = this;
+        var p = {
+          tuNgay: document.getElementById('ls-tu').value,
+          denNgay: document.getElementById('ls-den').value,
+          tonDau: document.getElementById('ls-ton').value,
+          baoCao: Array.prototype.map.call(document.querySelectorAll('.ls-bc:checked'), function (c) { return c.value; })
+        };
+        if (!p.tuNgay || !p.denNgay) { thMsg('Chọn Từ ngày / Đến ngày.', '#dc2626'); return; }
+        if (p.tonDau === '') { thMsg('Nhập Tồn đầu kỳ.', '#dc2626'); return; }
+        if (!p.baoCao.length) { thMsg('Chọn ít nhất 1 báo cáo.', '#dc2626'); return; }
+        btn.disabled = true;
+        document.getElementById('ls-ketqua').innerHTML = '';
+        thMsg('⏳ Đang ghi tham số và lập báo cáo — có thể mất 1-2 phút, đừng đóng trang...');
+        call('lapBaoCaoLamSan', [p]).then(function (kq) {
+          btn.disabled = false;
+          thMsg('✔ Đã lập xong ' + kq.files.length + ' sheet báo cáo (' + kq.lanCuoi.giay + ' giây). Nguồn: ' + kq.nguon.hsKeo + ' dòng hồ sơ keo, ' +
+            kq.nguon.pcxh + ' phiếu xuất, ' + kq.nguon.dhxb + ' đơn hàng, ' + kq.nguon.ngay + ' ngày.', '#16a34a');
+          document.getElementById('ls-ketqua').innerHTML =
+            '<table class="admin-table"><thead><tr><th>Sheet</th><th>Số dòng</th><th></th></tr></thead><tbody>' +
+            kq.files.map(function (f) {
+              return '<tr><td><b>' + escapeAttr(f.sheet) + '</b></td><td>' + f.soDong + '</td><td>' +
+                (f.url ? '<a class="th-link-btn" href="' + escapeAttr(f.url) + '" target="_blank" rel="noopener">⬇ Tải .xlsx</a>' : '') + '</td></tr>';
+            }).join('') + '</tbody></table>' +
+            '<div style="margin-top:8px"><a class="th-link-btn" href="' + escapeAttr(kq.urlTaiCaFile) + '" target="_blank" rel="noopener">⬇ Tải cả file báo cáo (.xlsx)</a>' +
+            '<a class="th-link-btn" href="' + escapeAttr(kq.urlBaoCao) + '" target="_blank" rel="noopener">📊 Mở Google Sheet</a></div>';
+        }).catch(function (err) { btn.disabled = false; thLoi(err); });
+      };
+    }
+
+    // --- Tab Quản trị "Thông số BC lâm sản" (link Google Sheet + thông số hàng hoá) ---
+    function renderTabLamSanCfg() {
+      var body = document.getElementById('quantri-body');
+      body.innerHTML = 'Đang tải...';
+      call('getLamSanCauHinh', []).then(veLamSanCfg)
+        .catch(function (err) { if (!xuLyLoiQuanTri(err)) body.innerHTML = '<div class="login-err">' + escapeAttr(err.message || err) + '</div>'; });
+    }
+    function veLamSanCfg(info) {
+      var body = document.getElementById('quantri-body');
+      if (!body) return;
+      var linkRows = info.links.map(function (l) {
+        return '<tr><td><b>' + escapeAttr(l.ten) + '</b><div class="th-mota">' + escapeAttr(l.moTa) + '</div></td>' +
+          '<td><input type="text" class="url-edit-input" id="lsl-' + l.key + '" value="' + escapeAttr(l.url) + '" placeholder="https://docs.google.com/spreadsheets/d/..."></td>' +
+          '<td><span class="badge ' + (l.ghiDe ? 'override' : 'default') + '">' + (l.ghiDe ? 'Đã sửa' : 'Mặc định') + '</span></td>' +
+          '<td style="white-space:nowrap"><button class="save-url-btn" data-lsl="' + l.key + '">💾 Lưu</button><button class="reset-url-btn" data-lsl-reset="' + l.key + '">↺</button>' +
+          '<a class="save-url-btn" style="text-decoration:none;color:inherit" href="' + escapeAttr(l.url) + '" target="_blank" rel="noopener">↗ Mở</a></td></tr>';
+      }).join('');
+      var hangHtml = info.hang
+        ? '<div class="ls-grid">' + info.thongSoHang.map(function (k, i) {
+            var v = info.hang[k];
+            return '<div><label>' + escapeAttr(k) + (k === 'Tiêu hao SX' ? ' (tỷ lệ, vd 0.025 = 2,5%)' : '') + '</label>' +
+              '<input type="text" class="ls-hang" data-cot="' + escapeAttr(k) + '" value="' + escapeAttr(v === null || v === undefined ? '' : v) + '"></div>';
+          }).join('') + '</div>' +
+          '<div class="form-row" style="margin-top:10px"><button class="save-url-btn" id="ls-luu-hang">💾 Lưu thông số hàng hoá</button>' +
+          '<span class="th-mota" style="align-self:center">Ghi vào mọi dòng Thamso_RPKL (Mẫu: ' + escapeAttr(info.dsMau.join(', ')) + ')</span></div>'
+        : '<div class="login-err">' + escapeAttr(info.loi || 'Không đọc được Thamso_RPKL') + '</div>';
+
+      body.innerHTML =
+        '<div style="color:#6b7280; font-size:13px;">Link các Google Sheet dùng cho menu <b>🪵 Quản lý lâm sản</b>. Sửa link rồi bấm Lưu (hệ thống thử mở file trước khi lưu); ↺ để quay về link mặc định.</div>' +
+        '<div class="th-section"><h3>🔗 Google Sheet liên quan</h3>' +
+          '<table class="admin-table"><thead><tr><th>File</th><th>Link</th><th>Nguồn</th><th></th></tr></thead><tbody>' + linkRows + '</tbody></table></div>' +
+        '<div class="th-section"><h3>🏷️ Thông số hàng hoá (Thamso_RPKL)</h3>' + hangHtml + '</div>' +
+        '<div id="admin-msg" style="margin-top:10px; font-size:13px;"></div>';
+
+      function luuLink(key, url) {
+        thMsg('Đang kiểm tra và lưu...');
+        call('luuLamSanLink', [key, url]).then(function (i2) { veLamSanCfg(i2); thMsg('Đã lưu link.', '#16a34a'); }).catch(thLoi);
+      }
+      document.querySelectorAll('button[data-lsl]').forEach(function (b) {
+        b.onclick = function () { var k = b.getAttribute('data-lsl'); luuLink(k, document.getElementById('lsl-' + k).value.trim()); };
+      });
+      document.querySelectorAll('button[data-lsl-reset]').forEach(function (b) {
+        b.onclick = function () { luuLink(b.getAttribute('data-lsl-reset'), ''); };
+      });
+      var btnHang = document.getElementById('ls-luu-hang');
+      if (btnHang) btnHang.onclick = function () {
+        var gt = {};
+        document.querySelectorAll('.ls-hang').forEach(function (inp) { gt[inp.getAttribute('data-cot')] = inp.value; });
+        thMsg('Đang lưu vào Thamso_RPKL...');
+        call('luuLamSanThongSoHang', [gt]).then(function (i2) { veLamSanCfg(i2); thMsg('Đã lưu thông số hàng hoá.', '#16a34a'); }).catch(thLoi);
+      };
+    }
+
     function showCenterPanel(kind, iconChar, title, bodyHtml) {
       clearMissingMsg();
       clearFrameStatus();
@@ -844,6 +1030,8 @@
 
       } else if (item.type === 'admin') {
         renderAdminPanel();
+      } else if (item.type === 'lamsan') {
+        renderLamSanPanel();
       }
 
       render();
@@ -864,7 +1052,11 @@
       // Vừa quay lại từ Cổng đăng nhập (server vừa cấp phiên mới, hoặc báo
       // lỗi đăng nhập) — mở luôn khu Quản trị, vì chỉ khu này cần đăng nhập
       // nên chắc chắn đó là nơi người dùng đang muốn vào.
-      if (document.body.dataset.phien || window.__loiDangNhapBanDau) selectItem('quantri');
+      if (document.body.dataset.phien || window.__loiDangNhapBanDau) {
+        var mucSau = 'quantri';
+        try { mucSau = sessionStorage.getItem(MUC_SAU_DANG_NHAP_KEY) || 'quantri'; sessionStorage.removeItem(MUC_SAU_DANG_NHAP_KEY); } catch (e) {}
+        selectItem(findItem(mucSau) ? mucSau : 'quantri');
+      }
     }).getMenu();
 
     // Xoá ?sso=... khỏi thanh địa chỉ sau khi đã dùng xong (link chỉ dùng

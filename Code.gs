@@ -374,14 +374,20 @@ var API_ROUTES = {
   getTongHopInfo: { fn: function () { return _getTongHopInfo_(); }, quyen: VAI_TRO.ADMIN },
   chayTacVuTongHop: { fn: function (tenHam) { return _chayTacVuTuPortal_(tenHam); }, quyen: VAI_TRO.ADMIN },
   datLichTongHop: { fn: function (tenHam, kieu, giaTri, thu) { return _datLichTongHop_(tenHam, kieu, giaTri, thu); }, quyen: VAI_TRO.ADMIN },
-  luuCauHinhTongHop: { fn: function (truong, giaTri) { return _luuCauHinhTongHop_(truong, giaTri); }, quyen: VAI_TRO.ADMIN }
+  luuCauHinhTongHop: { fn: function (truong, giaTri) { return _luuCauHinhTongHop_(truong, giaTri); }, quyen: VAI_TRO.ADMIN },
+  // Menu "Quản lý lâm sản" + tab Quản trị "Thông số BC lâm sản" — hàm ở LamSan.gs
+  getLamSanInfo: { fn: function () { return _getLamSanInfo_(); }, quyen: VAI_TRO.ADMIN },
+  lapBaoCaoLamSan: { fn: function (p) { return _lapBaoCaoLamSan_(p); }, quyen: VAI_TRO.ADMIN },
+  getLamSanCauHinh: { fn: function () { return _getLamSanCauHinh_(); }, quyen: VAI_TRO.ADMIN },
+  luuLamSanLink: { fn: function (key, url) { return _luuLamSanLink_(key, url); }, quyen: VAI_TRO.ADMIN },
+  luuLamSanThongSoHang: { fn: function (giaTri) { return _luuLamSanThongSoHang_(giaTri); }, quyen: VAI_TRO.ADMIN }
 };
 
 /**
  * Trả về toàn bộ cây menu cho frontend.
  * type: 'link' (mở iframe) | 'group' (có children, không click trực tiếp) |
  *       'placeholder' (chưa sẵn sàng, hiện thông báo) | 'guide' (text tĩnh) |
- *       'admin' (màn hình quản trị)
+ *       'admin' (màn hình quản trị) | 'lamsan' (báo cáo lâm sản — cần đăng nhập)
  */
 function getMenu() {
   return [
@@ -394,6 +400,7 @@ function getMenu() {
     { id: 'nhansu',     type: 'link', icon: '👥', name: 'Nhân sự',                   url: _resolveUrl('URL_NHANSU'),    urlKey: 'URL_NHANSU' },
     { id: 'luong',      type: 'link', icon: '🧾', name: 'Tiền lương',                url: _resolveUrl('URL_LUONG'),     urlKey: 'URL_LUONG' },
     { id: 'fsc',        type: 'link', icon: '🌲', name: 'Đánh giá FSC',              url: _resolveUrl('URL_FSC'),       urlKey: 'URL_FSC' },
+    { id: 'lamsan',     type: 'lamsan', icon: '🪵', name: 'Quản lý lâm sản' },
     {
       id: 'congcu', type: 'group', icon: '🧮', name: 'Công cụ kế toán',
       children: [
@@ -412,7 +419,8 @@ function getMenu() {
         { id: 'hd_updatekt',  type: 'guide', name: 'Update dữ liệu kế toán',  content: 'Chưa có nội dung hướng dẫn — sẽ cập nhật sau.' },
         { id: 'hd_nhansu',    type: 'guide', name: 'Nhân sự',                 content: _includeGuide('Guide_NhanSu') },
         { id: 'hd_luong',     type: 'guide', name: 'Tiền lương',              content: _includeGuide('Guide_Luong') },
-        { id: 'hd_fsc',       type: 'guide', name: 'Đánh giá FSC',            content: _includeGuide('Guide_FSC') }
+        { id: 'hd_fsc',       type: 'guide', name: 'Đánh giá FSC',            content: _includeGuide('Guide_FSC') },
+        { id: 'hd_lamsan',    type: 'guide', name: 'Quản lý lâm sản',         content: _includeGuide('Guide_LamSan') }
       ]
     },
     { id: 'quantri', type: 'admin', icon: '⚙️', name: 'Quản trị' }

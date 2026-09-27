@@ -1,0 +1,23 @@
+<h3>Hướng dẫn sử dụng — Quản lý lâm sản (HAK Group)</h3>
+
+<h4>📑 Lập báo cáo lâm sản</h4>
+<ol>
+  <li>Vào menu <b>🪵 Quản lý lâm sản</b> (cần đăng nhập bằng tài khoản Google đã được cấp quyền Quản trị).</li>
+  <li>Chọn <b>kỳ báo cáo</b> nhanh (tháng, 6 tháng, năm...) — Từ ngày / Đến ngày tự điền; hoặc chọn "Tùy chọn" để nhập tay.</li>
+  <li>Nhập <b>Tồn đầu kỳ</b> (tấn) tại ngày bắt đầu kỳ — ô này tự điền sẵn số đang lưu trong sheet Thamso_RPKL.</li>
+  <li>Tick các báo cáo cần lập rồi bấm <b>"📑 Lập báo cáo"</b>.</li>
+</ol>
+<p>Hệ thống tự ghi tham số kỳ báo cáo (IN_Tungay, IN_Denngay, Ngày tháng năm nhập, Tồn đầu ngày) vào sheet <b>Thamso_RPKL</b> của file ThamSo_BaoCao, rồi ghi đè các sheet báo cáo trong file <b>RP_XK_BKLS</b>:</p>
+<ul>
+  <li><b>RP_MAU04</b> — sổ theo dõi nhập, xuất lâm sản theo ngày (tồn lũy kế từng ngày).</li>
+  <li><b>RP_MAU14</b> — bảng kê lâm sản xuất khẩu theo tờ khai hải quan trong kỳ.</li>
+  <li><b>RP_MAU29_M / RP_MAU29_6T / RP_MAU29_Y</b> — báo cáo Mẫu 29 theo tháng / 6 tháng / năm.</li>
+</ul>
+<p>Sau khi lập xong, bấm link <b>⬇ Tải .xlsx</b> để tải từng sheet thành 1 file Excel riêng, hoặc tải cả file báo cáo.</p>
+<div style="background:#fef3c7;border-left:4px solid #b45309;padding:8px 12px;margin:10px 0;border-radius:4px;"><b>⚠️ Lưu ý:</b> Mỗi lần lập sẽ ghi đè sheet báo cáo cũ cùng tên. Kỳ báo cáo tối đa 999 ngày. Link tải Excel chỉ mở được bằng tài khoản Google có quyền xem file RP_XK_BKLS.</div>
+
+<h4>⚙️ Thông số (Quản trị &gt; Thông số BC lâm sản)</h4>
+<ul>
+  <li><b>Link Google Sheet liên quan</b>: XUATHANG_DN, ThamSo_BaoCao, RP_XK_BKLS, HoSoKeo_DN — sửa được, bấm "Mặc định" để quay về link gốc.</li>
+  <li><b>Thông số hàng hoá</b>: Tiêu hao SX, tên thông thường/khoa học, tên hàng theo TKHQ, đơn vị tính... — lưu vào mọi dòng của Thamso_RPKL.</li>
+</ul>

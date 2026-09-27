@@ -26,6 +26,14 @@ var TONG_HOP_CFG = {
   PROP_LICH: 'TONGHOP_LICH_JSON',
   SO_DONG_NHAT_KY: 30,
   CHO_KHOA_MS: 10000,
+  // Chống timeout: Apps Script dừng cứng mỗi lần chạy ở 6 phút. Tác vụ tự
+  // tạm dừng an toàn khi đã chạy quá NGAN_SACH_MS rồi hẹn trigger chạy tiếp.
+  NGAN_SACH_MS: 270000,             // 4,5 phút
+  DU_TRU_GHI_MS: 90000,             // cần còn >= 1,5 phút mới bắt đầu pha ghi dữ liệu
+  CHO_CHAY_TIEP_MS: 60000,          // chạy tiếp sau 1 phút
+  SO_LAN_CHAY_TIEP_TOI_DA: 20,
+  PROP_CHO_CHAY_TIEP: 'TONGHOP_CHO_CHAY_TIEP_JSON',
+  HAM_CHAY_TIEP: 'tiepTucTacVuTongHop',
   SHEET_HOSOKEO: 'HoSoKeo_DN',
   SHEET_HOSORUNG: 'HoSoRung_DN',
   SHEET_TOADO: 'ToaDoRung_DN'
@@ -73,6 +81,23 @@ function saoLuuDinhKy(e)                { return _chayTacVuTongHop_('saoLuuDinhK
 function chuanHoaDuLieuCotHIJ(e)        { return _chayTacVuTongHop_('chuanHoaDuLieuCotHIJ', _nguonChay_(e)); }
 function xoaDongNhanhNhatGiuDinhDang(e) { return _chayTacVuTongHop_('xoaDongNhanhNhatGiuDinhDang', _nguonChay_(e)); }
 
+/** Trigger 1 lần do hệ thống tự hẹn khi 1 tác vụ tạm dừng vì sắp hết giờ. */
+function tiepTucTacVuTongHop() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === TONG_HOP_CFG.HAM_CHAY_TIEP) ScriptApp.deleteTrigger(t);
+  });
+  var cho = _docJsonProp_(TONG_HOP_CFG.PROP_CHO_CHAY_TIEP, {});
+  var tenHam = Object.keys(cho).filter(function (k) { return TAC_VU_TONG_HOP[k]; })[0];
+  try {
+    if (tenHam) _chayTacVuTongHop_(tenHam, 'Tự chạy tiếp (lần ' + cho[tenHam].lan + ')');
+  } catch (err) {
+    Logger.log('Chạy tiếp ' + tenHam + ' lỗi: ' + err);
+  } finally {
+    // Còn tác vụ chờ (tác vụ khác, hoặc vừa rồi bị khoá do tác vụ khác đang chạy) → hẹn tiếp
+    if (Object.keys(_docJsonProp_(TONG_HOP_CFG.PROP_CHO_CHAY_TIEP, {})).length) _henChayTiep_();
+  }
+}
+
 function _nguonChay_(e) {
   return (e && e.triggerUid) ? 'Trigger tự động' : 'Trình soạn thảo Apps Script';
 }
@@ -104,7 +129,60 @@ function _moFileNguon_(url, tenFile) {
   }
 }
 
-// ---------- Chạy tác vụ: khoá + nhật ký ----------
+// ---------- Ngân sách thời gian (chống timeout 6 phút) ----------
+var _hanChotTacVu_ = 0;
+
+/** Số ms còn lại trước hạn chót của lượt chạy hiện tại. */
+function _conLaiMs_() {
+  return _hanChotTacVu_ ? _hanChotTacVu_ - Date.now() : Infinity;
+}
+
+/** Gọi tại các điểm dừng an toàn (chưa ghi dở dữ liệu): nếu thời gian còn
+ * lại < duTruMs thì ném tín hiệu tạm dừng — tác vụ sẽ được chạy lại từ đầu
+ * sau 1 phút, và vì mọi bước đều lặp lại được (xoá dòng trống, chỉ ghi dòng
+ * chưa có, ghi đè toàn bộ) nên lần sau làm tiếp đúng phần còn lại. */
+function _kiemTraThoiGian_(tienDo, duTruMs) {
+  if (_conLaiMs_() >= (duTruMs || 0)) return;
+  var e = new Error('Tạm dừng để tránh quá 6 phút' + (tienDo ? ' (' + tienDo + ')' : '') + '.');
+  e.tamDung = true;
+  throw e;
+}
+
+/** Tạo đúng 1 trigger chạy tiếp (nếu chưa có). */
+function _henChayTiep_() {
+  var daCo = ScriptApp.getProjectTriggers().some(function (t) {
+    return t.getHandlerFunction() === TONG_HOP_CFG.HAM_CHAY_TIEP;
+  });
+  if (!daCo) ScriptApp.newTrigger(TONG_HOP_CFG.HAM_CHAY_TIEP).timeBased().after(TONG_HOP_CFG.CHO_CHAY_TIEP_MS).create();
+}
+
+function _datChoChayTiep_(tenHam, co) {
+  var cho = _docJsonProp_(TONG_HOP_CFG.PROP_CHO_CHAY_TIEP, {});
+  if (co) cho[tenHam] = { lan: ((cho[tenHam] && cho[tenHam].lan) || 0) + 1, luc: new Date().toISOString() };
+  else delete cho[tenHam];
+  _ghiJsonProp_(TONG_HOP_CFG.PROP_CHO_CHAY_TIEP, cho);
+  return cho[tenHam];
+}
+
+/** Xoá các dòng được đánh dấu, gom các dòng liền nhau thành 1 lệnh
+ * deleteRows (nhanh hơn rất nhiều so với deleteRow từng dòng), duyệt từ
+ * dưới lên để không lệch chỉ số. danhDau[i] ứng với dòng dongBatDau + i. */
+function _xoaCacDong_(sheet, dongBatDau, danhDau) {
+  var daXoa = 0;
+  var i = danhDau.length - 1;
+  while (i >= 0) {
+    if (!danhDau[i]) { i--; continue; }
+    var cuoi = i;
+    while (i - 1 >= 0 && danhDau[i - 1]) i--;
+    _kiemTraThoiGian_('đã xoá ' + daXoa + ' dòng ở sheet ' + sheet.getName());
+    sheet.deleteRows(dongBatDau + i, cuoi - i + 1);
+    daXoa += cuoi - i + 1;
+    i--;
+  }
+  return daXoa;
+}
+
+// ---------- Chạy tác vụ: khoá + nhật ký + chạy tiếp khi sắp timeout ----------
 function _chayTacVuTongHop_(tenHam, nguon) {
   var tv = TAC_VU_TONG_HOP[tenHam];
   if (!tv) throw new Error('Tác vụ không hợp lệ: ' + tenHam);
@@ -113,17 +191,33 @@ function _chayTacVuTongHop_(tenHam, nguon) {
     throw new Error('Đang có 1 tác vụ Bảng tổng hợp khác chạy — vui lòng thử lại sau ít phút.');
   }
   var batDau = Date.now();
+  _hanChotTacVu_ = batDau + TONG_HOP_CFG.NGAN_SACH_MS;
   try {
     var thongDiep = tv.fn();
+    _datChoChayTiep_(tenHam, false);
     _ghiNhatKyTongHop_(tenHam, nguon, true, thongDiep, batDau);
     Logger.log(tv.ten + ': ' + thongDiep);
     return { success: true, message: thongDiep };
   } catch (err) {
     var loi = String((err && err.message) || err);
+    if (err && err.tamDung) {
+      var cho = _datChoChayTiep_(tenHam, true);
+      if (cho.lan <= TONG_HOP_CFG.SO_LAN_CHAY_TIEP_TOI_DA) {
+        _henChayTiep_();
+        var msg = '⏸ ' + loi + ' Hệ thống tự chạy tiếp sau ~1 phút (lần ' + cho.lan + ').';
+        _ghiNhatKyTongHop_(tenHam, nguon, true, msg, batDau);
+        return { success: true, tamDung: true, message: msg };
+      }
+      _datChoChayTiep_(tenHam, false);
+      loi += ' Đã tự chạy tiếp ' + TONG_HOP_CFG.SO_LAN_CHAY_TIEP_TOI_DA + ' lần vẫn chưa xong — dừng hẳn, cần kiểm tra dữ liệu nguồn.';
+    } else {
+      _datChoChayTiep_(tenHam, false);
+    }
     _ghiNhatKyTongHop_(tenHam, nguon, false, loi, batDau);
     Logger.log(tv.ten + ' — LỖI: ' + loi);
-    throw err;
+    throw new Error(loi);
   } finally {
+    _hanChotTacVu_ = 0;
     lock.releaseLock();
   }
 }
@@ -225,6 +319,7 @@ function _getTongHopInfo_() {
   });
   var tatCaLich = _docJsonProp_(TONG_HOP_CFG.PROP_LICH, {});
   var nhatKy = _docJsonProp_(TONG_HOP_CFG.PROP_NHAT_KY, []);
+  var choChayTiep = _docJsonProp_(TONG_HOP_CFG.PROP_CHO_CHAY_TIEP, {});
 
   var tacVu = Object.keys(TAC_VU_TONG_HOP).map(function (k) {
     var lanCuoi = nhatKy.filter(function (x) { return x.tacVu === k; })[0] || null;
@@ -236,7 +331,8 @@ function _getTongHopInfo_() {
       soTrigger: soTrigger[k] || 0,
       lich: lich,
       moTaLich: soTrigger[k] ? (_moTaLich_(lich) || 'Có trigger (tạo ngoài Portal)') : '',
-      lanCuoi: lanCuoi
+      lanCuoi: lanCuoi,
+      choChayTiep: choChayTiep[k] || null
     };
   });
 
@@ -259,7 +355,7 @@ function _getTongHopInfo_() {
 function _chayTacVuTuPortal_(tenHam) {
   var nd = _xacDinhNguoiDung_();
   var kq = _chayTacVuTongHop_(tenHam, 'Portal: ' + ((nd && nd.email) || '?'));
-  return { message: kq.message, info: _getTongHopInfo_() };
+  return { message: kq.message, tamDung: !!kq.tamDung, info: _getTongHopInfo_() };
 }
 
 /** Lưu cấu hình: truong = 'tongHopUrl' | 'backupFolderId'; giaTri = '' để về mặc định. */
@@ -351,13 +447,10 @@ function _tvDongBoToanDien_() {
       var dongCuoiNguon = sheetNguon.getLastRow();
       if (dongCuoiNguon >= 2) {
         var duLieuCotA = sheetNguon.getRange(2, 1, dongCuoiNguon - 1, 1).getValues();
-        // Duyệt lùi từ dưới lên trên để tránh lỗi lệch dòng khi xóa
-        for (var rIndex = duLieuCotA.length - 1; rIndex >= 0; rIndex--) {
-          var giaTriO = duLieuCotA[rIndex][0];
-          if (giaTriO === "" || giaTriO === null) {
-            sheetNguon.deleteRow(rIndex + 2);
-          }
-        }
+        // Xoá theo cụm dòng liền nhau (duyệt lùi từ dưới lên, có kiểm tra thời gian)
+        _xoaCacDong_(sheetNguon, 2, duLieuCotA.map(function (row) {
+          return row[0] === "" || row[0] === null;
+        }));
       }
     }
   }
@@ -408,6 +501,9 @@ function _tvDongBoToanDien_() {
       mangCotR_Moi.push([vungDuLieuFile1[k][5]]);
     }
   }
+
+  // Điểm dừng an toàn cuối cùng: pha ghi bên dưới phải chạy liền 1 mạch
+  _kiemTraThoiGian_('đã dọn xong dòng trống, chưa ghi dòng mới', TONG_HOP_CFG.DU_TRU_GHI_MS);
 
   // Nếu phát hiện có dữ liệu mới phát sinh thì tiến hành ghi nối tiếp vào cuối bảng tính
   if (mangCotE_Moi.length > 0) {
@@ -619,13 +715,10 @@ function _tvDongBoHoSoRung_() {
 
     if (keyColIdx !== -1) {
       var values = sheetObj.getRange(2, keyColIdx, lastRow - 1, 1).getValues();
-      for (var r = values.length - 1; r >= 0; r--) {
-        var cellValue = values[r][0];
-        if (cellValue === "" || cellValue === undefined || cellValue === null || cellValue.toString().trim() === "") {
-          var rowToDelete = r + 2;
-          sheetObj.deleteRow(rowToDelete);
-        }
-      }
+      _xoaCacDong_(sheetObj, 2, values.map(function (row) {
+        var cellValue = row[0];
+        return cellValue === "" || cellValue === undefined || cellValue === null || cellValue.toString().trim() === "";
+      }));
     }
   }
 
@@ -645,6 +738,7 @@ function _tvDongBoHoSoRung_() {
   if (!sheetNCC || !sheetRung) {
     throw new Error("Không tìm thấy sheet 'HD_NCC' hoặc 'HD_RUNG' ở file nguồn!");
   }
+  _kiemTraThoiGian_('đã dọn xong dòng trống, chưa ghi HoSoRung_DN', TONG_HOP_CFG.DU_TRU_GHI_MS);
 
   var dataNCC = sheetNCC.getDataRange().getValues();
   var dataRung = sheetRung.getDataRange().getValues();
@@ -778,37 +872,12 @@ function _tvXoaDongLoiPhieuCan_() {
   var lastRow = sheet.getLastRow();
   if (lastRow <= 1) return 'Sheet PhieuCan_DN trống.';
 
-  // Đọc toàn bộ dữ liệu cột W và Y để check (chỉ đọc đúng 2 cột này để tăng tốc)
-  var rangeW = sheet.getRange(1, 23, lastRow, 1).getValues(); // Cột 23 là W
-  var rangeY = sheet.getRange(1, 25, lastRow, 1).getValues(); // Cột 25 là Y
-
-  var tongXoa = 0;
-  // Duyệt ngược để gom các dòng lỗi lại thành các "cặp dòng liên tiếp"
-  var i = lastRow - 1;
-  while (i >= 1) {
-    var valW = rangeW[i][0].toString().trim();
-    var valY = rangeY[i][0].toString().trim();
-
-    if (valW === "" || valY === "Lỗi ĐK/Báo giá") {
-      var numRowsToDelete = 1;
-      // Kiểm tra xem dòng phía trên có lỗi tiếp không để gom cụm
-      while (i - numRowsToDelete >= 1) {
-        var nextW = rangeW[i - numRowsToDelete][0].toString().trim();
-        var nextY = rangeY[i - numRowsToDelete][0].toString().trim();
-        if (nextW === "" || nextY === "Lỗi ĐK/Báo giá") {
-          numRowsToDelete++;
-        } else {
-          break;
-        }
-      }
-      // Xóa cả cụm dòng lỗi cùng một lúc
-      sheet.deleteRows(i - numRowsToDelete + 2, numRowsToDelete);
-      tongXoa += numRowsToDelete;
-      i -= numRowsToDelete;
-    } else {
-      i--;
-    }
-  }
+  // Đọc dữ liệu cột W..Y 1 lần (từ dòng 2) để check cột W (23) và Y (25)
+  var vungWY = sheet.getRange(2, 23, lastRow - 1, 3).getValues();
+  // Xóa theo cụm dòng lỗi liên tiếp (duyệt ngược, có kiểm tra thời gian)
+  var tongXoa = _xoaCacDong_(sheet, 2, vungWY.map(function (row) {
+    return row[0].toString().trim() === "" || row[2].toString().trim() === "Lỗi ĐK/Báo giá";
+  }));
   return 'Đã xoá ' + tongXoa + ' dòng lỗi trong PhieuCan_DN.';
 }
 
@@ -875,6 +944,7 @@ function _tvSaoLuu_() {
   var dsUrl = [CAU_HINH_FILE.urlFile1, CAU_HINH_FILE.urlFile2, CAU_HINH_FILE.urlFile3, CAU_HINH_FILE.urlFile4, _tongHopUrl_()];
   var ok = 0, loi = [];
   dsUrl.forEach(function (u) {
+    if (_conLaiMs_() < 30000) { loi.push('Hết thời gian, chưa copy: ' + u); return; }
     var kq = copyAndRenameFile(u, subFolder, timeFile);
     if (kq === true) ok++; else loi.push(kq);
   });

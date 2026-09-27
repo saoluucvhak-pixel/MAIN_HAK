@@ -638,6 +638,9 @@
           ? '<span class="' + (lc.ok ? 'th-ok' : 'th-loi') + '">' + (lc.ok ? '✔' : '✖') + '</span> ' + escapeAttr(thGioLocal(lc.luc)) +
             '<div class="th-mota" title="' + escapeAttr(lc.thongDiep) + '">' + escapeAttr(lc.nguon) + '</div>'
           : '<span class="th-mota">Chưa chạy</span>';
+        if (tv.choChayTiep) {
+          lanCuoiHtml += '<div style="margin-top:4px;"><span class="badge" style="background:#fef3c7;color:#b45309;">⏳ Chờ tự chạy tiếp (lần ' + tv.choChayTiep.lan + ')</span></div>';
+        }
         var l = tv.lich || {};
         var kieu = tv.soTrigger ? (l.kieu || 'khac') : 'tat';
         var gioOpts = '';
@@ -736,7 +739,8 @@
           call('chayTacVuTongHop', [key]).then(function (kq) {
             thDangChay = false;
             veTabTongHop(kq.info);
-            thMsg('✔ ' + kq.message, '#16a34a');
+            if (kq.tamDung) thMsg(kq.message + ' Có thể đóng trang — bấm lại tab này sau để xem kết quả.', '#b45309');
+            else thMsg('✔ ' + kq.message, '#16a34a');
           }).catch(function (err) {
             thDangChay = false;
             document.querySelectorAll('.th-chay').forEach(function (b) { b.disabled = false; });

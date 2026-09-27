@@ -1,48 +1,318 @@
 /**
- * Menu Sheet cho các chức năng đồng bộ số liệu + sao lưu trong file này.
- * Dán đoạn onOpen() này (gộp vào onOpen() sẵn có nếu file đã có, không tạo
- * 2 hàm onOpen trùng tên — Apps Script chỉ chạy 1 trong 2, dễ gây tưởng
- * nhầm menu "không hoạt động").
+ * ============================================================
+ * BẢNG TỔNG HỢP (HoSoKeo_DN) — ĐỒNG BỘ SỐ LIỆU + SAO LƯU + TRIGGER
+ * ============================================================
+ * Các chức năng trong file này được điều khiển từ khu "⚙️ Quản trị" của
+ * Portal (tab "Bảng tổng hợp"): chạy ngay, đặt lịch chạy tự động (trigger),
+ * mở thư mục sao lưu, mở trang Trigger của dự án.
+ *
+ * Portal là dự án Apps Script ĐỘC LẬP (không gắn với Sheet nào) nên
+ * SpreadsheetApp.getActiveSpreadsheet()/getUi() không dùng được — mọi chức
+ * năng mở Bảng tổng hợp theo URL cấu hình (TONGHOP_URL, mặc định bên dưới,
+ * sửa được ngay trong khu Quản trị).
+ *
+ * Tên các hàm công khai (dongBoDuLieuToanDienV12, saoLuuDinhKy, ...) giữ
+ * nguyên như cũ để trigger đã tạo trước đây vẫn chạy được — nay mỗi lần
+ * chạy đều qua _chayTacVuTongHop_() (khoá chống chạy chồng + ghi nhật ký).
  */
-function onOpen() {
-  SpreadsheetApp.getUi().createMenu('🚀 QUẢN LÝ HAK')
-    .addItem('🔄 Đồng bộ dữ liệu toàn diện (V12)', 'dongBoDuLieuToanDienV12')
-    .addItem('🌳 Đồng bộ Hồ sơ Rừng', 'dongBoDuLieuLamHoSoRung')
-    .addItem('📍 Cập nhật thông minh Tọa độ Rừng', 'capNhatThongMinhToaDoRung')
-    .addSeparator()
-    .addItem('🧹 Xóa dòng lỗi Phiếu Cân', 'xoaDongNhanhNhatGiuDinhDang')
-    .addItem('📏 Chuẩn hóa cột H/I/J (chia 1000)', 'chuanHoaDuLieuCotHIJ')
-    .addSeparator()
-    .addItem('💾 Sao lưu định kỳ (4 file)', 'saoLuuDinhKy')
-    .addToUi();
+var TONG_HOP_CFG = {
+  // Nơi lưu dữ liệu đồng bộ (file "HoSoKeo_DN")
+  DEFAULT_TONGHOP_URL: 'https://docs.google.com/spreadsheets/d/1PfXmgnO4ad1Aourjcjoh7hZxL6mVuywL73wHle0oq6I/edit',
+  // ID Thư mục BACKUP tổng
+  DEFAULT_BACKUP_FOLDER_ID: '1TMAjOkAew6m0vBM9KvLgPbODSUofFjrS',
+  PROP_TONGHOP_URL: 'TONGHOP_URL',
+  PROP_BACKUP_FOLDER_ID: 'BACKUP_FOLDER_ID',
+  PROP_NHAT_KY: 'TONGHOP_NHAT_KY_JSON',
+  PROP_LICH: 'TONGHOP_LICH_JSON',
+  SO_DONG_NHAT_KY: 30,
+  CHO_KHOA_MS: 10000,
+  SHEET_HOSOKEO: 'HoSoKeo_DN',
+  SHEET_HOSORUNG: 'HoSoRung_DN',
+  SHEET_TOADO: 'ToaDoRung_DN'
+};
+
+// CẤU HÌNH THÔNG TIN FILE NGUỒN
+var CAU_HINH_FILE = {
+  // FILE 1: FILE "DNTT_GK_DN" (Đề nghị thanh toán - Giám tải Doanh nghiệp)
+  // -> Vai trò: Nơi tiếp nhận dữ liệu thô ban đầu, cần lọc sạch dòng trống
+  //             và là nguồn bốc dữ liệu chính (Số xe, mã cân, ngày tháng...) mang đi đồng bộ.
+  urlFile1: "https://docs.google.com/spreadsheets/d/1oUm87_gbDbnuPc_We0dyZ_e4kHXBHXs95AQAxp5okYo/edit",
+
+  // FILE 2: FILE "HD_NCC" (Hợp đồng Nhà cung cấp)
+  // -> Vai trò: Nơi lưu thông tin gốc của đối tác. Code dùng "Mã hợp đồng" để sang đây
+  //             tra cứu tự động: Mã khách hàng, Tên chủ rừng và Địa chỉ khu rừng.
+  urlFile2: "https://docs.google.com/spreadsheets/d/1cv11ORWuAF3Sit4f-kA0xrP6-ab4SF-7LEdkCvGi_gI/edit",
+
+  // FILE 3: FILE "PhieuCan_DN" (Dữ liệu Phiếu cân Doanh nghiệp)
+  // -> Vai trò: Nơi lưu dữ liệu trạm cân vật lý. Code dùng "Mã cân (Cột E)" để sang đây
+  //             rút trích thông tin chính xác về: Giờ vào, Giờ ra và Khối lượng hàng.
+  urlFile3: "https://docs.google.com/spreadsheets/d/1vqMVxccBA7zlAMHrGsVBydGFwZJ6QuDZW10zJ74V29g/edit",
+
+  // FILE 4: "BaoGiaNhapGoKeo_DN"
+  urlFile4: "https://docs.google.com/spreadsheets/d/1SIhfjP5-6ouRPDj265lAMmI5yWs1XcnedjqpzDwaIC0/edit?usp=sharing"
+};
+
+/**
+ * Danh sách tác vụ được phép chạy/đặt lịch từ khu Quản trị — chỉ đúng các
+ * hàm này, không gọi hàm tuỳ ý theo tên client gửi lên.
+ */
+var TAC_VU_TONG_HOP = {
+  dongBoDuLieuToanDienV12:     { ten: '🔄 Đồng bộ dữ liệu toàn diện (V12)', moTa: 'DNTT_GK_DN + HD_NCC + PhieuCan_DN → sheet HoSoKeo_DN', fn: _tvDongBoToanDien_ },
+  dongBoDuLieuLamHoSoRung:     { ten: '🌳 Đồng bộ dữ liệu rừng',            moTa: 'HD_NCC + HD_RUNG → sheet HoSoRung_DN (ghi đè toàn bộ)', fn: _tvDongBoHoSoRung_ },
+  capNhatThongMinhToaDoRung:   { ten: '📍 Cập nhật tọa độ rừng',            moTa: 'HD_GPS + HD_RUNG → sheet ToaDoRung_DN (thêm mới + làm mới)', fn: _tvCapNhatToaDo_ },
+  saoLuuDinhKy:                { ten: '💾 Sao lưu định kỳ',                 moTa: 'Copy 4 file nguồn + Bảng tổng hợp vào thư mục BACKUP_<ngày giờ>', fn: _tvSaoLuu_ },
+  chuanHoaDuLieuCotHIJ:        { ten: '📏 Chuẩn hóa cột phiếu cân (H/I/J)', moTa: 'PhieuCan_DN: giá trị > 70.000 ở cột H, I, J chia 1000', fn: _tvChuanHoaHIJ_ },
+  xoaDongNhanhNhatGiuDinhDang: { ten: '🧹 Xóa dòng lỗi phiếu cân',          moTa: 'PhieuCan_DN: xoá dòng cột W trống hoặc cột Y = "Lỗi ĐK/Báo giá"', fn: _tvXoaDongLoiPhieuCan_ }
+};
+
+// ---------- Hàm công khai (menu cũ / trigger gọi trực tiếp theo tên) ----------
+function dongBoDuLieuToanDienV12(e)     { return _chayTacVuTongHop_('dongBoDuLieuToanDienV12', _nguonChay_(e)); }
+function dongBoDuLieuLamHoSoRung(e)     { return _chayTacVuTongHop_('dongBoDuLieuLamHoSoRung', _nguonChay_(e)); }
+function capNhatThongMinhToaDoRung(e)   { return _chayTacVuTongHop_('capNhatThongMinhToaDoRung', _nguonChay_(e)); }
+function saoLuuDinhKy(e)                { return _chayTacVuTongHop_('saoLuuDinhKy', _nguonChay_(e)); }
+function chuanHoaDuLieuCotHIJ(e)        { return _chayTacVuTongHop_('chuanHoaDuLieuCotHIJ', _nguonChay_(e)); }
+function xoaDongNhanhNhatGiuDinhDang(e) { return _chayTacVuTongHop_('xoaDongNhanhNhatGiuDinhDang', _nguonChay_(e)); }
+
+function _nguonChay_(e) {
+  return (e && e.triggerUid) ? 'Trigger tự động' : 'Trình soạn thảo Apps Script';
 }
 
-function dongBoDuLieuToanDienV12() {
-  // =========================================================================
-  // CẤU HÌNH ĐỊA CHỈ (URL) CÁC FILE HỆ THỐNG - DIỄN GIẢI CHI TIẾT
-  // =========================================================================
-  var CAU_HINH_FILE = {
+// ---------- Cấu hình ----------
+function _tongHopUrl_() {
+  return PropertiesService.getScriptProperties().getProperty(TONG_HOP_CFG.PROP_TONGHOP_URL) || TONG_HOP_CFG.DEFAULT_TONGHOP_URL;
+}
+function _backupFolderId_() {
+  return PropertiesService.getScriptProperties().getProperty(TONG_HOP_CFG.PROP_BACKUP_FOLDER_ID) || TONG_HOP_CFG.DEFAULT_BACKUP_FOLDER_ID;
+}
+function _moBangTongHop_() {
+  try {
+    return SpreadsheetApp.openByUrl(_tongHopUrl_());
+  } catch (err) {
+    throw new Error('Không mở được Bảng tổng hợp (' + _tongHopUrl_() + ') — kiểm tra URL và quyền truy cập của tài khoản chủ script.');
+  }
+}
+function _laySheetTongHop_(tenSheet) {
+  var sh = _moBangTongHop_().getSheetByName(tenSheet);
+  if (!sh) throw new Error("Không tìm thấy sheet '" + tenSheet + "' trong Bảng tổng hợp.");
+  return sh;
+}
+function _moFileNguon_(url, tenFile) {
+  try {
+    return SpreadsheetApp.openByUrl(url);
+  } catch (err) {
+    throw new Error('Không thể mở file nguồn ' + tenFile + ' — kiểm tra lại quyền truy cập hoặc URL.');
+  }
+}
 
-    // FILE 1: FILE "DNTT_GK_DN" (Đề nghị thanh toán - Giám tải Doanh nghiệp)
-    // -> Vai trò: Nơi tiếp nhận dữ liệu thô ban đầu, cần lọc sạch dòng trống
-    //             và là nguồn bốc dữ liệu chính (Số xe, mã cân, ngày tháng...) mang đi đồng bộ.
-    urlFile1: "https://docs.google.com/spreadsheets/d/1oUm87_gbDbnuPc_We0dyZ_e4kHXBHXs95AQAxp5okYo/edit",
+// ---------- Chạy tác vụ: khoá + nhật ký ----------
+function _chayTacVuTongHop_(tenHam, nguon) {
+  var tv = TAC_VU_TONG_HOP[tenHam];
+  if (!tv) throw new Error('Tác vụ không hợp lệ: ' + tenHam);
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(TONG_HOP_CFG.CHO_KHOA_MS)) {
+    throw new Error('Đang có 1 tác vụ Bảng tổng hợp khác chạy — vui lòng thử lại sau ít phút.');
+  }
+  var batDau = Date.now();
+  try {
+    var thongDiep = tv.fn();
+    _ghiNhatKyTongHop_(tenHam, nguon, true, thongDiep, batDau);
+    Logger.log(tv.ten + ': ' + thongDiep);
+    return { success: true, message: thongDiep };
+  } catch (err) {
+    var loi = String((err && err.message) || err);
+    _ghiNhatKyTongHop_(tenHam, nguon, false, loi, batDau);
+    Logger.log(tv.ten + ' — LỖI: ' + loi);
+    throw err;
+  } finally {
+    lock.releaseLock();
+  }
+}
 
-    // FILE 2: FILE "HD_NCC" (Hợp đồng Nhà cung cấp)
-    // -> Vai trò: Nơi lưu thông tin gốc của đối tác. Code dùng "Mã hợp đồng" để sang đây
-    //             tra cứu tự động: Mã khách hàng, Tên chủ rừng và Địa chỉ khu rừng.
-    urlFile2: "https://docs.google.com/spreadsheets/d/1cv11ORWuAF3Sit4f-kA0xrP6-ab4SF-7LEdkCvGi_gI/edit",
+function _docJsonProp_(key, macDinh) {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(key);
+    return raw ? JSON.parse(raw) : macDinh;
+  } catch (e) { return macDinh; }
+}
+function _ghiJsonProp_(key, val) {
+  PropertiesService.getScriptProperties().setProperty(key, JSON.stringify(val));
+}
 
-    // FILE 3: FILE "PhieuCan_DN" (Dữ liệu Phiếu cân Doanh nghiệp)
-    // -> Vai trò: Nơi lưu dữ liệu trạm cân vật lý. Code dùng "Mã cân (Cột E)" để sang đây
-    //             rút trích thông tin chính xác về: Giờ vào, Giờ ra và Khối lượng hàng.
-    urlFile3: "https://docs.google.com/spreadsheets/d/1vqMVxccBA7zlAMHrGsVBydGFwZJ6QuDZW10zJ74V29g/edit"
+function _ghiNhatKyTongHop_(tenHam, nguon, ok, thongDiep, batDau) {
+  try {
+    var list = _docJsonProp_(TONG_HOP_CFG.PROP_NHAT_KY, []);
+    list.unshift({
+      tacVu: tenHam,
+      luc: new Date(batDau).toISOString(),
+      giay: Math.round((Date.now() - batDau) / 1000),
+      nguon: nguon || '',
+      ok: ok,
+      thongDiep: String(thongDiep || '').slice(0, 300)
+    });
+    _ghiJsonProp_(TONG_HOP_CFG.PROP_NHAT_KY, list.slice(0, TONG_HOP_CFG.SO_DONG_NHAT_KY));
+  } catch (e) {
+    Logger.log('Không ghi được nhật ký: ' + e);
+  }
+}
+
+// ---------- Trigger (đặt lịch chạy tự động) ----------
+var THU_TRONG_TUAN = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+var TEN_THU = { MONDAY: 'Thứ 2', TUESDAY: 'Thứ 3', WEDNESDAY: 'Thứ 4', THURSDAY: 'Thứ 5', FRIDAY: 'Thứ 6', SATURDAY: 'Thứ 7', SUNDAY: 'Chủ nhật' };
+
+function _moTaLich_(lich) {
+  if (!lich) return '';
+  if (lich.kieu === 'gio') return 'Mỗi ' + lich.soGio + ' giờ';
+  if (lich.kieu === 'ngay') return 'Hằng ngày lúc ' + lich.gio + 'h';
+  if (lich.kieu === 'tuan') return 'Hằng tuần ' + (TEN_THU[lich.thu] || lich.thu) + ' lúc ' + lich.gio + 'h';
+  return '';
+}
+
+/**
+ * Đặt lịch cho 1 tác vụ: xoá trigger cũ của đúng hàm đó rồi tạo mới.
+ * kieu: 'tat' | 'gio' (giaTri = số giờ 1/2/4/6/8/12) | 'ngay' (gio 0-23) |
+ *       'tuan' (thu = MONDAY..SUNDAY, gio 0-23).
+ * Trigger thuộc tài khoản chủ script (Portal deploy "Execute as: Me").
+ */
+function _datLichTongHop_(tenHam, kieu, giaTri, thu) {
+  if (!TAC_VU_TONG_HOP[tenHam]) throw new Error('Tác vụ không hợp lệ: ' + tenHam);
+  var lich = null;
+  var soGio = parseInt(giaTri, 10);
+  if (kieu === 'gio') {
+    if ([1, 2, 4, 6, 8, 12].indexOf(soGio) === -1) throw new Error('Số giờ lặp phải là 1, 2, 4, 6, 8 hoặc 12.');
+    lich = { kieu: 'gio', soGio: soGio };
+  } else if (kieu === 'ngay' || kieu === 'tuan') {
+    if (isNaN(soGio) || soGio < 0 || soGio > 23) throw new Error('Giờ chạy phải từ 0 đến 23.');
+    lich = { kieu: kieu, gio: soGio };
+    if (kieu === 'tuan') {
+      if (THU_TRONG_TUAN.indexOf(thu) === -1) throw new Error('Thứ trong tuần không hợp lệ.');
+      lich.thu = thu;
+    }
+  } else if (kieu !== 'tat') {
+    throw new Error('Kiểu lịch không hợp lệ.');
+  }
+
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === tenHam) ScriptApp.deleteTrigger(t);
+  });
+
+  if (lich) {
+    var b = ScriptApp.newTrigger(tenHam).timeBased();
+    if (lich.kieu === 'gio') b.everyHours(lich.soGio);
+    else if (lich.kieu === 'ngay') b.everyDays(1).atHour(lich.gio);
+    else b.onWeekDay(ScriptApp.WeekDay[lich.thu]).atHour(lich.gio);
+    b.create();
+  }
+
+  var tatCaLich = _docJsonProp_(TONG_HOP_CFG.PROP_LICH, {});
+  if (lich) {
+    var nd = _xacDinhNguoiDung_();
+    lich.capNhatLuc = new Date().toISOString();
+    lich.capNhatBoi = (nd && nd.email) || '';
+    tatCaLich[tenHam] = lich;
+  } else {
+    delete tatCaLich[tenHam];
+  }
+  _ghiJsonProp_(TONG_HOP_CFG.PROP_LICH, tatCaLich);
+  return _getTongHopInfo_();
+}
+
+// ---------- API cho khu Quản trị (gọi qua api() trong Code.gs) ----------
+function _getTongHopInfo_() {
+  var soTrigger = {};
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    var h = t.getHandlerFunction();
+    soTrigger[h] = (soTrigger[h] || 0) + 1;
+  });
+  var tatCaLich = _docJsonProp_(TONG_HOP_CFG.PROP_LICH, {});
+  var nhatKy = _docJsonProp_(TONG_HOP_CFG.PROP_NHAT_KY, []);
+
+  var tacVu = Object.keys(TAC_VU_TONG_HOP).map(function (k) {
+    var lanCuoi = nhatKy.filter(function (x) { return x.tacVu === k; })[0] || null;
+    var lich = soTrigger[k] ? (tatCaLich[k] || null) : null;
+    return {
+      key: k,
+      ten: TAC_VU_TONG_HOP[k].ten,
+      moTa: TAC_VU_TONG_HOP[k].moTa,
+      soTrigger: soTrigger[k] || 0,
+      lich: lich,
+      moTaLich: soTrigger[k] ? (_moTaLich_(lich) || 'Có trigger (tạo ngoài Portal)') : '',
+      lanCuoi: lanCuoi
+    };
+  });
+
+  var folderId = _backupFolderId_();
+  return {
+    tongHopUrl: _tongHopUrl_(),
+    tongHopMacDinh: !PropertiesService.getScriptProperties().getProperty(TONG_HOP_CFG.PROP_TONGHOP_URL),
+    backupFolderId: folderId,
+    backupFolderUrl: 'https://drive.google.com/drive/folders/' + folderId,
+    triggerPageUrl: 'https://script.google.com/home/projects/' + ScriptApp.getScriptId() + '/triggers',
+    tacVu: tacVu,
+    nhatKy: nhatKy.map(function (x) {
+      return { tacVu: x.tacVu, ten: TAC_VU_TONG_HOP[x.tacVu] ? TAC_VU_TONG_HOP[x.tacVu].ten : x.tacVu, luc: x.luc, giay: x.giay, nguon: x.nguon, ok: x.ok, thongDiep: x.thongDiep };
+    }),
+    banSaoGanDay: _danhSachBanSaoGanDay_(folderId, 5)
   };
-  // =========================================================================
+}
 
-  // 1. Mở file đích hiện tại (Hồ sơ tổng hợp - HoSoKeo_DN) và chọn sheet đang mở
-  var fileDich = SpreadsheetApp.getActiveSpreadsheet();
-  var sheetDich = fileDich.getActiveSheet();
+/** Chạy ngay 1 tác vụ từ khu Quản trị. */
+function _chayTacVuTuPortal_(tenHam) {
+  var nd = _xacDinhNguoiDung_();
+  var kq = _chayTacVuTongHop_(tenHam, 'Portal: ' + ((nd && nd.email) || '?'));
+  return { message: kq.message, info: _getTongHopInfo_() };
+}
+
+/** Lưu cấu hình: truong = 'tongHopUrl' | 'backupFolderId'; giaTri = '' để về mặc định. */
+function _luuCauHinhTongHop_(truong, giaTri) {
+  giaTri = String(giaTri || '').trim();
+  var props = PropertiesService.getScriptProperties();
+  if (truong === 'tongHopUrl') {
+    if (!giaTri) { props.deleteProperty(TONG_HOP_CFG.PROP_TONGHOP_URL); return _getTongHopInfo_(); }
+    if (!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[-\w]{25,}/.test(giaTri)) {
+      throw new Error('URL Bảng tổng hợp phải có dạng https://docs.google.com/spreadsheets/d/<ID>/...');
+    }
+    try { SpreadsheetApp.openByUrl(giaTri); } catch (e) {
+      throw new Error('Không mở được file này — tài khoản chủ script cần có quyền chỉnh sửa.');
+    }
+    props.setProperty(TONG_HOP_CFG.PROP_TONGHOP_URL, giaTri);
+  } else if (truong === 'backupFolderId') {
+    if (!giaTri) { props.deleteProperty(TONG_HOP_CFG.PROP_BACKUP_FOLDER_ID); return _getTongHopInfo_(); }
+    var m = giaTri.match(/folders\/([-\w]{10,})/);
+    var id = m ? m[1] : giaTri;
+    if (!/^[-\w]{10,}$/.test(id)) throw new Error('ID/link thư mục sao lưu không hợp lệ.');
+    try { DriveApp.getFolderById(id).getName(); } catch (e) {
+      throw new Error('Không mở được thư mục này — tài khoản chủ script cần có quyền chỉnh sửa.');
+    }
+    props.setProperty(TONG_HOP_CFG.PROP_BACKUP_FOLDER_ID, id);
+  } else {
+    throw new Error('Trường cấu hình không hợp lệ: ' + truong);
+  }
+  return _getTongHopInfo_();
+}
+
+function _danhSachBanSaoGanDay_(folderId, soLuong) {
+  try {
+    var it = DriveApp.getFolderById(folderId).getFolders();
+    var ds = [];
+    while (it.hasNext()) {
+      var f = it.next();
+      var ten = f.getName();
+      if (ten.indexOf('BACKUP_') === 0) ds.push({ ten: ten, url: f.getUrl() });
+    }
+    ds.sort(function (a, b) { return a.ten < b.ten ? 1 : (a.ten > b.ten ? -1 : 0); });
+    return ds.slice(0, soLuong);
+  } catch (e) {
+    return [];
+  }
+}
+
+// =========================================================================
+// CÁC TÁC VỤ (logic nghiệp vụ) — mỗi hàm trả về 1 câu thông báo kết quả
+// =========================================================================
+
+function _tvDongBoToanDien_() {
+  // 1. Mở file đích (Hồ sơ tổng hợp - HoSoKeo_DN), sheet HoSoKeo_DN
+  var sheetDich = _laySheetTongHop_(TONG_HOP_CFG.SHEET_HOSOKEO);
 
   // Định nghĩa vị trí các cột ở file đích (A=1, B=2, C=3, D=4...)
   var cotA_Dich = 1;
@@ -72,7 +342,7 @@ function dongBoDuLieuToanDienV12() {
   // ==========================================
   // STEP 1.5: XÓA DÒNG CÓ CỘT A RỖNG TẠI 3 SHEET CỦA FILE 1 TRƯỚC KHI ĐỒNG BỘ
   // ==========================================
-  var ssFile1 = SpreadsheetApp.openByUrl(CAU_HINH_FILE.urlFile1);
+  var ssFile1 = _moFileNguon_(CAU_HINH_FILE.urlFile1, 'DNTT_GK_DN');
   var danhSachSheetCanXoa = ["DNTT_GK_DN_CT", "DNTT_GK_DN", "DNTT_GK_DN_112"];
 
   for (var sName = 0; sName < danhSachSheetCanXoa.length; sName++) {
@@ -110,8 +380,9 @@ function dongBoDuLieuToanDienV12() {
   // STEP 2: LẤY DỮ LIỆU TỪ FILE 1 (DNTT_GK_DN_CT) GHI VÀO FILE ĐÍCH (CHỈ GHI DÒNG MỚI)
   // ==========================================
   var sheetFile1 = ssFile1.getSheetByName("DNTT_GK_DN_CT");
+  if (!sheetFile1) throw new Error("Không tìm thấy sheet 'DNTT_GK_DN_CT' ở file DNTT_GK_DN.");
   var dongCuoiFile1 = sheetFile1.getLastRow();
-  if (dongCuoiFile1 < 2) return;
+  if (dongCuoiFile1 < 2) return 'Sheet DNTT_GK_DN_CT không có dữ liệu — không có gì để đồng bộ.';
 
   // Lấy dữ liệu rộng 10 cột (từ cột L đến cột U nguồn)
   var vungDuLieuFile1 = sheetFile1.getRange(2, 12, dongCuoiFile1 - 1, 10).getValues();
@@ -159,7 +430,7 @@ function dongBoDuLieuToanDienV12() {
     // STEP 3 & 4: THAM CHIẾU FILE 2 VÀ FILE 3 CHO CÁC DÒNG MỚI ĐƯỢC THÊM VÀO
     // ==========================================
     // Tra cứu File 2 (HD_NCC) bằng cấu hình URL tập trung
-    var ssFile2 = SpreadsheetApp.openByUrl(CAU_HINH_FILE.urlFile2);
+    var ssFile2 = _moFileNguon_(CAU_HINH_FILE.urlFile2, 'HD_NCC');
     var sheetFile2 = ssFile2.getSheetByName("HD_NCC");
     var dataFile2 = sheetFile2.getRange(2, 1, sheetFile2.getLastRow() - 1, sheetFile2.getLastColumn()).getValues();
 
@@ -187,7 +458,7 @@ function dongBoDuLieuToanDienV12() {
     sheetDich.getRange(dongBatDauGhi, cotX_Diachirung, mangCotX.length, 1).setValues(mangCotX);
 
     // Tra cứu File 3 (PhieuCan_DN) bằng cấu hình URL tập trung
-    var ssFile3 = SpreadsheetApp.openByUrl(CAU_HINH_FILE.urlFile3);
+    var ssFile3 = _moFileNguon_(CAU_HINH_FILE.urlFile3, 'PhieuCan_DN');
     var sheetFile3 = ssFile3.getSheetByName("PhieuCan_DN");
     var dataFile3 = sheetFile3.getRange(2, 1, sheetFile3.getLastRow() - 1, sheetFile3.getLastColumn()).getValues();
 
@@ -221,8 +492,6 @@ function dongBoDuLieuToanDienV12() {
       }
     }
 
-
-
     sheetDich.getRange(dongBatDauGhi, cotF_Dich, mangF.length, 1).setValues(mangF);
     sheetDich.getRange(dongBatDauGhi, cotG_Dich, mangG.length, 1).setValues(mangG);
     var vungCotJ = sheetDich.getRange(dongBatDauGhi, cotJ_Dich, mangJ.length, 1); vungCotJ.setNumberFormat("hh:mm:ss"); vungCotJ.setValues(mangJ);
@@ -240,7 +509,7 @@ function dongBoDuLieuToanDienV12() {
   // BẮT BUỘC: LUÔN LUÔN TÍNH TOÁN VÀ GHI LẠI CỘT A, U, V TRÊN TOÀN BỘ SHEET ĐỂ TRÁNH SẠM STT
   // =========================================================================
   var dongCuoiToanBo = sheetDich.getLastRow();
-  if (dongCuoiToanBo < 2) return;
+  if (dongCuoiToanBo < 2) return 'Không có dòng mới.';
 
   var duLieuGomNhom = sheetDich.getRange(2, 1, dongCuoiToanBo - 1, sheetDich.getLastColumn()).getValues();
 
@@ -272,8 +541,8 @@ function dongBoDuLieuToanDienV12() {
   }
 
   var nhomMaHD = {};
-  for (var d = 0; d < danhSachDong.length; d++) {
-    var item = danhSachDong[d];
+  for (var d2 = 0; d2 < danhSachDong.length; d2++) {
+    var item = danhSachDong[d2];
     if (item.maHD !== "") {
       if (!nhomMaHD[item.maHD]) nhomMaHD[item.maHD] = [];
       nhomMaHD[item.maHD].push(item);
@@ -311,39 +580,29 @@ function dongBoDuLieuToanDienV12() {
   vungCotV.setNumberFormat("@");
   vungCotV.setValues(mangKetQua_V);
 
-  Logger.log("Hệ thống chạy ngầm: Đồng bộ thành công bản V12 kèm theo chú thích diễn giải!");
+  return 'Đồng bộ xong: thêm mới ' + mangCotE_Moi.length + ' dòng; đã đánh lại STT/BKLS cho ' + duLieuGomNhom.length + ' dòng.';
 }
 
 
-function dongBoDuLieuLamHoSoRung() {
-  var ssDest = SpreadsheetApp.getActiveSpreadsheet();
-  var sheetDest = ssDest.getSheetByName("HoSoRung_DN");
-
-  if (!sheetDest) {
-    console.warn("Không tìm thấy sheet đích 'HoSoRung_DN' trong file hiện tại!");
-    return;
+// Hàm chuyển đổi ký tự cột chữ sang chỉ số mảng (A → 0)
+function _chiSoCot_(colLetter) {
+  var base = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var result = 0;
+  for (var i = 0; i < colLetter.length; i++) {
+    result = result * 26 + base.indexOf(colLetter[i].toUpperCase()) + 1;
   }
+  return result - 1;
+}
+
+
+function _tvDongBoHoSoRung_() {
+  var colIndex = _chiSoCot_;
+  var sheetDest = _laySheetTongHop_(TONG_HOP_CFG.SHEET_HOSORUNG);
 
   // 1. Mở file nguồn bằng URL
-  var sourceUrl = "https://docs.google.com/spreadsheets/d/1cv11ORWuAF3Sit4f-kA0xrP6-ab4SF-7LEdkCvGi_gI/edit?usp=sharing";
-  var ssSource;
-  try {
-    ssSource = SpreadsheetApp.openByUrl(sourceUrl);
-  } catch(e) {
-    console.warn("Không thể mở file nguồn. Vui lòng kiểm tra lại quyền truy cập hoặc URL!");
-    return;
-  }
+  var ssSource = _moFileNguon_(CAU_HINH_FILE.urlFile2, 'HD_NCC');
 
-  // ================= BỔ SUNG: KIỂM TRA VÀ XÓA DÒNG TRỐNG TRƯỚC KHI CHẠY =================
-  function colIndex(colLetter) {
-    var base = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    var result = 0;
-    for (var i = 0; i < colLetter.length; i++) {
-      result = result * 26 + base.indexOf(colLetter[i].toUpperCase()) + 1;
-    }
-    return result - 1;
-  }
-
+  // ================= KIỂM TRA VÀ XÓA DÒNG TRỐNG TRƯỚC KHI CHẠY =================
   function kiemTraVaXoaDongTrong(sheetObj, keyHeaderName) {
     if (!sheetObj) return;
     var lastRow = sheetObj.getLastRow();
@@ -384,16 +643,14 @@ function dongBoDuLieuLamHoSoRung() {
   // =====================================================================================
 
   if (!sheetNCC || !sheetRung) {
-    console.warn("Không tìm thấy sheet 'HD_NCC' hoặc 'HD_RUNG' ở file nguồn!");
-    return;
+    throw new Error("Không tìm thấy sheet 'HD_NCC' hoặc 'HD_RUNG' ở file nguồn!");
   }
 
   var dataNCC = sheetNCC.getDataRange().getValues();
   var dataRung = sheetRung.getDataRange().getValues();
 
   if (dataNCC.length <= 1) {
-    console.warn("Sheet HD_NCC không có dữ liệu!");
-    return;
+    return 'Sheet HD_NCC không có dữ liệu — không có gì để đồng bộ.';
   }
 
   var groupsRungByD = {};
@@ -408,19 +665,19 @@ function dongBoDuLieuLamHoSoRung() {
   }
 
   var groupsNCC = {};
-  for (var i = 1; i < dataNCC.length; i++) {
-    var keyC = dataNCC[i][colIndex("C")];
+  for (var i2 = 1; i2 < dataNCC.length; i2++) {
+    var keyC = dataNCC[i2][colIndex("C")];
     if (keyC === "" || keyC === undefined) continue;
     if (!groupsNCC[keyC]) {
       groupsNCC[keyC] = [];
     }
-    groupsNCC[keyC].push(dataNCC[i]);
+    groupsNCC[keyC].push(dataNCC[i2]);
   }
 
   var outputData = [];
 
-  for (var keyC in groupsNCC) {
-    var rows = groupsNCC[keyC];
+  for (var keyNCC in groupsNCC) {
+    var rows = groupsNCC[keyNCC];
     var firstRow = rows[0];
 
     var destRow = Array(17).fill("");
@@ -495,38 +752,37 @@ function dongBoDuLieuLamHoSoRung() {
   });
 
   var idxA = colIndex("A");
-  for (var i = 0; i < outputData.length; i++) {
-    outputData[i][idxA] = i + 1;
+  for (var i3 = 0; i3 < outputData.length; i3++) {
+    outputData[i3][idxA] = i3 + 1;
   }
 
-  if (outputData.length > 0) {
-    var lastRow = sheetDest.getLastRow();
-    sheetDest.getRange(2, 1, lastRow >= 2 ? lastRow : 1, outputData[0].length).clearContent();
+  if (outputData.length === 0) return 'Không có hợp đồng nào có mã (cột C) trong HD_NCC.';
 
-    sheetDest.getRange(2, 2, outputData.length, 1).setNumberFormat("@");
-    sheetDest.getRange(2, 13, outputData.length, 1).setNumberFormat("@");
+  var lastRow = sheetDest.getLastRow();
+  sheetDest.getRange(2, 1, lastRow >= 2 ? lastRow : 1, outputData[0].length).clearContent();
 
-    sheetDest.getRange(2, 1, outputData.length, outputData[0].length).setValues(outputData);
+  sheetDest.getRange(2, 2, outputData.length, 1).setNumberFormat("@");
+  sheetDest.getRange(2, 13, outputData.length, 1).setNumberFormat("@");
 
-    // Thay alert thành log để an toàn khi chạy ngầm
-    console.log("Đồng bộ dữ liệu thành công!");
-  }
+  sheetDest.getRange(2, 1, outputData.length, outputData[0].length).setValues(outputData);
+
+  return 'Đồng bộ hồ sơ rừng xong: ' + outputData.length + ' hợp đồng.';
 }
 
 
-function xoaDongNhanhNhatGiuDinhDang() {
-  var url = "https://docs.google.com/spreadsheets/d/1vqMVxccBA7zlAMHrGsVBydGFwZJ6QuDZW10zJ74V29g/edit";
-  var ss = SpreadsheetApp.openByUrl(url);
+function _tvXoaDongLoiPhieuCan_() {
+  var ss = _moFileNguon_(CAU_HINH_FILE.urlFile3, 'PhieuCan_DN');
   var sheet = ss.getSheetByName("PhieuCan_DN");
-  if (!sheet) return;
+  if (!sheet) throw new Error("Không tìm thấy sheet 'PhieuCan_DN'.");
 
   var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return;
+  if (lastRow <= 1) return 'Sheet PhieuCan_DN trống.';
 
   // Đọc toàn bộ dữ liệu cột W và Y để check (chỉ đọc đúng 2 cột này để tăng tốc)
   var rangeW = sheet.getRange(1, 23, lastRow, 1).getValues(); // Cột 23 là W
   var rangeY = sheet.getRange(1, 25, lastRow, 1).getValues(); // Cột 25 là Y
 
+  var tongXoa = 0;
   // Duyệt ngược để gom các dòng lỗi lại thành các "cặp dòng liên tiếp"
   var i = lastRow - 1;
   while (i >= 1) {
@@ -547,36 +803,23 @@ function xoaDongNhanhNhatGiuDinhDang() {
       }
       // Xóa cả cụm dòng lỗi cùng một lúc
       sheet.deleteRows(i - numRowsToDelete + 2, numRowsToDelete);
+      tongXoa += numRowsToDelete;
       i -= numRowsToDelete;
     } else {
       i--;
     }
   }
+  return 'Đã xoá ' + tongXoa + ' dòng lỗi trong PhieuCan_DN.';
 }
 
 
-function chuanHoaDuLieuCotHIJ() {
-  var url = "https://docs.google.com/spreadsheets/d/1vqMVxccBA7zlAMHrGsVBydGFwZJ6QuDZW10zJ74V29g/edit";
-
-  var ss;
-  try {
-    ss = SpreadsheetApp.openByUrl(url);
-  } catch(e) {
-    Logger.log("Không thể mở file. Lỗi: " + e.message);
-    return;
-  }
-
+function _tvChuanHoaHIJ_() {
+  var ss = _moFileNguon_(CAU_HINH_FILE.urlFile3, 'PhieuCan_DN');
   var sheet = ss.getSheetByName("PhieuCan_DN");
-  if (!sheet) {
-    Logger.log("Không tìm thấy sheet 'PhieuCan_DN'.");
-    return;
-  }
+  if (!sheet) throw new Error("Không tìm thấy sheet 'PhieuCan_DN'.");
 
   var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) {
-    Logger.log("Sheet trống hoặc chỉ có dòng tiêu đề.");
-    return;
-  }
+  if (lastRow <= 1) return 'Sheet trống hoặc chỉ có dòng tiêu đề.';
 
   // 1. Xác định vùng chứa cột H, I, J (Cột H là cột số 8, lấy cụm 3 cột H-I-J)
   var startRow = 2; // Bắt đầu từ dòng 2 để bỏ qua tiêu đề
@@ -584,7 +827,7 @@ function chuanHoaDuLieuCotHIJ() {
   var targetRange = sheet.getRange(startRow, 8, numRows, 3);
   var values = targetRange.getValues();
 
-  var isUpdated = false;
+  var soO = 0;
 
   // 2. Duyệt qua mảng dữ liệu của 3 cột để kiểm tra điều kiện > 70.000
   for (var r = 0; r < values.length; r++) {
@@ -594,136 +837,92 @@ function chuanHoaDuLieuCotHIJ() {
       // Kiểm tra nếu là số và lớn hơn 70000 thì chia cho 1000
       if (typeof cellValue === "number" && cellValue > 70000) {
         values[r][c] = cellValue / 1000;
-        isUpdated = true;
+        soO++;
       }
     }
   }
 
   // 3. Nếu có dữ liệu thay đổi, tiến hành ghi ngược lại xuống sheet đúng 1 lần duy nhất
-  if (isUpdated) {
+  if (soO > 0) {
     targetRange.setValues(values);
-    Logger.log("Đã chuẩn hóa và chia 1000 thành công cho các giá trị > 70.000 tại cột H, I, J.");
-  } else {
-    Logger.log("Không tìm thấy giá trị nào lớn hơn 70.000 ở các cột H, I, J.");
+    return 'Đã chuẩn hóa (chia 1000) ' + soO + ' ô có giá trị > 70.000 tại cột H, I, J.';
   }
+  return 'Không có giá trị nào lớn hơn 70.000 ở các cột H, I, J.';
 }
 
 
-// CẤU HÌNH THÔNG TIN FILE VÀ THƯ MỤC
-var CAU_HINH_FILE = {
-  // FILE 1: "DNTT_GK_DN"
-  urlFile1: "https://docs.google.com/spreadsheets/d/1oUm87_gbDbnuPc_We0dyZ_e4kHXBHXs95AQAxp5okYo/edit",
-
-  // FILE 2: "HD_NCC"
-  urlFile2: "https://docs.google.com/spreadsheets/d/1cv11ORWuAF3Sit4f-kA0xrP6-ab4SF-7LEdkCvGi_gI/edit",
-
-  // FILE 3: "PhieuCan_DN"
-  urlFile3: "https://docs.google.com/spreadsheets/d/1vqMVxccBA7zlAMHrGsVBydGFwZJ6QuDZW10zJ74V29g/edit",
-
-  // FILE 4 MỚI: "BaoGiaNhapGoKeo_DN"
-  urlFile4: "https://docs.google.com/spreadsheets/d/1SIhfjP5-6ouRPDj265lAMmI5yWs1XcnedjqpzDwaIC0/edit?usp=sharing",
-
-  // ID Thư mục BACKUP tổng
-  backupFolderId: "1TMAjOkAew6m0vBM9KvLgPbODSUofFjrS"
-};
-
-function saoLuuDinhKy() {
+function _tvSaoLuu_() {
+  // 1. Lấy thư mục gốc BACKUP
+  var rootFolder;
   try {
-    // 1. Lấy thư mục gốc BACKUP
-    var rootFolder = DriveApp.getFolderById(CAU_HINH_FILE.backupFolderId);
-
-    // 2. Tạo định dạng ngày giờ cho tên thư mục và tên file
-    // Định dạng dùng cho thư mục: yyyy-MM-dd_HHmmss (đầy đủ giây)
-    var timeFolder = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd_HHmmss");
-    // Định dạng dùng đính kèm sau tên file: yyyy-MM-dd_HHmm (chỉ cần đến phút cho gọn)
-    var timeFile = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd_HHmm");
-
-    // Tạo thư mục mới trong thư mục BACKUP tổng
-    var tenThuMucMoi = "BACKUP_" + timeFolder;
-    var subFolder = rootFolder.createFolder(tenThuMucMoi);
-    Logger.log("Đã tạo thư mục sao lưu mới: " + tenThuMucMoi);
-
-    // 3. Tiến hành copy từng file vào thư mục mới kèm đổi tên thêm ngày giờ
-    copyAndRenameFile(CAU_HINH_FILE.urlFile1, subFolder, timeFile);
-    copyAndRenameFile(CAU_HINH_FILE.urlFile2, subFolder, timeFile);
-    copyAndRenameFile(CAU_HINH_FILE.urlFile3, subFolder, timeFile);
-    copyAndRenameFile(CAU_HINH_FILE.urlFile4, subFolder, timeFile);
-
-    Logger.log("Hoàn thành sao lưu toàn bộ 4 file thành công!");
-  } catch (error) {
-    Logger.log("Lỗi trong quá trình sao lưu: " + error.toString());
+    rootFolder = DriveApp.getFolderById(_backupFolderId_());
+  } catch (e) {
+    throw new Error('Không mở được thư mục sao lưu (ID ' + _backupFolderId_() + ').');
   }
+
+  // 2. Tạo định dạng ngày giờ cho tên thư mục và tên file
+  // Định dạng dùng cho thư mục: yyyy-MM-dd_HHmmss (đầy đủ giây)
+  var timeFolder = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd_HHmmss");
+  // Định dạng dùng đính kèm sau tên file: yyyy-MM-dd_HHmm (chỉ cần đến phút cho gọn)
+  var timeFile = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd_HHmm");
+
+  // Tạo thư mục mới trong thư mục BACKUP tổng
+  var tenThuMucMoi = "BACKUP_" + timeFolder;
+  var subFolder = rootFolder.createFolder(tenThuMucMoi);
+
+  // 3. Copy từng file vào thư mục mới kèm đổi tên thêm ngày giờ
+  //    (4 file nguồn + Bảng tổng hợp nơi lưu dữ liệu đồng bộ)
+  var dsUrl = [CAU_HINH_FILE.urlFile1, CAU_HINH_FILE.urlFile2, CAU_HINH_FILE.urlFile3, CAU_HINH_FILE.urlFile4, _tongHopUrl_()];
+  var ok = 0, loi = [];
+  dsUrl.forEach(function (u) {
+    var kq = copyAndRenameFile(u, subFolder, timeFile);
+    if (kq === true) ok++; else loi.push(kq);
+  });
+
+  var msg = 'Đã sao lưu ' + ok + '/' + dsUrl.length + ' file vào thư mục ' + tenThuMucMoi + '.';
+  if (loi.length) throw new Error(msg + ' Lỗi: ' + loi.join(' | '));
+  return msg;
 }
 
-// Hàm phụ trách trích xuất file, sao lưu và đổi tên thêm ngày giờ
+// Hàm phụ trách trích xuất file, sao lưu và đổi tên thêm ngày giờ.
+// Trả về true nếu thành công, ngược lại trả về chuỗi mô tả lỗi.
 function copyAndRenameFile(urlFile, targetFolder, timeSuffix) {
   try {
     // Trích xuất ID từ URL của Google Sheets
     var fileId = urlFile.match(/[-\w]{25,}/);
-    if (fileId) {
-      var file = DriveApp.getFileById(fileId[0]);
-      var tenFileGoc = file.getName();
-
-      // Tạo tên mới dạng: Tên_File_Gốc_2026-06-27_0915
-      var tenFileMoi = tenFileGoc + "_" + timeSuffix;
-
-      // Tạo bản sao với tên mới vào thư mục sao lưu
-      file.makeCopy(tenFileMoi, targetFolder);
-      Logger.log("Đã sao lưu thành công file: " + tenFileMoi);
-    } else {
-      Logger.log("Không tìm thấy ID hợp lệ cho URL: " + urlFile);
-    }
+    if (!fileId) return 'Không tìm thấy ID hợp lệ cho URL: ' + urlFile;
+    var file = DriveApp.getFileById(fileId[0]);
+    // Tạo tên mới dạng: Tên_File_Gốc_2026-06-27_0915
+    var tenFileMoi = file.getName() + "_" + timeSuffix;
+    file.makeCopy(tenFileMoi, targetFolder);
+    return true;
   } catch (e) {
-    Logger.log("Không thể copy file từ URL " + urlFile + ". Lỗi: " + e.toString());
+    return 'Không thể copy file ' + urlFile + ': ' + e;
   }
 }
 
 
-function capNhatThongMinhToaDoRung() {
-  var ssDest = SpreadsheetApp.getActiveSpreadsheet();
-  var sheetDest = ssDest.getSheetByName("ToaDoRung_DN");
-
-  if (!sheetDest) {
-    SpreadsheetApp.getUi().alert("Không tìm thấy sheet đích 'ToaDoRung_DN' trong file hiện tại!");
-    return;
-  }
+function _tvCapNhatToaDo_() {
+  var colIndex = _chiSoCot_;
+  var sheetDest = _laySheetTongHop_(TONG_HOP_CFG.SHEET_TOADO);
 
   // 1. Mở file nguồn bằng URL
-  var sourceUrl = "https://docs.google.com/spreadsheets/d/1cv11ORWuAF3Sit4f-kA0xrP6-ab4SF-7LEdkCvGi_gI/edit?usp=sharing";
-  var ssSource;
-  try {
-    ssSource = SpreadsheetApp.openByUrl(sourceUrl);
-  } catch(e) {
-    SpreadsheetApp.getUi().alert("Không thể mở file nguồn. Vui lòng kiểm tra lại quyền truy cập hoặc URL!");
-    return;
-  }
+  var ssSource = _moFileNguon_(CAU_HINH_FILE.urlFile2, 'HD_NCC');
 
   var sheetGPS = ssSource.getSheetByName("HD_GPS");
   var sheetRung = ssSource.getSheetByName("HD_RUNG");
 
   if (!sheetGPS || !sheetRung) {
-    SpreadsheetApp.getUi().alert("Không tìm thấy sheet 'HD_GPS' hoặc 'HD_RUNG' ở file nguồn!");
-    return;
+    throw new Error("Không tìm thấy sheet 'HD_GPS' hoặc 'HD_RUNG' ở file nguồn!");
   }
 
   // 2. Lấy dữ liệu từ sheet nguồn HD_GPS và HD_RUNG
   var lastRowGps = sheetGPS.getLastRow();
   if (lastRowGps <= 1) {
-    SpreadsheetApp.getUi().alert("Sheet nguồn 'HD_GPS' không có dữ liệu!");
-    return;
+    return "Sheet nguồn 'HD_GPS' không có dữ liệu!";
   }
   var dataGPS = sheetGPS.getRange(2, 1, lastRowGps - 1, 6).getValues();
   var dataRung = sheetRung.getDataRange().getValues();
-
-  // Hàm chuyển đổi ký tự cột chữ sang chỉ số mảng
-  function colIndex(colLetter) {
-    var base = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    var result = 0;
-    for (var i = 0; i < colLetter.length; i++) {
-      result = result * 26 + base.indexOf(colLetter[i].toUpperCase()) + 1;
-    }
-    return result - 1;
-  }
 
   // --- TẠO MAP TRA CỨU CHO HD_RUNG (Theo Cột C) ---
   var mapRungByC = {};
@@ -744,10 +943,10 @@ function capNhatThongMinhToaDoRung() {
 
   if (lastRowDest >= 2) {
     dataDest = sheetDest.getRange(2, 1, lastRowDest - 1, 17).getValues();
-    for (var i = 0; i < dataDest.length; i++) {
-      var keyA_Dest = dataDest[i][0]; // Cột A đích
+    for (var i2 = 0; i2 < dataDest.length; i2++) {
+      var keyA_Dest = dataDest[i2][0]; // Cột A đích
       if (keyA_Dest !== "" && keyA_Dest !== undefined) {
-        mapDestRowIndex[keyA_Dest] = i; // Lưu lại chỉ số mảng của mã này
+        mapDestRowIndex[keyA_Dest] = i2; // Lưu lại chỉ số mảng của mã này
       }
     }
   }
@@ -756,8 +955,8 @@ function capNhatThongMinhToaDoRung() {
   var countUpdate = 0;
 
   // 4. DUYỆT QUA DỮ LIỆU GPS NGUỒN ĐỂ XỬ LÝ LỌC
-  for (var i = 0; i < dataGPS.length; i++) {
-    var valA_Gps = dataGPS[i][0]; // Mã định danh (Cột A GPS)
+  for (var i3 = 0; i3 < dataGPS.length; i3++) {
+    var valA_Gps = dataGPS[i3][0]; // Mã định danh (Cột A GPS)
     if (valA_Gps === "" || valA_Gps === undefined) continue;
 
     var destRow;
@@ -765,8 +964,7 @@ function capNhatThongMinhToaDoRung() {
 
     if (isExisting) {
       // Nếu dòng đã có sẵn trên sheet đích, lấy dòng cũ ra để cập nhật làm mới thông tin
-      var targetIdx = mapDestRowIndex[valA_Gps];
-      destRow = dataDest[targetIdx];
+      destRow = dataDest[mapDestRowIndex[valA_Gps]];
       countUpdate++;
     } else {
       // Nếu là mã mới hoàn toàn, khởi tạo một dòng trống mới (17 cột)
@@ -775,12 +973,12 @@ function capNhatThongMinhToaDoRung() {
     }
 
     // Ghi dữ liệu từ HD_GPS sang mảng dòng đích
-    destRow[colIndex("A")] = dataGPS[i][0]; // Cột A GPS -> Cột A đích
-    destRow[colIndex("B")] = dataGPS[i][1]; // Cột B GPS -> Cột B đích
-    destRow[colIndex("N")] = dataGPS[i][2]; // Cột C GPS -> Cột N đích
-    destRow[colIndex("O")] = dataGPS[i][3]; // Cột D GPS -> Cột O đích
-    destRow[colIndex("P")] = dataGPS[i][4]; // Cột E GPS -> Cột P đích
-    destRow[colIndex("Q")] = dataGPS[i][5]; // Cột F GPS -> Cột Q đích
+    destRow[colIndex("A")] = dataGPS[i3][0]; // Cột A GPS -> Cột A đích
+    destRow[colIndex("B")] = dataGPS[i3][1]; // Cột B GPS -> Cột B đích
+    destRow[colIndex("N")] = dataGPS[i3][2]; // Cột C GPS -> Cột N đích
+    destRow[colIndex("O")] = dataGPS[i3][3]; // Cột D GPS -> Cột O đích
+    destRow[colIndex("P")] = dataGPS[i3][4]; // Cột E GPS -> Cột P đích
+    destRow[colIndex("Q")] = dataGPS[i3][5]; // Cột F GPS -> Cột Q đích
 
     // Tham chiếu sang dữ liệu HD_RUNG
     if (mapRungByC[valA_Gps]) {
@@ -814,21 +1012,8 @@ function capNhatThongMinhToaDoRung() {
   if (dataDest.length > 0) {
     // Định dạng Text dạng Plain Text cho cột G đích trước khi ghi dữ liệu
     sheetDest.getRange(2, 7, dataDest.length, 1).setNumberFormat("@");
-
     // Ghi đè toàn bộ mảng đã cập nhật và nối dòng mới xuống sheet
     sheetDest.getRange(2, 1, dataDest.length, dataDest[0].length).setValues(dataDest);
-
-    // Kiểm tra nếu đang chạy bằng tay (có giao diện) thì mới hiển thị Alert
-    // Nếu chạy bằng Trigger ngầm thì chỉ ghi Log chứ không hiển thị giao diện để tránh lỗi
-    try {
-      SpreadsheetApp.getUi().alert(
-        "Cập nhật thông minh hoàn tất!\n" +
-        "- Thêm mới bổ sung: " + countNew + " dòng.\n" +
-        "- Làm mới/Cập nhật thông tin: " + countUpdate + " dòng cũ."
-      );
-    } catch(e) {
-      // Ghi lại kết quả vào Nhật ký kích hoạt (Execution Log) khi chạy ngầm
-      Logger.log("Chạy ngầm hoàn tất - Thêm mới: " + countNew + " dòng, Cập nhật: " + countUpdate + " dòng.");
-    }
   }
+  return 'Cập nhật tọa độ xong — thêm mới ' + countNew + ' dòng, làm mới ' + countUpdate + ' dòng cũ.';
 }

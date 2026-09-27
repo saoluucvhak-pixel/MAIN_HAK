@@ -368,7 +368,13 @@ var API_ROUTES = {
   getCongDangNhapInfo: { fn: _getCongDangNhapInfo_, quyen: VAI_TRO.ADMIN },
   layMaNguonCongDangNhap: { fn: _layMaNguonCongDangNhap_, quyen: VAI_TRO.ADMIN },
   luuCongDangNhapUrl: { fn: _luuCongDangNhapUrl_, quyen: VAI_TRO.ADMIN },
-  taoLaiSsoSecret: { fn: _taoLaiSsoSecret_, quyen: VAI_TRO.ADMIN }
+  taoLaiSsoSecret: { fn: _taoLaiSsoSecret_, quyen: VAI_TRO.ADMIN },
+  // Tab "Bảng tổng hợp" — hàm nằm ở BoSung_BackupTongHop.gs; bọc hàm để chỉ
+  // tra tên lúc gọi (file đó có thể được nạp sau Code.gs).
+  getTongHopInfo: { fn: function () { return _getTongHopInfo_(); }, quyen: VAI_TRO.ADMIN },
+  chayTacVuTongHop: { fn: function (tenHam) { return _chayTacVuTuPortal_(tenHam); }, quyen: VAI_TRO.ADMIN },
+  datLichTongHop: { fn: function (tenHam, kieu, giaTri, thu) { return _datLichTongHop_(tenHam, kieu, giaTri, thu); }, quyen: VAI_TRO.ADMIN },
+  luuCauHinhTongHop: { fn: function (truong, giaTri) { return _luuCauHinhTongHop_(truong, giaTri); }, quyen: VAI_TRO.ADMIN }
 };
 
 /**

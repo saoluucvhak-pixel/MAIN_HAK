@@ -6,8 +6,24 @@
  */
 
 function doGet(e) {
-  return HtmlService.createTemplateFromFile('Index')
-    .evaluate()
+  var thamSo = (e && e.parameter) || {};
+  var tpl = HtmlService.createTemplateFromFile('Index');
+  tpl.phien = '';
+  tpl.loiDangNhap = '';
+  if (thamSo.sso) {
+    try {
+      var email = _xacMinhSso_(thamSo.sso);
+      var vaiTro = _vaiTroCua_(email);
+      if (vaiTro) {
+        tpl.phien = _taoPhien_(email);
+      } else {
+        tpl.loiDangNhap = 'Tài khoản ' + email + ' chưa được cấp quyền Quản trị hoặc đã bị khóa — liên hệ chủ hệ thống để được thêm vào danh sách.';
+      }
+    } catch (err) {
+      tpl.loiDangNhap = String((err && err.message) || err);
+    }
+  }
+  return tpl.evaluate()
     .setTitle('HAK Group - Portal')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -89,20 +105,271 @@ var ADMIN_URL_FIELDS = [
 ];
 
 /**
- * Webapp này access:ANYONE nên ai có link cũng gọi được các hàm lộ ra ngoài
- * (kể cả qua console trình duyệt, không chỉ qua nút bấm) — vì vậy setUrlOverride()
- * PHẢI tự kiểm tra quyền ở phía server, không được tin giao diện.
- * Cấp quyền: Project Settings > Script Properties > thêm property
- * ADMIN_EMAILS = "email1@gmail.com,email2@gmail.com".
+ * ============================================================
+ * ĐĂNG NHẬP GMAIL & PHÂN QUYỀN KHU QUẢN TRỊ (cổng trung gian)
+ * ============================================================
+ * Portal vẫn access:ANYONE và mở tự do (menu/hướng dẫn/công cụ) — CHỈ khu
+ * "⚙️ Quản trị" (sửa URL hệ thống con, quản lý người dùng) mới bắt buộc
+ * đăng nhập xác thực qua Gmail, vì lý do sau:
+ *
+ * Nếu Portal deploy "Execute as: Me" (owner), Session.getActiveUser() trả về
+ * RỖNG với bất kỳ ai khác owner mở web app — khiến ADMIN_EMAILS trước đây
+ * gần như không chạy được cho người dùng thật. Cách khắc phục (giống hệt
+ * cơ chế đã dùng ở HAK_WEBAPP_DNTT_DRAFT — xem docs/ARCHITECTURE.md mục 4b
+ * của repo đó): một dự án Apps Script RIÊNG ("Cổng đăng nhập", deploy
+ * Execute as: User accessing the web app) đọc đúng email người đang mở nó
+ * (chạy dưới quyền người dùng nên luôn xác định được), ký (HMAC-SHA256) kèm
+ * hạn dùng 5 phút + mã dùng-1-lần, rồi chuyển tới Portal qua ?sso=<token>.
+ * Portal xác minh chữ ký/hạn/nonce, tra vai trò, cấp 1 "phiên" (mã ngẫu
+ * nhiên, giữ trong CacheService tối đa 6 giờ). Trình duyệt lưu phiên rồi
+ * gửi kèm mọi lời gọi khu Quản trị qua api(phien, tenChucNang, thamSo) —
+ * hàm cửa vào DUY NHẤT có kiểm tra quyền theo API_ROUTES.
+ *
+ * Cài đặt (1 lần, làm trong khu Quản trị sau khi đăng nhập bằng tài khoản
+ * chủ script — chủ script luôn là Quản trị mặc định, không cần cấu hình gì):
+ *  1. Bấm "📋 Lấy mã nguồn Cổng đăng nhập" trong khu Quản trị.
+ *  2. Mở https://script.new, xoá code mặc định, dán mã vừa lấy.
+ *  3. Deploy > New deployment > Web app — Execute as: "User accessing the
+ *     web app", Who has access: "Anyone with Google account". Deploy xong
+ *     copy URL /exec.
+ *  4. Dán URL đó vào ô "Link Cổng đăng nhập" trong khu Quản trị, bấm Lưu.
+ *  5. Thêm email các Quản trị viên khác ở mục "Người dùng" trong khu Quản trị.
+ *
+ * ADMIN_EMAILS (Script Property, cấu hình sẵn từ trước) vẫn được giữ làm
+ * danh sách Quản trị CỐ ĐỊNH — luôn có quyền, không thể tự khoá nhầm mình
+ * qua giao diện web (đúng như QUAN_TRI_CO_DINH của DNTT_DRAFT).
  */
-function _isAdmin() {
-  var email = '';
-  try { email = (Session.getActiveUser().getEmail() || '').toLowerCase(); } catch (err) { email = ''; }
-  if (!email) return false;
-  var raw = PropertiesService.getScriptProperties().getProperty('ADMIN_EMAILS') || '';
-  var allowed = raw.split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
-  return allowed.indexOf(email) >= 0;
+var VAI_TRO = { ADMIN: 'ADMIN' };
+var TRANG_THAI_NGUOI_DUNG = { HOAT_DONG: 'Hoạt động', KHOA: 'Khóa' };
+var AUTH_CFG = {
+  PHIEN_TTL_GIAY: 21600,           // tối đa CacheService cho phép (6 giờ)
+  SSO_HIEU_LUC_MS: 5 * 60 * 1000,  // link từ Cổng đăng nhập chỉ dùng được 5 phút
+  SSO_NONCE_TTL_GIAY: 900,
+  CACHE_NGUOI_DUNG_GIAY: 60,
+  PROP_SSO_SECRET: 'SSO_SECRET',
+  PROP_CONG_DANG_NHAP_URL: 'SSO_GATEWAY_URL',
+  PROP_NGUOI_DUNG: 'PORTAL_NGUOI_DUNG_JSON',
+  CACHE_KEY_NGUOI_DUNG: 'portal_nguoi_dung_v1',
+  TIEN_TO_PHIEN: 'portal_phien_',
+  TIEN_TO_NONCE: 'portal_sso_n_',
+  LOI_DANG_NHAP: '[AUTH] ',
+  LOI_QUYEN: '[QUYEN] '
+};
+var MAU_MA_PHIEN = /^[0-9a-f]{64}$/;
+var MAU_EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+// Người đã xác định trong lượt gọi api() hiện tại (mỗi lời gọi Apps Script
+// là 1 lần chạy riêng — biến toàn cục khởi tạo lại mỗi lần).
+var _nguoiDungHienTai_ = null;
+
+function _chuanHoaEmail_(v) {
+  return String(v || '').trim().toLowerCase();
 }
+
+/** Danh sách email Quản trị cố định lấy từ Script Property ADMIN_EMAILS —
+ * luôn là Quản trị, không đổi/khoá được từ giao diện web. */
+function _quanTriCoDinh_() {
+  var raw = PropertiesService.getScriptProperties().getProperty('ADMIN_EMAILS') || '';
+  return raw.split(',').map(_chuanHoaEmail_).filter(Boolean);
+}
+function _laQuanTriCoDinh_(email) {
+  var e = _chuanHoaEmail_(email);
+  return !!e && _quanTriCoDinh_().indexOf(e) >= 0;
+}
+
+/** Danh sách Quản trị bổ sung (thêm/khoá được từ khu Người dùng), lưu dạng
+ * JSON trong Script Properties — Portal không có Sheet riêng nên không dùng
+ * SYS_NguoiDung như DNTT_DRAFT. */
+function _docDanhSachNguoiDung_() {
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get(AUTH_CFG.CACHE_KEY_NGUOI_DUNG);
+  if (raw) return JSON.parse(raw);
+  var list = [];
+  try {
+    var stored = PropertiesService.getScriptProperties().getProperty(AUTH_CFG.PROP_NGUOI_DUNG);
+    if (stored) list = JSON.parse(stored);
+  } catch (e) { list = []; }
+  cache.put(AUTH_CFG.CACHE_KEY_NGUOI_DUNG, JSON.stringify(list), AUTH_CFG.CACHE_NGUOI_DUNG_GIAY);
+  return list;
+}
+function _ghiDanhSachNguoiDung_(list) {
+  PropertiesService.getScriptProperties().setProperty(AUTH_CFG.PROP_NGUOI_DUNG, JSON.stringify(list));
+  CacheService.getScriptCache().remove(AUTH_CFG.CACHE_KEY_NGUOI_DUNG);
+}
+
+/** Vai trò hiệu lực của 1 email — 'ADMIN' hoặc null (chưa cấp quyền/đã khoá). */
+function _vaiTroCua_(email) {
+  var e = _chuanHoaEmail_(email);
+  if (!e) return null;
+  if (_laQuanTriCoDinh_(e)) return VAI_TRO.ADMIN;
+  var nd = _docDanhSachNguoiDung_().filter(function (x) { return x.email === e; })[0];
+  if (!nd || nd.trangThai !== TRANG_THAI_NGUOI_DUNG.HOAT_DONG) return null;
+  return VAI_TRO.ADMIN;
+}
+
+/** Người thao tác của lượt gọi hiện tại — từ phiên (api()), có fallback
+ * Session.getActiveUser() phòng khi Portal deploy "Execute as: User
+ * accessing the web app" (khi đó không cần qua Cổng đăng nhập vẫn nhận
+ * diện được luôn, giống DNTT_DRAFT). */
+function _xacDinhNguoiDung_() {
+  if (_nguoiDungHienTai_) return _nguoiDungHienTai_;
+  var email = '';
+  try { email = _chuanHoaEmail_(Session.getActiveUser().getEmail()); } catch (e) {}
+  return email ? { email: email, vaiTro: _vaiTroCua_(email) } : null;
+}
+
+/** Chặn nếu người thao tác không có quyền `quyen` (VAI_TRO.*). */
+function _yeuCauQuyen_(quyen) {
+  var nd = _xacDinhNguoiDung_();
+  if (!nd) throw new Error(AUTH_CFG.LOI_DANG_NHAP + 'Chưa đăng nhập — vui lòng đăng nhập bằng tài khoản Google đã được cấp quyền Quản trị.');
+  if (!nd.vaiTro) throw new Error(AUTH_CFG.LOI_DANG_NHAP + 'Tài khoản ' + nd.email + ' chưa được cấp quyền Quản trị hoặc đã bị khóa.');
+  if (nd.vaiTro !== quyen) throw new Error(AUTH_CFG.LOI_QUYEN + 'Tài khoản ' + nd.email + ' không có quyền thực hiện thao tác này.');
+  return nd;
+}
+
+function _taoMaNgauNhien_() {
+  return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').toLowerCase();
+}
+function _taoPhien_(email) {
+  var phien = _taoMaNgauNhien_();
+  CacheService.getScriptCache().put(AUTH_CFG.TIEN_TO_PHIEN + phien, JSON.stringify({ email: email, taoLuc: Date.now() }), AUTH_CFG.PHIEN_TTL_GIAY);
+  return phien;
+}
+function _docPhien_(phien) {
+  if (!MAU_MA_PHIEN.test(String(phien || ''))) return '';
+  var raw = CacheService.getScriptCache().get(AUTH_CFG.TIEN_TO_PHIEN + phien);
+  if (!raw) return '';
+  try { return _chuanHoaEmail_(JSON.parse(raw).email); } catch (e) { return ''; }
+}
+
+function _laySsoSecret_() {
+  var props = PropertiesService.getScriptProperties();
+  var secret = props.getProperty(AUTH_CFG.PROP_SSO_SECRET);
+  if (!secret) {
+    secret = _taoMaNgauNhien_();
+    props.setProperty(AUTH_CFG.PROP_SSO_SECRET, secret);
+  }
+  return secret;
+}
+function _kyHmac_(data, secret) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(data, secret));
+}
+function _soSanhAnToan_(a, b) {
+  if (a.length !== b.length) return false;
+  var khac = 0;
+  for (var i = 0; i < a.length; i++) khac |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return khac === 0;
+}
+
+/** Xác minh mã từ Cổng đăng nhập: đúng chữ ký, còn hạn, chưa dùng. Trả về email. */
+function _xacMinhSso_(token) {
+  var secret = PropertiesService.getScriptProperties().getProperty(AUTH_CFG.PROP_SSO_SECRET);
+  if (!secret) throw new Error('Cổng đăng nhập chưa được cấu hình — vào khu Quản trị để thiết lập.');
+  var parts = String(token || '').split('.');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) throw new Error('Mã đăng nhập không hợp lệ.');
+  if (!_soSanhAnToan_(_kyHmac_(parts[0], secret), parts[1])) throw new Error('Mã đăng nhập không hợp lệ (sai chữ ký).');
+  var payload;
+  try {
+    payload = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString('UTF-8'));
+  } catch (e) {
+    throw new Error('Mã đăng nhập không đọc được.');
+  }
+  if (!payload || typeof payload.exp !== 'number' || payload.exp < Date.now()) throw new Error('Link đăng nhập đã hết hạn — vui lòng đăng nhập lại.');
+  var nonce = String(payload.n || '');
+  var cache = CacheService.getScriptCache();
+  if (!nonce || cache.get(AUTH_CFG.TIEN_TO_NONCE + nonce)) throw new Error('Link đăng nhập đã được dùng — vui lòng đăng nhập lại.');
+  cache.put(AUTH_CFG.TIEN_TO_NONCE + nonce, '1', AUTH_CFG.SSO_NONCE_TTL_GIAY);
+  var email = _chuanHoaEmail_(payload.email);
+  if (!MAU_EMAIL.test(email)) throw new Error('Mã đăng nhập không có email hợp lệ.');
+  return email;
+}
+
+/** Mã nguồn Cổng đăng nhập (dán vào 1 dự án Apps Script riêng — xem hướng
+ * dẫn cài đặt ở khối chú thích phía trên). ADMIN mới xem/lấy được (api()). */
+function _maNguonCongDangNhap_(appUrl, secret) {
+  var soPhut = AUTH_CFG.SSO_HIEU_LUC_MS / 60000;
+  return '// CỔNG ĐĂNG NHẬP - HAK PORTAL\n' +
+    '// Dán vào 1 dự án Apps Script MỚI (https://script.new), rồi Deploy > New deployment > Web app:\n' +
+    '//   Execute as: User accessing the web app  ·  Who has access: Anyone with Google account\n' +
+    '// Mã bí mật bên dưới phải KHỚP với Portal — không chia sẻ file này cho người ngoài.\n' +
+    'var APP_URL = ' + JSON.stringify(appUrl) + ';\n' +
+    'var SSO_SECRET = ' + JSON.stringify(secret) + ';\n' +
+    'var SSO_HIEU_LUC_MS = ' + AUTH_CFG.SSO_HIEU_LUC_MS + ';\n\n' +
+    'function doGet(e) {\n' +
+    '  var email = String(Session.getActiveUser().getEmail() || "").trim().toLowerCase();\n' +
+    '  if (!email) {\n' +
+    '    return HtmlService.createHtmlOutput(\'<p style="font-family:Arial;padding:24px">Không xác định được tài khoản Google. Hãy đăng nhập Google rồi mở lại link này.</p>\');\n' +
+    '  }\n' +
+    '  var payload = JSON.stringify({ email: email, exp: Date.now() + SSO_HIEU_LUC_MS, n: Utilities.getUuid() });\n' +
+    '  var p64 = Utilities.base64EncodeWebSafe(payload, Utilities.Charset.UTF_8);\n' +
+    '  var sig = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(p64, SSO_SECRET));\n' +
+    '  var url = APP_URL + "?sso=" + encodeURIComponent(p64 + "." + sig);\n' +
+    '  var emailHtml = email.replace(/[&<>"\']/g, function (c) { return "&#" + c.charCodeAt(0) + ";"; });\n' +
+    '  var html = \'<div style="font-family:Arial,sans-serif;padding:32px;text-align:center">\'\n' +
+    '    + \'<h2 style="margin:0 0 8px">HAK Portal</h2>\'\n' +
+    '    + \'<p>Tài khoản: <b>\' + emailHtml + \'</b></p>\'\n' +
+    '    + \'<a href="\' + url + \'" target="_top" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Vào Portal</a>\'\n' +
+    '    + \'<p style="color:#666;font-size:12px;margin-top:16px">Link có hiệu lực ' + soPhut + ' phút và chỉ dùng được 1 lần.</p></div>\';\n' +
+    '  return HtmlService.createHtmlOutput(html).setTitle("Đăng nhập HAK Portal");\n' +
+    '}\n';
+}
+
+/** CÔNG KHAI (không cần đăng nhập): trạng thái đăng nhập của chính người
+ * gọi + link Cổng đăng nhập, để client quyết định hiện màn hình nào. */
+function thongTinDangNhap(phien) {
+  var emailPhien = _docPhien_(phien);
+  var email = emailPhien;
+  if (!email) {
+    try { email = _chuanHoaEmail_(Session.getActiveUser().getEmail()); } catch (e) {}
+  }
+  var vaiTro = email ? _vaiTroCua_(email) : null;
+  return {
+    daDangNhap: !!vaiTro,
+    email: email,
+    vaiTro: vaiTro || '',
+    congDangNhapUrl: PropertiesService.getScriptProperties().getProperty(AUTH_CFG.PROP_CONG_DANG_NHAP_URL) || ''
+  };
+}
+
+/** CÔNG KHAI: hủy phiên (chỉ xóa đúng mã phiên được gửi lên). */
+function dangXuat(phien) {
+  if (MAU_MA_PHIEN.test(String(phien || ''))) CacheService.getScriptCache().remove(AUTH_CFG.TIEN_TO_PHIEN + phien);
+  return { success: true };
+}
+
+/** CỬA VÀO DUY NHẤT cho các chức năng khu Quản trị: kiểm tra phiên + quyền
+ * rồi gọi đúng hàm nội bộ đã đăng ký trong API_ROUTES. Chức năng không có
+ * trong bảng này thì KHÔNG gọi được từ web (kể cả qua console trình duyệt). */
+function api(phien, tenHam, thamSo) {
+  var route = Object.prototype.hasOwnProperty.call(API_ROUTES, tenHam) ? API_ROUTES[tenHam] : null;
+  if (!route) throw new Error('Chức năng không tồn tại: ' + tenHam);
+  _nguoiDungHienTai_ = null;
+  try {
+    if (phien) {
+      var email = _docPhien_(phien);
+      if (!email) throw new Error(AUTH_CFG.LOI_DANG_NHAP + 'Phiên đăng nhập đã hết hạn — vui lòng đăng nhập lại.');
+      _nguoiDungHienTai_ = { email: email, vaiTro: _vaiTroCua_(email) };
+    }
+    _yeuCauQuyen_(route.quyen);
+    return route.fn.apply(null, Array.isArray(thamSo) ? thamSo : []);
+  } finally {
+    _nguoiDungHienTai_ = null;
+  }
+}
+
+/** Bảng phân quyền duy nhất cho khu Quản trị — tất cả yêu cầu vai trò ADMIN
+ * (Portal chỉ có 1 vai trò gác cổng: Quản trị / không phải Quản trị). */
+var API_ROUTES = {
+  getAdminInfo: { fn: _getAdminInfo_, quyen: VAI_TRO.ADMIN },
+  setUrlOverride: { fn: _setUrlOverride_, quyen: VAI_TRO.ADMIN },
+  getNguoiDungList: { fn: _getNguoiDungList_, quyen: VAI_TRO.ADMIN },
+  upsertNguoiDung: { fn: _upsertNguoiDung_, quyen: VAI_TRO.ADMIN },
+  xoaNguoiDung: { fn: _xoaNguoiDung_, quyen: VAI_TRO.ADMIN },
+  getCongDangNhapInfo: { fn: _getCongDangNhapInfo_, quyen: VAI_TRO.ADMIN },
+  layMaNguonCongDangNhap: { fn: _layMaNguonCongDangNhap_, quyen: VAI_TRO.ADMIN },
+  luuCongDangNhapUrl: { fn: _luuCongDangNhapUrl_, quyen: VAI_TRO.ADMIN },
+  taoLaiSsoSecret: { fn: _taoLaiSsoSecret_, quyen: VAI_TRO.ADMIN }
+};
 
 /**
  * Trả về toàn bộ cây menu cho frontend.
@@ -148,12 +415,11 @@ function getMenu() {
 
 /**
  * Dữ liệu cho màn hình Quản trị: liệt kê URL đang áp dụng cho từng hệ thống.
- * isAdmin quyết định frontend có hiện ô nhập + nút Lưu hay chỉ xem read-only.
+ * Chỉ gọi được qua api(phien, 'getAdminInfo', []) — đã xác thực Quản trị.
  */
-function getAdminInfo() {
+function _getAdminInfo_() {
   var props = PropertiesService.getScriptProperties();
   return {
-    isAdmin: _isAdmin(),
     rows: ADMIN_URL_FIELDS.map(function (k) {
       var overridden = !!props.getProperty(k.key);
       return {
@@ -170,12 +436,8 @@ function getAdminInfo() {
  * Sửa URL của 1 hệ thống con ngay từ màn Quản trị của webapp — ghi vào
  * Script Properties, không cần vào Project Settings, không cần deploy lại Portal.
  * Truyền url = '' để xóa ghi đè (quay lại DEFAULT_URLS trong Code.gs).
- * Chỉ tài khoản có email trong Script Property ADMIN_EMAILS mới gọi được.
  */
-function setUrlOverride(key, url) {
-  if (!_isAdmin()) {
-    throw new Error('Bạn không có quyền sửa URL. Nhờ quản trị viên thêm email của bạn vào Script Property ADMIN_EMAILS.');
-  }
+function _setUrlOverride_(key, url) {
   var field = ADMIN_URL_FIELDS.filter(function (f) { return f.key === key; })[0];
   if (!field) throw new Error('Key không hợp lệ: ' + key);
 
@@ -189,5 +451,82 @@ function setUrlOverride(key, url) {
     }
     props.setProperty(key, url);
   }
-  return getAdminInfo();
+  return _getAdminInfo_();
+}
+
+/**
+ * Danh sách Quản trị bổ sung (không tính Quản trị cố định trong ADMIN_EMAILS —
+ * nhóm đó chỉ sửa được trực tiếp trong Script Properties, không qua web).
+ */
+function _getNguoiDungList_() {
+  return {
+    coDinh: _quanTriCoDinh_(),
+    boSung: _docDanhSachNguoiDung_()
+  };
+}
+
+/** Thêm mới hoặc cập nhật 1 Quản trị bổ sung. trangThai: 'Hoạt động' | 'Khóa'. */
+function _upsertNguoiDung_(email, hoTen, trangThai) {
+  email = _chuanHoaEmail_(email);
+  if (!MAU_EMAIL.test(email)) throw new Error('Email không hợp lệ: ' + email);
+  if (_laQuanTriCoDinh_(email)) throw new Error('Tài khoản này đã là Quản trị cố định (ADMIN_EMAILS), không cần thêm lại.');
+  if ([TRANG_THAI_NGUOI_DUNG.HOAT_DONG, TRANG_THAI_NGUOI_DUNG.KHOA].indexOf(trangThai) === -1) {
+    throw new Error('Trạng thái không hợp lệ.');
+  }
+  var nguoiThucHien = _xacDinhNguoiDung_();
+  var list = _docDanhSachNguoiDung_();
+  var i = list.map(function (x) { return x.email; }).indexOf(email);
+  var hoTenMoi = String(hoTen || '').trim();
+  if (!hoTenMoi && i >= 0) hoTenMoi = list[i].hoTen || ''; // giữ nguyên họ tên cũ khi chỉ đổi trạng thái
+  var dong = {
+    email: email,
+    hoTen: hoTenMoi,
+    vaiTro: VAI_TRO.ADMIN,
+    trangThai: trangThai,
+    capNhatLuc: new Date().toISOString(),
+    capNhatBoi: (nguoiThucHien && nguoiThucHien.email) || ''
+  };
+  if (i >= 0) list[i] = dong; else list.push(dong);
+  _ghiDanhSachNguoiDung_(list);
+  return _getNguoiDungList_();
+}
+
+/** Xoá hẳn 1 Quản trị bổ sung khỏi danh sách (không xoá được Quản trị cố định). */
+function _xoaNguoiDung_(email) {
+  email = _chuanHoaEmail_(email);
+  var list = _docDanhSachNguoiDung_().filter(function (x) { return x.email !== email; });
+  _ghiDanhSachNguoiDung_(list);
+  return _getNguoiDungList_();
+}
+
+/** Thông tin Cổng đăng nhập hiện tại (URL đã lưu, nếu có). */
+function _getCongDangNhapInfo_() {
+  return {
+    congDangNhapUrl: PropertiesService.getScriptProperties().getProperty(AUTH_CFG.PROP_CONG_DANG_NHAP_URL) || ''
+  };
+}
+
+/** Sinh mã nguồn Cổng đăng nhập để dán vào 1 dự án Apps Script mới —
+ * appUrl lấy tự động từ chính deployment hiện tại (ScriptApp.getService().getUrl()). */
+function _layMaNguonCongDangNhap_() {
+  var appUrl = ScriptApp.getService().getUrl();
+  return _maNguonCongDangNhap_(appUrl, _laySsoSecret_());
+}
+
+/** Lưu URL Cổng đăng nhập (sau khi deploy dự án riêng ở bước cài đặt). */
+function _luuCongDangNhapUrl_(url) {
+  url = String(url || '').trim();
+  if (url && !/^https:\/\/script\.google\.com\/(a\/[^/]+\/)?macros\/s\/[\w-]+\/exec$/.test(url)) {
+    throw new Error('URL Cổng đăng nhập không hợp lệ — phải là link .../exec của web app vừa deploy.');
+  }
+  var props = PropertiesService.getScriptProperties();
+  if (url) props.setProperty(AUTH_CFG.PROP_CONG_DANG_NHAP_URL, url);
+  else props.deleteProperty(AUTH_CFG.PROP_CONG_DANG_NHAP_URL);
+  return _getCongDangNhapInfo_();
+}
+
+/** Đổi mã bí mật (khi nghi bị lộ). Phải dán lại mã nguồn mới vào Cổng đăng nhập. */
+function _taoLaiSsoSecret_() {
+  PropertiesService.getScriptProperties().setProperty(AUTH_CFG.PROP_SSO_SECRET, _taoMaNgauNhien_());
+  return { success: true, message: 'Đã tạo mã bí mật mới — nhớ lấy lại mã nguồn Cổng đăng nhập và dán đè vào dự án Cổng, Deploy > Manage deployments > Edit > New version.' };
 }

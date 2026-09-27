@@ -140,9 +140,45 @@
       border: none; border-radius: 6px; padding: 8px 16px; background: var(--sidebar-active);
     }
     .retry-btn:hover { opacity: 0.9; }
+
+    .login-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 28px; max-width: 420px; margin: 60px auto;
+      text-align: center;
+    }
+    .login-card .btn-google {
+      display: inline-block; margin-top: 14px; padding: 10px 22px;
+      background: var(--sidebar-active); color: #fff; border-radius: 8px;
+      text-decoration: none; font-weight: 600; font-size: 13.5px;
+    }
+    .login-card .login-err { color: var(--danger); font-size: 13px; margin-top: 10px; }
+    .login-card .login-hint { color: #6b7280; font-size: 12.5px; margin-top: 10px; }
+
+    .quantri-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+    .quantri-tabs button {
+      border: 1px solid var(--border); background: #fafafa; cursor: pointer;
+      padding: 7px 14px; font-size: 12.5px; font-weight: 600; border-radius: 6px;
+      color: #374151;
+    }
+    .quantri-tabs button.active { background: var(--sidebar-active); color: #fff; border-color: var(--sidebar-active); }
+    .nguoidung-chip {
+      display: inline-flex; align-items: center; gap: 8px; font-size: 12px;
+      color: #6b7280; margin-bottom: 14px;
+    }
+    .nguoidung-chip .dang-xuat-btn {
+      border: 1px solid var(--border); background: #fff; border-radius: 5px;
+      font-size: 11px; padding: 3px 8px; cursor: pointer;
+    }
+    .form-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .form-row input, .form-row select { font-size: 12.5px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; }
+    .form-row input[type="email"] { flex: 1; min-width: 200px; }
+    .cong-textarea {
+      width: 100%; height: 220px; font-family: monospace; font-size: 11.5px;
+      padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-top: 8px;
+    }
   </style>
 </head>
-<body>
+<body data-phien="<?= phien ?>" data-loi-dang-nhap="<?= loiDangNhap ?>">
 
   <div class="layout">
     <div class="sidebar">
@@ -174,6 +210,44 @@
     var expanded = {};
     var frameState = {}; // id -> { loaded: bool, timer: number }
     var LOAD_TIMEOUT_MS = 12000;
+
+    /* ============================================================
+     * ĐĂNG NHẬP GMAIL (chỉ khu Quản trị) — xem chú thích trong Code.gs.
+     * Mọi lời gọi khu Quản trị đi qua call(tenChucNang, thamSo), tự kèm
+     * PHIEN và tự hiện màn đăng nhập nếu lỗi bắt đầu bằng "[AUTH] ".
+     * ============================================================ */
+    var PHIEN_STORAGE_KEY = 'hak_portal_phien';
+    var LOI_DANG_NHAP_PREFIX = '[AUTH] ';
+    var PHIEN = '';
+
+    function khoiTaoPhien() {
+      var tuServer = document.body.dataset.phien || '';
+      if (tuServer) {
+        PHIEN = tuServer;
+        try { sessionStorage.setItem(PHIEN_STORAGE_KEY, PHIEN); } catch (e) {}
+      } else {
+        try { PHIEN = sessionStorage.getItem(PHIEN_STORAGE_KEY) || ''; } catch (e) { PHIEN = ''; }
+      }
+    }
+    khoiTaoPhien();
+
+    /** Gọi 1 chức năng khu Quản trị qua api(PHIEN, tenHam, thamSo). Trả Promise. */
+    function call(tenHam, thamSo) {
+      return new Promise(function (resolve, reject) {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .api(PHIEN, tenHam, thamSo || []);
+      });
+    }
+    function laLoiDangNhap(err) {
+      return !!(err && err.message && err.message.indexOf(LOI_DANG_NHAP_PREFIX) === 0);
+    }
+    function noiDungLoi(err, tienTo) {
+      var msg = (err && err.message) || String(err);
+      var i = msg.indexOf(tienTo);
+      return i >= 0 ? msg.slice(i + tienTo.length) : msg;
+    }
 
     function findItem(id, list) {
       list = list || menu;
@@ -312,54 +386,115 @@
       return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     }
 
+    var quantriTab = 'url'; // 'url' | 'nguoidung' | 'cong'
+
+    /** Điểm vào khu Quản trị: kiểm tra đăng nhập trước (thongTinDangNhap
+     * không cần đăng nhập, chỉ trả trạng thái của chính người gọi). */
     function renderAdminPanel() {
-      google.script.run.withSuccessHandler(function (info) {
-        var isAdmin = info.isAdmin;
+      var loiBanDau = window.__loiDangNhapBanDau || '';
+      window.__loiDangNhapBanDau = ''; // chỉ hiện 1 lần ngay sau khi quay lại từ Cổng đăng nhập
+      google.script.run
+        .withSuccessHandler(function (nd) {
+          if (!nd.daDangNhap || nd.vaiTro !== 'ADMIN') {
+            hienManHinhDangNhapQuanTri(nd, loiBanDau);
+            return;
+          }
+          renderQuanTriDaDangNhap(nd);
+        })
+        .withFailureHandler(function () { hienManHinhDangNhapQuanTri({ congDangNhapUrl: '' }, loiBanDau); })
+        .thongTinDangNhap(PHIEN);
+    }
+
+    function hienManHinhDangNhapQuanTri(nd, loi) {
+      var cong = (nd && nd.congDangNhapUrl) || '';
+      showCardPanel(
+        '<div class="login-card"><h2>🔐 Đăng nhập Quản trị</h2>' +
+        '<div class="login-hint">Khu Quản trị (sửa URL, quản lý người dùng) yêu cầu đăng nhập bằng tài khoản Google đã được cấp quyền.</div>' +
+        (loi ? '<div class="login-err">' + escapeAttr(loi) + '</div>' : '') +
+        (!cong
+          ? '<div class="login-hint" style="margin-top:14px;">Chưa cấu hình Cổng đăng nhập. Nếu bạn là chủ hệ thống, mở Portal trực tiếp (không qua link đăng nhập) — bạn sẽ tự động là Quản trị nếu email nằm trong Script Property <code>ADMIN_EMAILS</code>.</div>'
+          : '<a class="btn-google" href="' + escapeAttr(cong) + '" target="_top">Đăng nhập bằng Google</a>') +
+        '</div>'
+      );
+    }
+
+    function renderQuanTriDaDangNhap(nd) {
+      showCardPanel(
+        '<div class="admin-card">' +
+        '<div class="nguoidung-chip">👤 ' + escapeAttr(nd.email) + ' (Quản trị)' +
+        '<button class="dang-xuat-btn" id="btn-dang-xuat">Đăng xuất</button></div>' +
+        '<h2>⚙️ Quản trị</h2>' +
+        '<div class="quantri-tabs">' +
+        '<button data-tab="url" class="' + (quantriTab === 'url' ? 'active' : '') + '">Hệ thống con</button>' +
+        '<button data-tab="nguoidung" class="' + (quantriTab === 'nguoidung' ? 'active' : '') + '">Người dùng</button>' +
+        '<button data-tab="cong" class="' + (quantriTab === 'cong' ? 'active' : '') + '">Cổng đăng nhập</button>' +
+        '</div>' +
+        '<div id="quantri-body">Đang tải...</div></div>'
+      );
+      document.getElementById('btn-dang-xuat').onclick = dangXuatQuanTri;
+      document.querySelectorAll('.quantri-tabs button').forEach(function (btn) {
+        btn.onclick = function () { quantriTab = btn.getAttribute('data-tab'); renderQuanTriDaDangNhap(nd); };
+      });
+      if (quantriTab === 'url') renderTabUrl();
+      else if (quantriTab === 'nguoidung') renderTabNguoiDung();
+      else renderTabCongDangNhap();
+    }
+
+    function dangXuatQuanTri() {
+      google.script.run.withSuccessHandler(function () {}).withFailureHandler(function () {}).dangXuat(PHIEN);
+      PHIEN = '';
+      try { sessionStorage.removeItem(PHIEN_STORAGE_KEY); } catch (e) {}
+      renderAdminPanel();
+    }
+
+    /** Sau lỗi [AUTH] ở bất kỳ thao tác Quản trị nào: phiên hết hạn/bị khoá — quay lại màn đăng nhập. */
+    function xuLyLoiQuanTri(err) {
+      if (laLoiDangNhap(err)) {
+        PHIEN = '';
+        try { sessionStorage.removeItem(PHIEN_STORAGE_KEY); } catch (e) {}
+        google.script.run.withSuccessHandler(function (nd) {
+          hienManHinhDangNhapQuanTri(nd, noiDungLoi(err, LOI_DANG_NHAP_PREFIX));
+        }).thongTinDangNhap('');
+        return true;
+      }
+      return false;
+    }
+
+    // --- Tab "Hệ thống con" (sửa URL) ---
+    function renderTabUrl() {
+      var body = document.getElementById('quantri-body');
+      body.innerHTML = 'Đang tải...';
+      call('getAdminInfo', []).then(function (info) {
         var rowsHtml = info.rows.map(function (r) {
           var badgeClass = r.source.indexOf('ghi đè') >= 0 ? 'override' : 'default';
-          var urlCell = isAdmin
-            ? '<input type="text" id="url-input-' + r.key + '" class="url-edit-input" value="' + escapeAttr(r.url) + '" placeholder="https://script.google.com/macros/s/.../exec">'
-            : (r.url ? '<span style="word-break:break-all;">' + r.url + '</span>' : '<span style="color:#dc2626;">(chưa có)</span>');
-          var actionsCell = isAdmin
-            ? '<button class="save-url-btn" data-key="' + r.key + '">💾 Lưu</button><button class="reset-url-btn" data-key="' + r.key + '">↺ Mặc định</button>'
-            : '';
-          return '<tr><td>' + r.name + '</td><td>' + urlCell + '</td><td><span class="badge ' + badgeClass + '">' + r.source + '</span></td><td>' + actionsCell + '</td></tr>';
+          return '<tr><td>' + r.name + '</td>' +
+            '<td><input type="text" id="url-input-' + r.key + '" class="url-edit-input" value="' + escapeAttr(r.url) + '" placeholder="https://script.google.com/macros/s/.../exec"></td>' +
+            '<td><span class="badge ' + badgeClass + '">' + r.source + '</span></td>' +
+            '<td><button class="save-url-btn" data-key="' + r.key + '">💾 Lưu</button><button class="reset-url-btn" data-key="' + r.key + '">↺ Mặc định</button></td></tr>';
         }).join('');
-        var note = isAdmin
-          ? '<div style="color:#6b7280; font-size:13px;">Sửa URL rồi bấm <b>Lưu</b> — áp dụng ngay lập tức, không cần deploy lại Portal. Bấm <b>Mặc định</b> để xóa ghi đè, quay về URL trong Code.gs.</div>'
-          : '<div style="color:#6b7280; font-size:13px;">Bạn đang xem chế độ chỉ đọc. Để được sửa URL trực tiếp tại đây, nhờ quản trị viên thêm email của bạn vào Script Property <code>ADMIN_EMAILS</code>.</div>';
-        showCardPanel(
-          '<div class="admin-card"><h2>⚙️ Quản trị</h2>' + note +
+        body.innerHTML =
+          '<div style="color:#6b7280; font-size:13px;">Sửa URL rồi bấm <b>Lưu</b> — áp dụng ngay lập tức, không cần deploy lại Portal.</div>' +
           '<table class="admin-table"><thead><tr><th>Hệ thống</th><th>URL hiện tại</th><th>Nguồn</th><th></th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
-          '<div id="admin-msg" style="margin-top:10px; font-size:13px;"></div></div>'
-        );
-        if (isAdmin) {
-          document.querySelectorAll('.save-url-btn').forEach(function (btn) {
-            btn.onclick = function () {
-              var key = btn.getAttribute('data-key');
-              var input = document.getElementById('url-input-' + key);
-              saveUrlOverride(key, input.value);
-            };
-          });
-          document.querySelectorAll('.reset-url-btn').forEach(function (btn) {
-            btn.onclick = function () { saveUrlOverride(btn.getAttribute('data-key'), ''); };
-          });
-        }
-      }).getAdminInfo();
+          '<div id="admin-msg" style="margin-top:10px; font-size:13px;"></div>';
+        document.querySelectorAll('.save-url-btn').forEach(function (btn) {
+          btn.onclick = function () { saveUrlOverride(btn.getAttribute('data-key'), document.getElementById('url-input-' + btn.getAttribute('data-key')).value); };
+        });
+        document.querySelectorAll('.reset-url-btn').forEach(function (btn) {
+          btn.onclick = function () { saveUrlOverride(btn.getAttribute('data-key'), ''); };
+        });
+      }).catch(function (err) { if (!xuLyLoiQuanTri(err)) body.innerHTML = '<div class="login-err">' + escapeAttr(err.message || err) + '</div>'; });
     }
 
     function saveUrlOverride(key, url) {
       var msg = document.getElementById('admin-msg');
       if (msg) { msg.style.color = '#6b7280'; msg.textContent = 'Đang lưu...'; }
-      google.script.run
-        .withSuccessHandler(function () {
-          afterUrlChange(key);
-          renderAdminPanel();
-        })
-        .withFailureHandler(function (err) {
-          if (msg) { msg.style.color = '#dc2626'; msg.textContent = 'Lỗi: ' + (err && err.message ? err.message : err); }
-        })
-        .setUrlOverride(key, url);
+      call('setUrlOverride', [key, url]).then(function () {
+        afterUrlChange(key);
+        renderTabUrl();
+      }).catch(function (err) {
+        if (xuLyLoiQuanTri(err)) return;
+        if (msg) { msg.style.color = '#dc2626'; msg.textContent = 'Lỗi: ' + (err && err.message ? err.message : err); }
+      });
     }
 
     // Đồng bộ menu ở client ngay sau khi đổi URL, để mục tương ứng dùng URL mới
@@ -375,6 +510,85 @@
         }
         render();
       }).getMenu();
+    }
+
+    // --- Tab "Người dùng" (Quản trị bổ sung, ngoài ADMIN_EMAILS cố định) ---
+    function renderTabNguoiDung() {
+      var body = document.getElementById('quantri-body');
+      body.innerHTML = 'Đang tải...';
+      call('getNguoiDungList', []).then(function (info) {
+        var coDinhHtml = info.coDinh.map(function (e) { return '<tr><td>' + escapeAttr(e) + '</td><td>—</td><td><span class="badge override">Cố định (ADMIN_EMAILS)</span></td><td></td></tr>'; }).join('');
+        var boSungHtml = info.boSung.map(function (nd) {
+          return '<tr><td>' + escapeAttr(nd.email) + '</td><td>' + escapeAttr(nd.hoTen || '') + '</td>' +
+            '<td><span class="badge ' + (nd.trangThai === 'Hoạt động' ? 'override' : 'default') + '">' + escapeAttr(nd.trangThai) + '</span></td>' +
+            '<td><button class="save-url-btn" data-email="' + escapeAttr(nd.email) + '" data-action="khoa" data-trang-thai-moi="' + (nd.trangThai === 'Hoạt động' ? 'Khóa' : 'Hoạt động') + '">' + (nd.trangThai === 'Hoạt động' ? '🔒 Khóa' : '🔓 Mở khóa') + '</button>' +
+            '<button class="reset-url-btn" data-email="' + escapeAttr(nd.email) + '" data-action="xoa">🗑️ Xoá</button></td></tr>';
+        }).join('');
+        body.innerHTML =
+          '<div style="color:#6b7280; font-size:13px;">Thêm Quản trị viên khác bằng email Google của họ. Quản trị cố định (ADMIN_EMAILS) chỉ sửa được trong Script Properties, không xoá/khoá được ở đây.</div>' +
+          '<table class="admin-table"><thead><tr><th>Email</th><th>Họ tên</th><th>Trạng thái</th><th></th></tr></thead><tbody>' + coDinhHtml + boSungHtml + '</tbody></table>' +
+          '<div class="form-row" style="margin-top:14px;">' +
+          '<input type="email" id="nd-email" placeholder="email@gmail.com">' +
+          '<input type="text" id="nd-hoten" placeholder="Họ tên (tuỳ chọn)" style="width:160px">' +
+          '<button class="save-url-btn" id="nd-them">➕ Thêm Quản trị</button></div>' +
+          '<div id="admin-msg" style="margin-top:6px; font-size:13px;"></div>';
+        document.getElementById('nd-them').onclick = function () {
+          var email = document.getElementById('nd-email').value.trim();
+          var hoTen = document.getElementById('nd-hoten').value.trim();
+          themNguoiDung(email, hoTen);
+        };
+        document.querySelectorAll('button[data-email]').forEach(function (btn) {
+          btn.onclick = function () {
+            var email = btn.getAttribute('data-email');
+            if (btn.getAttribute('data-action') === 'xoa') xoaNguoiDung(email);
+            else khoaMoNguoiDung(email, btn.getAttribute('data-trang-thai-moi'));
+          };
+        });
+      }).catch(function (err) { if (!xuLyLoiQuanTri(err)) body.innerHTML = '<div class="login-err">' + escapeAttr(err.message || err) + '</div>'; });
+    }
+    function themNguoiDung(email, hoTen) {
+      var msg = document.getElementById('admin-msg');
+      if (!email) { if (msg) { msg.style.color = '#dc2626'; msg.textContent = 'Nhập email trước.'; } return; }
+      call('upsertNguoiDung', [email, hoTen, 'Hoạt động']).then(function () { renderTabNguoiDung(); })
+        .catch(function (err) { if (!xuLyLoiQuanTri(err) && msg) { msg.style.color = '#dc2626'; msg.textContent = 'Lỗi: ' + (err.message || err); } });
+    }
+    function khoaMoNguoiDung(email, trangThaiMoi) {
+      call('upsertNguoiDung', [email, '', trangThaiMoi]).then(function () { renderTabNguoiDung(); }).catch(xuLyLoiQuanTri);
+    }
+    function xoaNguoiDung(email) {
+      call('xoaNguoiDung', [email]).then(function () { renderTabNguoiDung(); }).catch(xuLyLoiQuanTri);
+    }
+
+    // --- Tab "Cổng đăng nhập" ---
+    function renderTabCongDangNhap() {
+      var body = document.getElementById('quantri-body');
+      body.innerHTML = 'Đang tải...';
+      call('getCongDangNhapInfo', []).then(function (info) {
+        body.innerHTML =
+          '<div style="color:#6b7280; font-size:13px;">Cài đặt 1 lần: bấm "Lấy mã nguồn", dán vào 1 dự án Apps Script mới (script.new), Deploy dạng Web app '
+          + '(Execute as: <b>User accessing the web app</b>, Who has access: <b>Anyone with Google account</b>), rồi dán URL vừa deploy vào ô bên dưới.</div>'
+          + '<div class="form-row" style="margin-top:12px;"><button class="save-url-btn" id="btn-lay-ma">📋 Lấy mã nguồn Cổng đăng nhập</button>'
+          + '<button class="reset-url-btn" id="btn-doi-secret">🔄 Tạo lại mã bí mật</button></div>'
+          + '<textarea class="cong-textarea" id="cong-source" readonly placeholder="Bấm &quot;Lấy mã nguồn&quot; ở trên..."></textarea>'
+          + '<div class="form-row" style="margin-top:14px;"><input type="text" id="cong-url" style="flex:1" value="' + escapeAttr(info.congDangNhapUrl) + '" placeholder="https://script.google.com/macros/s/.../exec (URL Cổng đăng nhập đã deploy)">'
+          + '<button class="save-url-btn" id="btn-luu-cong-url">💾 Lưu URL</button></div>'
+          + '<div id="admin-msg" style="margin-top:6px; font-size:13px;"></div>';
+        document.getElementById('btn-lay-ma').onclick = function () {
+          call('layMaNguonCongDangNhap', []).then(function (source) { document.getElementById('cong-source').value = source; }).catch(xuLyLoiQuanTri);
+        };
+        document.getElementById('btn-doi-secret').onclick = function () {
+          if (!confirm('Tạo lại mã bí mật sẽ vô hiệu mã nguồn Cổng đăng nhập đang dùng — phải lấy mã mới và dán đè lại. Tiếp tục?')) return;
+          call('taoLaiSsoSecret', []).then(function (kq) {
+            var msg = document.getElementById('admin-msg'); if (msg) { msg.style.color = '#b45309'; msg.textContent = kq.message; }
+          }).catch(xuLyLoiQuanTri);
+        };
+        document.getElementById('btn-luu-cong-url').onclick = function () {
+          var msg = document.getElementById('admin-msg');
+          call('luuCongDangNhapUrl', [document.getElementById('cong-url').value.trim()]).then(function () {
+            if (msg) { msg.style.color = '#16a34a'; msg.textContent = 'Đã lưu.'; }
+          }).catch(function (err) { if (!xuLyLoiQuanTri(err) && msg) { msg.style.color = '#dc2626'; msg.textContent = 'Lỗi: ' + (err.message || err); } });
+        };
+      }).catch(function (err) { if (!xuLyLoiQuanTri(err)) body.innerHTML = '<div class="login-err">' + escapeAttr(err.message || err) + '</div>'; });
     }
 
     function showCenterPanel(kind, iconChar, title, bodyHtml) {
@@ -476,10 +690,21 @@
       else if (item.url) retryFrame(currentId, item.name, item.url);
     };
 
+    window.__loiDangNhapBanDau = document.body.dataset.loiDangNhap || '';
     google.script.run.withSuccessHandler(function (result) {
       menu = result;
       render();
+      // Vừa quay lại từ Cổng đăng nhập (server vừa cấp phiên mới, hoặc báo
+      // lỗi đăng nhập) — mở luôn khu Quản trị, vì chỉ khu này cần đăng nhập
+      // nên chắc chắn đó là nơi người dùng đang muốn vào.
+      if (document.body.dataset.phien || window.__loiDangNhapBanDau) selectItem('quantri');
     }).getMenu();
+
+    // Xoá ?sso=... khỏi thanh địa chỉ sau khi đã dùng xong (link chỉ dùng
+    // được 1 lần, giữ lại trên URL dễ gây nhầm lẫn khi tải lại trang / chia sẻ link).
+    if (window.location.search.indexOf('sso=') >= 0 && window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   </script>
 
 </body>

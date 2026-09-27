@@ -26,9 +26,9 @@ function doGet(e) {
  */
 var DEFAULT_URLS = {
   URL_QUY:          'https://script.google.com/macros/s/AKfycbyX1g0hc770dJzIAcREgBcg3wVAoiQYgFcLoTZoYJzXqfRUW6fGXv9TC9GYIcUOCpqu/exec',
-  URL_KHO:          'https://script.google.com/macros/s/AKfycbx5Cphc5FSTzCiRRBo1zWbBROsmTa7q-1aVgbZgKQGOpvA9oQxa412foTtqBMoiUgNpIg/exec',
-  URL_HOPDONG:      'https://script.google.com/macros/s/AKfycbyVjEB2QdM8KS9GwHxN5hbv2bvpvILRvQ8NlChfPDww79_l3ep0R5ciYe_yQIXY5lJm/exec',
-  URL_THANHTOAN:    'https://script.google.com/macros/s/AKfycby0UxAtq6WOEoVH_Pw9GQyHDO0CTWKAIjyKyfTYW_hcdqUwbwH2rbEtsG5l9M_TVr4LMQ/exec',
+  URL_KHO:          'https://script.google.com/macros/s/AKfycbwxw_liqTn4i4TPI6GMNXtSn2T3SLedE4eRbMDAbmJibUaI8VTU1M6eD_j5cp1WQGxckg/exec',
+  URL_HOPDONG:      'https://script.google.com/macros/s/AKfycbyakRXr_6FzLwJajEuzyWm55p3fyxncO2djxLn4CififuBnHTTMhsOa2cA5wshLRVnL/exec',
+  URL_THANHTOAN:    'https://script.google.com/macros/s/AKfycbw0fvUnm9I7eDwQ2zk-jF29VXg69dUfa7OFKvTfjWQeGIiodn5U398UrTPszNxI2N5HiQ/exec',
   URL_VAY:          'https://script.google.com/macros/s/AKfycbxyZ8ZtO0ccPOoHDU_f0g--ib15lhHe-SlgEhnDJ6sGuAD-j6WwdmDpLghrf4IAaF7G/exec',
   URL_UPDATE_KT:    'https://script.google.com/macros/s/AKfycbzokLFi-9Rs7eegV3VCPWdiBQfUfj6ArVag1JyeiCykmuSu90nZ3vPMxrGUjW-ncCUsFw/exec',
   URL_NHANSU:       'https://script.google.com/macros/s/AKfycbxwGTeM1Y0EEF2bIsdRmbREoMp7_Lz9yJbWZpnoXEIzfJJSUTu_LObbJD9TvfDJohupOw/exec',

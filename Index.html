@@ -79,6 +79,7 @@
       padding: 5px 10px; background: #fafafa;
     }
     .content-header .reload-btn:hover { background: #f0f0f0; }
+    .content-header .newtab-btn { text-decoration: none; margin-left: 6px; }
 
     .frame-area { flex: 1; position: relative; overflow: auto; }
     iframe {
@@ -209,7 +210,10 @@
     <div class="content">
       <div class="content-header">
         <div class="current-name" id="current-name">Trang chủ</div>
-        <div class="reload-btn" id="reload-btn" style="display:none;">↻ Tải lại</div>
+        <div>
+          <div class="reload-btn" id="reload-btn" style="display:none;">↻ Tải lại</div>
+          <a class="reload-btn newtab-btn" id="newtab-btn" style="display:none;" target="_blank" rel="noopener" title="Mở hệ thống này ở tab riêng — dùng khi khung bên dưới trắng/không hiện">↗ Mở tab mới</a>
+        </div>
       </div>
       <div class="frame-area" id="frame-area">
         <div class="panel center-panel" id="welcome-screen">
@@ -351,8 +355,14 @@
       wrap.className = 'frame-status panel center-panel danger';
       wrap.id = 'frame-status';
       wrap.innerHTML = '<div class="big-icon">⚠️</div><h2>Không tải được "' + name + '"</h2>' +
-        '<div>URL hiện tại có thể sai hoặc hệ thống con chưa cho phép nhúng iframe:<br><code>' + url + '</code></div>' +
-        '<button class="retry-btn" id="retry-btn">↻ Thử lại</button>';
+        '<div>URL hiện tại: <code>' + escapeAttr(url) + '</code></div>' +
+        '<div style="text-align:left;max-width:560px;margin:12px auto 0;font-size:13px">Bấm <b>↗ Mở tab mới</b> để xem hệ thống con báo gì, rồi kiểm tra:<ol style="margin:6px 0 0 18px;padding:0">' +
+        '<li>URL còn đúng deployment đang chạy (Deploy › Manage deployments của hệ thống con) — sửa ở Quản trị › Hệ thống con.</li>' +
+        '<li>Deployment để <b>Who has access: Anyone</b> (không phải "Anyone with Google account"/"Only myself") — trang đăng nhập Google không cho nhúng.</li>' +
+        '<li>doGet() có <code>.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)</code> và không báo lỗi khi mở thẳng.</li>' +
+        '<li>Trình duyệt đang đăng nhập nhiều tài khoản Google cùng lúc — thử cửa sổ ẩn danh chỉ 1 tài khoản.</li></ol></div>' +
+        '<button class="retry-btn" id="retry-btn">↻ Thử lại</button>' +
+        '<a class="retry-btn" style="margin-left:8px;text-decoration:none;display:inline-block" href="' + escapeAttr(url) + '" target="_blank" rel="noopener">↗ Mở tab mới</a>';
       document.getElementById('retry-btn').onclick = function () { retryFrame(id, name, url); };
     }
 
@@ -974,6 +984,11 @@
       currentId = id;
       document.getElementById('current-name').textContent = item.name;
       document.getElementById('reload-btn').style.display = ((item.type === 'link' && item.url) || item.type === 'tool') ? 'inline-block' : 'none';
+      // Khung nhúng có thể trắng mà không báo lỗi (Google chặn nhúng trang đăng nhập / trang báo lỗi):
+      // luôn cho phép mở thẳng hệ thống con ở tab riêng.
+      var newTab = document.getElementById('newtab-btn');
+      if (item.type === 'link' && item.url) { newTab.href = item.url; newTab.style.display = 'inline-block'; }
+      else { newTab.removeAttribute('href'); newTab.style.display = 'none'; }
 
       if (item.type === 'link') {
         if (!item.url) {

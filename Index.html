@@ -381,8 +381,54 @@
       frameState[id].loaded = false;
       showFrameLoading(id, name);
       armFrameTimer(id, name, url);
-      frame.src = url;
+      frame.src = urlNhung(url);
     }
+
+    /* ------------------------------------------------------------
+     * CHUYỂN TRANG BÊN TRONG KHUNG NHÚNG
+     * Hệ thống con (vd HDMB_HAK) dùng <base target="_top"> / window.open
+     * để chuyển trang -> khi nằm trong Portal sẽ thay mất cả Portal hoặc
+     * bật tab mới. Portal gắn ?hak_portal=1 vào link nhúng; hệ thống con
+     * thấy tham số này thì KHÔNG tự chuyển trang mà postMessage lên:
+     *   { loai: 'hak-portal-dieu-huong', url: '<link /exec?page=...>' }
+     * Portal chỉ nhận tin từ BÊN TRONG khung của 1 hệ thống con 'link'
+     * (lần ngược window.parent từ ev.source) và chỉ cho chuyển tới link
+     * script.google.com — trang nhúng chỉ điều hướng được khung của chính nó.
+     * ------------------------------------------------------------ */
+    function urlNhung(url) {
+      if (!url || /[?&]hak_portal=1(&|#|$)/.test(url)) return url;
+      var i = url.indexOf('#');
+      var goc = i >= 0 ? url.slice(0, i) : url, hash = i >= 0 ? url.slice(i) : '';
+      return goc + (goc.indexOf('?') >= 0 ? '&' : '?') + 'hak_portal=1' + hash;
+    }
+    function mucChuaCuaSo(win) {
+      var frames = document.querySelectorAll('iframe[id^="frame-"]');
+      for (var buoc = 0, w = win; w && buoc < 10; buoc++) {
+        for (var i = 0; i < frames.length; i++) {
+          if (frames[i].contentWindow === w) {
+            var item = findItem(frames[i].id.slice('frame-'.length));
+            return item && item.type === 'link' ? item : null;
+          }
+        }
+        if (w === w.parent) break;
+        w = w.parent;
+      }
+      return null;
+    }
+    window.addEventListener('message', function (ev) {
+      var d = ev.data;
+      if (!d || d.loai !== 'hak-portal-dieu-huong' || typeof d.url !== 'string') return;
+      if (!/^https:\/\/script\.google\.com\//.test(d.url)) return;
+      var item = mucChuaCuaSo(ev.source);
+      if (!item) return;
+      if (currentId !== item.id) selectItem(item.id);
+      var frame = document.getElementById('frame-' + item.id);
+      if (!frame) return;
+      frameState[item.id].loaded = false;
+      showFrameLoading(item.id, item.name);
+      armFrameTimer(item.id, item.name, d.url);
+      frame.src = urlNhung(d.url);
+    });
 
     // Công cụ độc lập (type:'tool') nhúng bằng srcdoc thay vì src — nội dung lấy
     // từ getToolContent() phía server, không phải URL bên ngoài, nên không dùng
@@ -1013,7 +1059,7 @@
           document.getElementById('frame-area').appendChild(frame);
           showFrameLoading(id, item.name);
           armFrameTimer(id, item.name, item.url);
-          frame.src = item.url;
+          frame.src = urlNhung(item.url);
         } else if (frameState[id] && frameState[id].loaded) {
           clearFrameStatus();
         } else {
